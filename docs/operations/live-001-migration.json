@@ -1,0 +1,570 @@
+{
+  "task": "LIVE-001",
+  "phase": "validated-awaiting-independent-review",
+  "moves": [
+    {
+      "source": "app/backend",
+      "destination": "archives/cpb-reference-20261005/backend",
+      "action": "archive",
+      "files": 520,
+      "bytes": 4636102,
+      "executed": true
+    },
+    {
+      "source": "app/ai-scoring",
+      "destination": "archives/cpb-reference-20261005/ai-scoring",
+      "action": "archive",
+      "files": 14698,
+      "bytes": 108600533,
+      "executed": true
+    },
+    {
+      "source": "app/frontend/admin",
+      "destination": "archives/cpb-reference-20261005/frontend/admin",
+      "action": "archive",
+      "files": 40,
+      "bytes": 309142,
+      "executed": true
+    },
+    {
+      "source": "app/frontend/user",
+      "destination": "archives/cpb-reference-20261005/frontend/user",
+      "action": "archive",
+      "files": 42451,
+      "bytes": 436400751,
+      "executed": true
+    },
+    {
+      "source": "app/frontend/teacher",
+      "destination": "archives/cpb-reference-20261005/frontend/teacher",
+      "action": "archive",
+      "files": 76,
+      "bytes": 953566,
+      "executed": true
+    },
+    {
+      "source": "app/recording-bot",
+      "destination": "archives/cpb-reference-20261005/recording-bot",
+      "action": "archive",
+      "files": 5,
+      "bytes": 113966,
+      "executed": true
+    },
+    {
+      "source": "app/signaling",
+      "destination": "archives/cpb-reference-20261005/signaling",
+      "action": "archive",
+      "files": 6,
+      "bytes": 54538,
+      "executed": true
+    },
+    {
+      "source": "app/sql",
+      "destination": "archives/cpb-reference-20261005/sql",
+      "action": "archive",
+      "files": 7,
+      "bytes": 56007,
+      "executed": true
+    },
+    {
+      "source": "app/livekit.yaml",
+      "destination": "archives/cpb-reference-20261005/livekit.yaml",
+      "action": "archive",
+      "files": 1,
+      "bytes": 489,
+      "executed": true
+    },
+    {
+      "source": "app/livekit-egress.yaml",
+      "destination": "archives/cpb-reference-20261005/livekit-egress.yaml",
+      "action": "archive",
+      "files": 1,
+      "bytes": 201,
+      "executed": true
+    },
+    {
+      "source": "app/livekit-proxy.js",
+      "destination": "archives/cpb-reference-20261005/livekit-proxy.js",
+      "action": "archive",
+      "files": 1,
+      "bytes": 2797,
+      "executed": true
+    },
+    {
+      "source": "app/package.json",
+      "destination": "archives/cpb-reference-20261005/package.json",
+      "action": "archive",
+      "files": 1,
+      "bytes": 200,
+      "executed": true
+    },
+    {
+      "source": "app/scripts",
+      "destination": "archives/cpb-reference-20261005/scripts",
+      "action": "archive",
+      "files": 1,
+      "bytes": 30,
+      "executed": true
+    },
+    {
+      "source": "app/UI资料 2",
+      "destination": "archives/cpb-reference-20261005/UI资料 2",
+      "action": "archive",
+      "files": 0,
+      "bytes": 0,
+      "executed": true
+    },
+    {
+      "source": "app/source-migration-core",
+      "destination": "archives/cpb-reference-20261005/source-migration-core",
+      "action": "archive",
+      "files": 0,
+      "bytes": 0,
+      "executed": true
+    },
+    {
+      "source": "app/javac.20260814_120403.args",
+      "destination": "archives/cpb-reference-20261005/javac.20260814_120403.args",
+      "action": "archive",
+      "files": 1,
+      "bytes": 71,
+      "executed": true
+    },
+    {
+      "source": "app/项目启动指南.md",
+      "destination": "archives/cpb-reference-20261005/项目启动指南.md",
+      "action": "archive",
+      "files": 1,
+      "bytes": 10712,
+      "executed": true
+    },
+    {
+      "source": "app/frontend/prototype",
+      "destination": "app/frontend/web",
+      "action": "rename",
+      "executed": true
+    },
+    {
+      "source": "app/frontend/web/qa",
+      "destination": "runtime/prototype-qa-20261005/qa",
+      "action": "relocate_runtime",
+      "executed": true
+    },
+    {
+      "source": "app/frontend/web/tmp",
+      "destination": "runtime/prototype-qa-20261005/tmp",
+      "action": "relocate_runtime",
+      "executed": true
+    }
+  ],
+  "demo_preservation": [
+    {
+      "path": ".npmrc",
+      "bytes": 23,
+      "sha256": "f7dbda001b627b3a792fb6929303b517f047f03916f2c55227e81216d38a2008",
+      "after_sha256": "f7dbda001b627b3a792fb6929303b517f047f03916f2c55227e81216d38a2008",
+      "unchanged": true
+    },
+    {
+      "path": ".openai/hosting.json",
+      "bytes": 31,
+      "sha256": "d532abb65cf9ae20634b464d954cb4a08a0de9f3cd3cdf7f9c3ec8948826d947",
+      "after_sha256": "d532abb65cf9ae20634b464d954cb4a08a0de9f3cd3cdf7f9c3ec8948826d947",
+      "unchanged": true
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 2063,
+      "sha256": "e39e128c29744a7afc899165b8a68594e7b2f72952a2d025ecb4a6bd10aae68e",
+      "after_sha256": "e39e128c29744a7afc899165b8a68594e7b2f72952a2d025ecb4a6bd10aae68e",
+      "unchanged": true
+    },
+    {
+      "path": "README.md",
+      "bytes": 2481,
+      "sha256": "e45cdb5aca5e5c6c929152c0288ba93e82623004ac1ce55b3bca725df277a07c",
+      "after_sha256": "3c86201580d9d3ec8147dca851d3e2c7045a54b3046b410ae963e9dad57b5aff",
+      "unchanged": false
+    },
+    {
+      "path": "design-qa.md",
+      "bytes": 5378,
+      "sha256": "e5f2d1ab25626ee8a4ac45d000edb671b919bfb72631deb2a60b47d7027a6e5a",
+      "after_sha256": "4e1471c5ac4806f97a5e89b06d5b44d88f55aaa6dd22cdddf6444257f7dec856",
+      "unchanged": false
+    },
+    {
+      "path": "docs/summary-report-template.md",
+      "bytes": 2617,
+      "sha256": "a8f9fea4844eb6fb8e5e5f90b2bb8ae27977d0388125ae1400935bc1442a0c1f",
+      "after_sha256": "a8f9fea4844eb6fb8e5e5f90b2bb8ae27977d0388125ae1400935bc1442a0c1f",
+      "unchanged": true
+    },
+    {
+      "path": "index.html",
+      "bytes": 321,
+      "sha256": "8ade784385e91e4ebfdc71193441601081fe0c0c66b955a18727da43fbe12c14",
+      "after_sha256": "8ade784385e91e4ebfdc71193441601081fe0c0c66b955a18727da43fbe12c14",
+      "unchanged": true
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 125867,
+      "sha256": "cdda35602c94c67b825e6714b4b501df2e468873be6f9e966d4bd7ac2535350c",
+      "after_sha256": "cdda35602c94c67b825e6714b4b501df2e468873be6f9e966d4bd7ac2535350c",
+      "unchanged": true
+    },
+    {
+      "path": "package.json",
+      "bytes": 2088,
+      "sha256": "e8db15ff937ed08aa1d340f6d59b436af16c88de18f116ac9a5aa9a3913f93c6",
+      "after_sha256": "e8db15ff937ed08aa1d340f6d59b436af16c88de18f116ac9a5aa9a3913f93c6",
+      "unchanged": true
+    },
+    {
+      "path": "public/assets/brand.png",
+      "bytes": 459086,
+      "sha256": "837a51b4a7a0cde2c748f92bfea15276e49dac2cff0ce79fa57ab69d9278b5ae",
+      "after_sha256": "837a51b4a7a0cde2c748f92bfea15276e49dac2cff0ce79fa57ab69d9278b5ae",
+      "unchanged": true
+    },
+    {
+      "path": "public/assets/presenter.png",
+      "bytes": 1960649,
+      "sha256": "ee5c0d1fa9d475375189f971b334a31fa8deb82bde1fbe3d0c0052d0758464ee",
+      "after_sha256": "ee5c0d1fa9d475375189f971b334a31fa8deb82bde1fbe3d0c0052d0758464ee",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/prepare-sites-build.mjs",
+      "bytes": 910,
+      "sha256": "b6a6adaa4fab3234676116dd1c9cb6611275ab9d92dd26f5bf402393e3744bf6",
+      "after_sha256": "b6a6adaa4fab3234676116dd1c9cb6611275ab9d92dd26f5bf402393e3744bf6",
+      "unchanged": true
+    },
+    {
+      "path": "src/App.tsx",
+      "bytes": 1211,
+      "sha256": "8fe49e8d88b2bc2ab633b039f905f69df18431b0a0f11ce21e649493d1419bcd",
+      "after_sha256": "8fe49e8d88b2bc2ab633b039f905f69df18431b0a0f11ce21e649493d1419bcd",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/AddToPlan.tsx",
+      "bytes": 2043,
+      "sha256": "2c362019d3fd25e73adb25b6513fd451f30d1a42e767e8ae23654d3088d96dec",
+      "after_sha256": "2c362019d3fd25e73adb25b6513fd451f30d1a42e767e8ae23654d3088d96dec",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/MediaPreview.tsx",
+      "bytes": 2039,
+      "sha256": "d75e56a000124bab414731b23c503bdd6af9496986ff040cc556ea2b17a09078",
+      "after_sha256": "d75e56a000124bab414731b23c503bdd6af9496986ff040cc556ea2b17a09078",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/NewSession.tsx",
+      "bytes": 1794,
+      "sha256": "4e705b46feaf85e3c5198f377fc36e03ee20e70ccfe5fba0179f3cbdd819e214",
+      "after_sha256": "4e705b46feaf85e3c5198f377fc36e03ee20e70ccfe5fba0179f3cbdd819e214",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/ReviewInspector.tsx",
+      "bytes": 3373,
+      "sha256": "a5455518bdf157ae97ed04dd7fc62b83269e856394652a30612abc5da205a7fb",
+      "after_sha256": "a5455518bdf157ae97ed04dd7fc62b83269e856394652a30612abc5da205a7fb",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/RichEditor.tsx",
+      "bytes": 1526,
+      "sha256": "f666cab2840984b301da9688e6abbfaf02fded1111abaa8c8c0c5da47760236a",
+      "after_sha256": "f666cab2840984b301da9688e6abbfaf02fded1111abaa8c8c0c5da47760236a",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/SessionTable.tsx",
+      "bytes": 1183,
+      "sha256": "74c29da08b4389b64b3568dab7bd4c9fb5180387ae6b57f5fbe1290b1053aaca",
+      "after_sha256": "74c29da08b4389b64b3568dab7bd4c9fb5180387ae6b57f5fbe1290b1053aaca",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/Shell.tsx",
+      "bytes": 2944,
+      "sha256": "311a6fbc1cb080efa02c5eecd11ac6ff0cf89504ae9f6a730d0be74e17f84ca5",
+      "after_sha256": "311a6fbc1cb080efa02c5eecd11ac6ff0cf89504ae9f6a730d0be74e17f84ca5",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/UI.tsx",
+      "bytes": 2608,
+      "sha256": "a6cc194670d7ff4af331df9008fa91e8ab125920e847eae3ba367fbcf3623943",
+      "after_sha256": "a6cc194670d7ff4af331df9008fa91e8ab125920e847eae3ba367fbcf3623943",
+      "unchanged": true
+    },
+    {
+      "path": "src/data.ts",
+      "bytes": 4474,
+      "sha256": "0f616e54e7ebc62f97cb2207fc7610bacc91a44e27527898d3a06022121e2304",
+      "after_sha256": "0f616e54e7ebc62f97cb2207fc7610bacc91a44e27527898d3a06022121e2304",
+      "unchanged": true
+    },
+    {
+      "path": "src/main.tsx",
+      "bytes": 365,
+      "sha256": "fc8993af9fc95a26d6f0f25aa8b2f386dd03c2f18a2c49aafb2c2a57ec7178a7",
+      "after_sha256": "fc8993af9fc95a26d6f0f25aa8b2f386dd03c2f18a2c49aafb2c2a57ec7178a7",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Dashboard.tsx",
+      "bytes": 4117,
+      "sha256": "c80b838fe29cfdb739d76f50872bcfd4cff9d368bdde7b98ea91235ff6eeb0fd",
+      "after_sha256": "c80b838fe29cfdb739d76f50872bcfd4cff9d368bdde7b98ea91235ff6eeb0fd",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Library.tsx",
+      "bytes": 5436,
+      "sha256": "4afa008ca64721ab9ca314bc6a68868215e38b78d6cbffcd9739a981cd6a4415",
+      "after_sha256": "4afa008ca64721ab9ca314bc6a68868215e38b78d6cbffcd9739a981cd6a4415",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/PlanEditor.tsx",
+      "bytes": 10521,
+      "sha256": "8ed687b5f51a76a5232ed389a52cc968b2d9e22cde8fc8899530ae7c862ff21b",
+      "after_sha256": "8ed687b5f51a76a5232ed389a52cc968b2d9e22cde8fc8899530ae7c862ff21b",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Plans.tsx",
+      "bytes": 3052,
+      "sha256": "4176444dccf8d83eedc6a6e1db769fbb36c6f156ec3aeb9b798529a1e1b8a42b",
+      "after_sha256": "4176444dccf8d83eedc6a6e1db769fbb36c6f156ec3aeb9b798529a1e1b8a42b",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Reports.tsx",
+      "bytes": 15801,
+      "sha256": "66fed025890f77ec8533f82d59d73e2bb1f2a22a2ec24c47b2ad52163d0beee1",
+      "after_sha256": "66fed025890f77ec8533f82d59d73e2bb1f2a22a2ec24c47b2ad52163d0beee1",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Reviews.tsx",
+      "bytes": 2324,
+      "sha256": "14e36aca7ca200fd50414584882b4aa0a89400c8a9cd6ce0101c76b743520254",
+      "after_sha256": "14e36aca7ca200fd50414584882b4aa0a89400c8a9cd6ce0101c76b743520254",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/SessionDetail.tsx",
+      "bytes": 7638,
+      "sha256": "8ae325782c86f721516eda7d74c071cfa83e0cb0f85b07e62484512a5a07615a",
+      "after_sha256": "8ae325782c86f721516eda7d74c071cfa83e0cb0f85b07e62484512a5a07615a",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Sessions.tsx",
+      "bytes": 1919,
+      "sha256": "a6d522108e1c0805903bdca844bb39812958e1bdc95756c231f325e149b378b5",
+      "after_sha256": "a6d522108e1c0805903bdca844bb39812958e1bdc95756c231f325e149b378b5",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Settings.tsx",
+      "bytes": 3592,
+      "sha256": "fceafcb7a314694de7547b52549e549ef7e6dcdeacd9aa643857436bee1c956e",
+      "after_sha256": "fceafcb7a314694de7547b52549e549ef7e6dcdeacd9aa643857436bee1c956e",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Weekly.tsx",
+      "bytes": 4959,
+      "sha256": "179b629d802cf031c119a80571860420e75b009d3a28122f1c4b77ffd8c7f5e3",
+      "after_sha256": "179b629d802cf031c119a80571860420e75b009d3a28122f1c4b77ffd8c7f5e3",
+      "unchanged": true
+    },
+    {
+      "path": "src/store.tsx",
+      "bytes": 929,
+      "sha256": "1a4e97a590683e47fe6709fdb6c812b2c4df6e4c63a549fb308a3d1cd2ae9e20",
+      "after_sha256": "1a4e97a590683e47fe6709fdb6c812b2c4df6e4c63a549fb308a3d1cd2ae9e20",
+      "unchanged": true
+    },
+    {
+      "path": "src/styles.css",
+      "bytes": 47146,
+      "sha256": "f1dd5bb8eca57fbdaa32c2cf3b71361dd5c87101383a449aef8bd875d7d66e41",
+      "after_sha256": "f1dd5bb8eca57fbdaa32c2cf3b71361dd5c87101383a449aef8bd875d7d66e41",
+      "unchanged": true
+    },
+    {
+      "path": "src/types.ts",
+      "bytes": 1203,
+      "sha256": "271baec053eb6be6f9bc27aab6b977a94c126f4ba257c5ebe0a9ca761b9dacaf",
+      "after_sha256": "271baec053eb6be6f9bc27aab6b977a94c126f4ba257c5ebe0a9ca761b9dacaf",
+      "unchanged": true
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "bytes": 38,
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "after_sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "unchanged": true
+    },
+    {
+      "path": "tests/sites-worker.test.mjs",
+      "bytes": 2219,
+      "sha256": "96af7b48906c6460c793356d7b6952f7d5026dbf5a502bec0d9297ff04201c26",
+      "after_sha256": "96af7b48906c6460c793356d7b6952f7d5026dbf5a502bec0d9297ff04201c26",
+      "unchanged": true
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 316,
+      "sha256": "389ba9d72ab9c2158a5083146b4b928fbb9826f2da1d86468a01d8dab9778bf3",
+      "after_sha256": "389ba9d72ab9c2158a5083146b4b928fbb9826f2da1d86468a01d8dab9778bf3",
+      "unchanged": true
+    },
+    {
+      "path": "vite.config.mjs",
+      "bytes": 382,
+      "sha256": "efff57d40c56d0d12ef5b4ed5adbab02323c995571cc42623c2c8702fb1c836c",
+      "after_sha256": "efff57d40c56d0d12ef5b4ed5adbab02323c995571cc42623c2c8702fb1c836c",
+      "unchanged": true
+    },
+    {
+      "path": "worker/index.js",
+      "bytes": 483,
+      "sha256": "2dd0615a445143933d88d4271f54f5d63ee951421fcd08c5a7617bb09c564389",
+      "after_sha256": "2dd0615a445143933d88d4271f54f5d63ee951421fcd08c5a7617bb09c564389",
+      "unchanged": true
+    }
+  ],
+  "notes": [
+    "No symlinks or private .env/.pem/.key found in app excluding node_modules/.git.",
+    "Workspace docs -> app/docs; design/ui-prototype-20261003 is a regular directory and remains unchanged.",
+    "Stop owned Vite PID 19287 and npm PID 19269 before rename; restart same port from web.",
+    "No CPB service start. No remote. No source UI edits."
+  ],
+  "review": "ARC approved 20 moves via task message on 2026-10-05",
+  "preservation_result": {
+    "total": 41,
+    "unchanged": 39,
+    "path_only_document_changes": [
+      "README.md",
+      "design-qa.md"
+    ]
+  },
+  "archive_validation": [
+    {
+      "path": "archives/cpb-reference-20261005/backend",
+      "files": 520,
+      "bytes": 4636102,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/ai-scoring",
+      "files": 14698,
+      "bytes": 108600533,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/frontend/admin",
+      "files": 40,
+      "bytes": 309142,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/frontend/user",
+      "files": 42451,
+      "bytes": 436400751,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/frontend/teacher",
+      "files": 76,
+      "bytes": 953566,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/recording-bot",
+      "files": 5,
+      "bytes": 113966,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/signaling",
+      "files": 6,
+      "bytes": 54538,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/sql",
+      "files": 7,
+      "bytes": 56007,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/livekit.yaml",
+      "files": 1,
+      "bytes": 489,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/livekit-egress.yaml",
+      "files": 1,
+      "bytes": 201,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/livekit-proxy.js",
+      "files": 1,
+      "bytes": 2797,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/package.json",
+      "files": 1,
+      "bytes": 200,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/scripts",
+      "files": 1,
+      "bytes": 30,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/UI资料 2",
+      "files": 0,
+      "bytes": 0,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/source-migration-core",
+      "files": 0,
+      "bytes": 0,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/javac.20260814_120403.args",
+      "files": 1,
+      "bytes": 71,
+      "matches_inventory": true
+    },
+    {
+      "path": "archives/cpb-reference-20261005/项目启动指南.md",
+      "files": 1,
+      "bytes": 10712,
+      "matches_inventory": true
+    }
+  ],
+  "archive_existed_before": false,
+  "archive_exists_after": true
+}

@@ -1,0 +1,63 @@
+{
+  "name": "live-review-interactive-prototype",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node scripts/prepare-sites-build.mjs",
+    "preview": "vite preview",
+    "test:sites": "node --test tests/sites-worker.test.mjs"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@tiptap/core": "3.6.6",
+    "@tiptap/pm": "3.6.6",
+    "@tiptap/react": "3.6.6",
+    "@tiptap/starter-kit": "3.6.6",
+    "@vitejs/plugin-react": "5.0.4",
+    "lucide-react": "^1.47.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-router-dom": "^7.18.4",
+    "vite": "6.4.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  },
+  "overrides": {
+    "@tiptap/extension-bold": "3.6.6",
+    "@tiptap/extension-text": "3.6.6",
+    "@tiptap/starter-kit": "3.6.6",
+    "@tiptap/extension-list-item": "3.6.6",
+    "@tiptap/extensions": "3.6.6",
+    "@tiptap/extension-italic": "3.6.6",
+    "@tiptap/extension-horizontal-rule": "3.6.6",
+    "@tiptap/extension-bullet-list": "3.6.6",
+    "@tiptap/extension-heading": "3.6.6",
+    "@tiptap/extension-strike": "3.6.6",
+    "@tiptap/extension-link": "3.6.6",
+    "@tiptap/extension-underline": "3.6.6",
+    "@tiptap/extension-code": "3.6.6",
+    "@tiptap/extension-bubble-menu": "3.6.6",
+    "@tiptap/pm": "3.6.6",
+    "@tiptap/extension-document": "3.6.6",
+    "@tiptap/extension-paragraph": "3.6.6",
+    "@tiptap/extension-blockquote": "3.6.6",
+    "@tiptap/extension-list-keymap": "3.6.6",
+    "@tiptap/react": "3.6.6",
+    "@tiptap/core": "3.6.6",
+    "@tiptap/extension-code-block": "3.6.6",
+    "@tiptap/extension-gapcursor": "3.6.6",
+    "@tiptap/extension-dropcursor": "3.6.6",
+    "@tiptap/extension-hard-break": "3.6.6",
+    "@tiptap/extension-ordered-list": "3.6.6",
+    "@tiptap/extension-list": "3.6.6",
+    "@tiptap/extension-floating-menu": "3.6.6"
+  }
+}

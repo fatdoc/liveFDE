@@ -1,0 +1,37 @@
+# Dependencies and build outputs
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.vite/
+dist/
+*.egg-info/
+# Private local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+# Runtime only; legitimate modules/**/models/ source remains trackable
+/runtime/
+/frontend/web/qa/
+/frontend/web/tmp/
+/services/backend/runtime/
+/services/backend/model-weights/
+*.log
+*.pid
+*.db
+*.sqlite*
+playwright-report/
+test-results/
+.DS_Store
+
+.git/
+project-team/reports/

@@ -1,0 +1,9 @@
+import {useState} from 'react'
+import {useNavigate} from 'react-router-dom'
+import {useStore} from '../store'
+import type {Asset} from '../types'
+import {Modal,Button} from './UI'
+export const escapeHtml=(s:string)=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')
+export function AddToPlan({asset,open,onOpenChange}:{asset:Asset;open:boolean;onOpenChange:(v:boolean)=>void}){const {state,setState,toast}=useStore(),navigate=useNavigate(),[planId,setPlanId]=useState(state.plans[0]?.id||''),[sectionIndex,setSectionIndex]=useState(0);const plan=state.plans.find(p=>p.id===planId)
+function add(){if(!plan)return;const section=plan.sections[sectionIndex];if(!section)return;setState(s=>({...s,plans:s.plans.map(p=>p.id===planId?{...p,status:'draft',sections:p.sections.map(t=>t.id===section.id?{...t,assetIds:[...new Set([...t.assetIds,asset.id])],html:t.assetIds.includes(asset.id)?t.html:t.html+`<p>${escapeHtml(asset.adapted)}</p>`}:t)}:p)}));toast('已加入备播，并保留原话来源');onOpenChange(false);navigate('/plans/'+planId)}
+return <Modal open={open} onOpenChange={onOpenChange} title="加入备播计划" description="选择要使用这条话术的场次与环节。"><blockquote className="modal-quote">{asset.quote}</blockquote><label className="field">备播计划<select value={planId} onChange={e=>{setPlanId(e.target.value);setSectionIndex(0)}}>{state.plans.map(p=><option value={p.id} key={p.id}>{p.date} · {p.title}</option>)}</select></label><label className="field">使用环节<select value={sectionIndex} onChange={e=>setSectionIndex(+e.target.value)}>{plan?.sections.map((s,i)=><option key={s.id} value={i}>{String(i+1).padStart(2,'0')} {s.title}</option>)}</select></label><p className="helper">会将适配示例加入稿件，你可以继续修改。原话不会被覆盖。</p><div className="modal-footer"><Button onClick={()=>onOpenChange(false)}>取消</Button><Button primary disabled={!plan} onClick={add}>加入并编辑备播稿</Button></div></Modal>}

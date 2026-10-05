@@ -1,0 +1,8 @@
+import {useState} from 'react'
+import {Plus,SlidersHorizontal,Video} from 'lucide-react'
+import {useStore} from '../store'
+import {PageHeader,Button,SearchInput} from '../components/UI'
+import {SessionTable} from '../components/SessionTable'
+import {NewSession} from '../components/NewSession'
+export function Sessions(){const {state}=useStore(),[create,setCreate]=useState(false),[query,setQuery]=useState(''),[host,setHost]=useState('全部主播'),[status,setStatus]=useState('all');const filtered=state.sessions.filter(s=>(s.title+s.host).includes(query)&&(host==='全部主播'||s.host===host)&&(status==='all'||s.status===status))
+return <><PageHeader title="直播场次" description="从每一场直播中，找到下一次可以做得更好的地方。" actions={<Button primary onClick={()=>setCreate(true)}><Plus size={18}/>新建直播场次</Button>}/><div className="toolbar"><SearchInput value={query} onChange={setQuery} placeholder="搜索直播主题或主播"/><select aria-label="主播筛选" value={host} onChange={e=>setHost(e.target.value)}><option>全部主播</option>{Array.from(new Set(state.sessions.map(s=>s.host))).map(h=><option key={h}>{h}</option>)}</select><SlidersHorizontal size={17}/><select aria-label="进度筛选" value={status} onChange={e=>setStatus(e.target.value)}><option value="all">全部进度</option><option value="draft">待导入材料</option><option value="review">待审核话术</option><option value="complete">复盘已完成</option><option value="prepared">备播稿已形成</option></select></div><section className="panel"><div className="panel-heading"><h2><Video size={20}/>全部直播</h2><span className="muted">共 {filtered.length} 场</span></div><SessionTable sessions={filtered}/><div className="table-footer">所有场次为原型示例 · 支持添加本次演示场次</div></section><NewSession open={create} onOpenChange={setCreate}/></>}

@@ -1,0 +1,11 @@
+# LIVE-002 后端工程骨架与门禁
+- 状态：backlog；owner ENG-01；reviewer ARC-01；QA QA-01
+- 依赖：LIVE-001 基线
+- 允许：services/backend 的包/锁/配置/最小 main 健康入口和基础测试，infra、scripts/checks、.github/workflows、docs/operations；业务模块不在本任务实现。
+- 目标：Python3.11/FastAPI 可启动，PG/RabbitMQ 独立开发环境，worker/dispatcher 入口，uv 锁；前端既有构建不退化。
+- branch/worktree/base/端口/隔离 DB：启动时登记，不假定空闲。
+- 验收：health/live 与依赖 readiness 区别、进程重启、独立 DB/卷、Alembic 基础配置、pytest/Ruff 命令可运行；不编造业务测试。
+- 门禁：未知目录/运行产物/敏感文件/rename两端路径、PR模板、前端构建；没有远程就本地运行，不声称 CI 已部署。
+- 明确：迁移修订由 BE 后续协调；业务 schemas 不由 ENG 临时设计。
+- 回滚：只撤本任务代码/环境，不清用户卷。
+- 交付：未执行；记录锁定版本、实际命令、SHA与独立结论。

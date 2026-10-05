@@ -1,11 +1,12 @@
 # LIVE-002 后端工程骨架与门禁
-- 状态：backlog；owner ENG-01；reviewer ARC-01；QA QA-01
-- 依赖：LIVE-001 基线
-- 允许：services/backend 的包/锁/配置/最小 main 健康入口和基础测试，infra、scripts/checks、.github/workflows、docs/operations；业务模块不在本任务实现。
-- 目标：Python3.11/FastAPI 可启动，PG/RabbitMQ 独立开发环境，worker/dispatcher 入口，uv 锁；前端既有构建不退化。
-- branch/worktree/base/端口/隔离 DB：启动时登记，不假定空闲。
-- 验收：health/live 与依赖 readiness 区别、进程重启、独立 DB/卷、Alembic 基础配置、pytest/Ruff 命令可运行；不编造业务测试。
-- 门禁：未知目录/运行产物/敏感文件/rename两端路径、PR模板、前端构建；没有远程就本地运行，不声称 CI 已部署。
-- 明确：迁移修订由 BE 后续协调；业务 schemas 不由 ENG 临时设计。
-- 回滚：只撤本任务代码/环境，不清用户卷。
-- 交付：未执行；记录锁定版本、实际命令、SHA与独立结论。
+- 状态：in_progress；owner ENG-01；独立 reviewer 由 ARC 指派；QA 独立。
+- 依赖：LIVE-001；base ca9de2b；branch feat/LIVE-002-foundation。
+- 工作副本：工作区 `.worktrees/live-002-eng`，不与 ARC/003 共写。
+- 独占：services/backend/（仅基础包/锁/配置/健康/worker预检/Alembic与基础测试）、infra/、scripts/checks/、.github/workflows/、docs/operations/backend-foundation.md、本卡、project-team/reports/LIVE-002/。不写STATUS/access/前端/契约。
+- runtime：工作区 runtime/live-002；Compose live-fde-002；DB live002；端口 PG15432/MQ5673/管理15672/API8188（启动前探针无监听），127.0.0.1 绑定，不碰5432/6379/5188。
+- 验收：Python3.11/uv固定锁；health/live200 与依赖失败ready503；独立PG/RabbitMQ真实连接；API/worker重启；worker ping；dispatcher明确仅check；Alembic基础真实PG启动（无业务修订）；Ruff/pytest；前端独立npm ci/build/hosting；结构/运行产物/敏感文件/rename两端与任务scope。
+- 门禁：先 staged index 扫描，再独立 head Review；无远程不声称CI部署/PR创建。
+- 未做：业务表/API、outbox、真实模型、部署发布；不以空迁移冒充业务验证。
+- 回滚：revert本任务代码，仅关闭live-fde-002容器，保留runtime数据；不删除用户卷。
+- 证据：reports/LIVE-002 与 docs/operations/backend-foundation.md。
+- SHA/独立验收：待完成后由ARC集成记录，作者不自批。

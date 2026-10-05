@@ -1,0 +1,27 @@
+name: checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  local-equivalent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.9.26'
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 scripts/checks/repository.py
+      - run: python3 -m unittest discover -s scripts/checks -p 'test_*.py'
+      - run: uv sync --project services/backend --locked
+      - run: uv run --project services/backend ruff check services/backend scripts/checks
+      - run: uv run --project services/backend pytest services/backend/tests
+      - run: npm ci && npm run build && npm run test:sites
+        working-directory: frontend/web
+      - run: python3 scripts/checks/init_environment.py
+      - run: uv run --project services/backend python scripts/checks/runtime_smoke.py --env-file ../runtime/live-002/private.env
+      - if: always()
+        run: docker compose --env-file ../runtime/live-002/private.env -f infra/compose.yaml down

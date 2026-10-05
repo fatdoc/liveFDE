@@ -36,3 +36,6 @@ PDF解析有20MiB上限；生产高并发/恶意资源消耗测试、独立解�
 
 ## 回滚
 代码revert，受控空开发DB可按逆序downgrade；不删客户数据/用户卷/原片。审核必须绑定最终C提交SHA，集成由ARC串行执行，本作者不自批。
+
+## 独立评审修正
+QA指出初版fixture直接写入platform=manual，超出正式API枚举。已将专用fixture统一为other，并在每个测试初始化后通过正式GET /api/v1/sessions/{id}验证200且platform=other；不再仅依赖ORM插入成功作为场次有效证据。该修正仅涉及测试/报告，后端行为未改变。修正后完整15项真实PG材料测试重新通过，Ruff通过。

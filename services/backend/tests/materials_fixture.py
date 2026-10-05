@@ -61,7 +61,7 @@ def materials(monkeypatch):
             )
             db.add_all([admin, stranger])
             db.flush()
-            streamer = Streamer(workspace_id=workspace.id, name="Fixture", platform="manual")
+            streamer = Streamer(workspace_id=workspace.id, name="Fixture", platform="other")
             db.add(streamer)
             db.flush()
             sessions = [
@@ -69,7 +69,7 @@ def materials(monkeypatch):
                     workspace_id=workspace.id,
                     streamer_id=streamer.id,
                     title=f"Synthetic {i}",
-                    platform="manual",
+                    platform="other",
                     session_local_date=date.today(),
                     started_at=None,
                     time_precision="date",
@@ -85,6 +85,10 @@ def materials(monkeypatch):
         )
         assert response.status_code == 200, response.text
         headers = ORIGIN | {"X-CSRF-Token": response.json()["csrf_token"]}
+        for session in sessions:
+            visible = client.get(f"/api/v1/sessions/{session.id}")
+            assert visible.status_code == 200, visible.text
+            assert visible.json()["platform"] == "other"
         yield client, headers, admin, sessions, stranger
     get_settings.cache_clear()
 

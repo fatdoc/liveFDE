@@ -34,3 +34,5 @@ LIVE-004收尾：业务代码集成a9a15d2，独立QA与PM验收通过；各作�
 - 独立QA /root/qa_live002：指定SHA只读审查，runtime/live-005下记录与测试；不批准自己的代码。
 - PG15450/project live-fde-005；MQ5675/25675/node live005@localhost；runtime/live-005/{be,qa,integration,qa_identity}.env隔离DB/role/vhost/storage。API烟测8195。旧5188/5432/6379/15432/15440不动。
 - 不把合成任务处理器当视频分析；006与后续仍backlog。任务/索引/运行资源本轮结束后显式释放。
+
+LIVE-005统筹补充测试入口守卫：scripts/checks/test_backend_integration_tests.py由ARC编写，QA独立审查；pytest启动前同时限定PG与MQ/vhost，当前本地整套仅允许live-005/qa.env，CI仍使用独立live002端点，不允许新005套件迁移旧004库。

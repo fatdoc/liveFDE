@@ -1,0 +1,7 @@
+{
+  "synthetic_handlers": true,
+  "video_analysis": false,
+  "checks": [],
+  "fresh_004_to_005_upgrade": true,
+  "preserved_material_sha256": "b785efb1dba72e7862fe75da0f816ebc924601c4551cf58a3d582b14b96bae18"
+}

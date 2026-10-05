@@ -21,12 +21,14 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") == "true":
         expected = runtime / "live-002/private.env"
         username, port = "live002", 15432
+        mq_port, mq_path = 5673, "//"
         storage = runtime / "live-002/test-materials"
     else:
-        expected = runtime / "live-004/qa.env"
-        username, port = "live004_qa", 15440
-        storage = runtime / "live-004/storage-qa"
-    if path != expected or args.env_file.is_symlink():
+        expected = runtime / "live-005/qa.env"
+        username, port = "live005_qa", 15450
+        mq_port, mq_path = 5675, "/live005_qa"
+        storage = runtime / "live-005/storage-qa"
+    if path != expected or args.env_file.is_symlink() or path.stat().st_mode & 0o077:
         raise SystemExit("Only the registered isolated suite environment is allowed")
     for line in path.read_text().splitlines():
         key, value = line.split("=", 1)
@@ -39,6 +41,14 @@ def main():
         or url.fragment
     ):
         raise SystemExit("Refusing a non-test database")
+    broker = urlsplit(environment.get("LIVE_BROKER_URL", ""))
+    if (
+        (broker.scheme, broker.hostname, broker.port, broker.username, broker.path)
+        != ("amqp", "127.0.0.1", mq_port, username, mq_path)
+        or broker.query
+        or broker.fragment
+    ):
+        raise SystemExit("Refusing a non-test broker or vhost")
     if storage.resolve() != storage:
         raise SystemExit("Refusing redirected test storage")
     environment["LIVE_TEST_DATABASE_URL"] = environment["LIVE_DATABASE_URL"]

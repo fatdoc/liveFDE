@@ -1,6 +1,6 @@
 # LIVE-002 工程环境
 
-范围：可启动基础包、真实 PG/RabbitMQ 开发依赖、健康探针、Celery 进程、dispatcher 预检及 Alembic 入口。本文件保留LIVE-002工程启动范围；LIVE-004已增加身份/场次/材料，实际业务范围见../contracts/implementation-status.md，outbox/模型仍未实现。
+范围：可启动基础包、真实 PG/RabbitMQ 开发依赖、健康探针、Celery 进程、dispatcher 预检及 Alembic 入口。本文件保留LIVE-002工程启动范围；LIVE-004已增加身份/场次/材料，实际业务范围见../contracts/implementation-status.md，LIVE-005增加outbox任务恢复；模型仍未实现。
 
 ## 独立启动
 从产品 Git 根执行，Python 3.11、uv 0.9.26、Node 22、Docker Compose v2：
@@ -29,7 +29,7 @@ uv run python -m live_review.workers.dispatcher --check
 uv run alembic upgrade head
 ```
 
-Dispatcher 当前仅依赖预检，明确退出，不声称已经常驻分发。Celery 没有业务任务和结果后端，后续结果由业务 PostgreSQL 保存。健康 readiness 检查数据库和 broker，不代表 worker/模型/业务链路已就绪；worker 用 inspect ping 单独检查。公开响应不返回 DSN/异常文本。
+LIVE-005后dispatcher --check保留依赖预检，--once/--loop实际处理PG outbox；Celery只消费任务ID/attempt，权威状态和阶段产物在PG，不使用Celery结果后端。默认无生产分析handler，完整当前操作见live-005.md及本轮验收记录。健康 readiness 检查数据库和 broker，不代表 worker/模型/业务链路已就绪；worker 用 inspect ping 单独检查。公开响应不返回 DSN/异常文本。
 
 LIVE-002基线时Alembic为空；LIVE-004后 `upgrade head` 会创建身份/场次/材料业务表。只对登记的隔离开发库执行，当前唯一head与验收见LIVE-004报告；不得将旧空迁移说明用于判断当前数据库。
 

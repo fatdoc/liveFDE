@@ -1,0 +1,19 @@
+{
+  "synthetic_handlers": true,
+  "video_analysis": false,
+  "checks": [
+    "004 identity session and original material bytes survive additive 005 migration",
+    "business transaction rollback leaves neither job nor outbox",
+    "broker unavailable keeps outbox; persistent confirmed message survives restart",
+    "dispatcher killed after broker confirm retains pending outbox for safe replay",
+    "duplicate delivery and worker restart cannot duplicate committed stage artifacts",
+    "failed-stage retry retains prior output; request replay and old messages are safe",
+    "abrupt worker death recovers durable job through expired lease",
+    "paused old worker resumes after new lease success and cannot overwrite artifact",
+    "cancel request remains distinct from worker confirmed stop; no result committed",
+    "unknown synthetic paid-call intent survives kill and blocks every automatic replay",
+    "API restart retains state; authentication CSRF and workspace boundaries enforced"
+  ],
+  "fresh_004_to_005_upgrade": false,
+  "preserved_material_sha256": "b785efb1dba72e7862fe75da0f816ebc924601c4551cf58a3d582b14b96bae18"
+}

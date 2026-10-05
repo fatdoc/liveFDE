@@ -6,6 +6,7 @@ import re
 import secrets
 import subprocess
 from pathlib import Path
+from urllib.parse import urlsplit
 
 WORKSPACE = Path("/Users/docfat/Desktop/个人/project/直播体系FDE")
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,8 +15,33 @@ ROLES = ("4a", "4b", "4c", "qa", "integration")
 CONTAINER = "live-fde-004-postgres-1"
 
 
-def run(args, **kwargs):
-    return subprocess.run(args, check=True, capture_output=True, text=True, **kwargs).stdout
+def run(args, *, env, **kwargs):
+    return subprocess.run(
+        args, env=env, check=True, capture_output=True, text=True, **kwargs
+    ).stdout
+
+
+def safe_parent_environment():
+    environment = os.environ.copy()
+    for key in environment:
+        if key.startswith(("DOCKER_", "COMPOSE_")) or key in {"LIVE_RUNTIME", "PG_PASSWORD"}:
+            raise SystemExit(f"Refusing inherited override {key}")
+    endpoint = run(
+        ["docker", "context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
+        env=environment,
+    ).strip()
+    parsed = urlsplit(endpoint)
+    if (
+        parsed.scheme != "unix"
+        or parsed.netloc
+        or not parsed.path.startswith("/")
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise SystemExit("Refusing non-local Docker context")
+    # Pin the verified endpoint for all later Docker calls, even if active context changes.
+    environment["DOCKER_HOST"] = endpoint
+    return environment
 
 
 def private(path, content):
@@ -25,6 +51,7 @@ def private(path, content):
 
 
 def main():
+    environment = safe_parent_environment()
     if ROOT != WORKSPACE / "app" and ROOT.parent != WORKSPACE / ".worktrees":
         raise SystemExit("Refusing non-workspace checkout")
     if RUNTIME.resolve() != RUNTIME:
@@ -37,11 +64,18 @@ def main():
         raise SystemExit("Private env must be regular and mode 600")
     config = dict(line.split("=", 1) for line in env.read_text().splitlines())
     if (
-        config.get("LIVE_RUNTIME") != str(RUNTIME)
+        set(config) != {"LIVE_RUNTIME", "PG_PASSWORD"}
+        or config.get("LIVE_RUNTIME") != str(RUNTIME)
         or not re.fullmatch(r"[0-9a-f]{48}", config.get("PG_PASSWORD", ""))
         or (RUNTIME / "postgres").is_symlink()
     ):
         raise SystemExit("Refusing changed runtime")
+    # Explicit values beat inherited shell interpolation and come only from checked file.
+    environment.update(config)
+
+    def execute(args, **kwargs):
+        return run(args, env=environment, **kwargs)
+
     compose = [
         "docker",
         "compose",
@@ -53,19 +87,19 @@ def main():
         "live-fde-004",
     ]
     # Existing fixed-name container must belong to our project and exact bind mount.
-    existing = run(["docker", "ps", "-aq", "--filter", f"name=^/{CONTAINER}$"]).strip()
+    existing = execute(["docker", "ps", "-aq", "--filter", f"name=^/{CONTAINER}$"]).strip()
     if existing:
-        info = json.loads(run(["docker", "inspect", existing]))[0]
+        info = json.loads(execute(["docker", "inspect", existing]))[0]
         if info["Config"]["Labels"].get("com.docker.compose.project") != "live-fde-004" or not any(
             m["Source"] == str(RUNTIME / "postgres")
             and m["Destination"] == "/var/lib/postgresql/data"
             for m in info["Mounts"]
         ):
             raise SystemExit("Refusing foreign container")
-    run(compose + ["up", "-d", "--wait", "postgres"])
+    execute(compose + ["up", "-d", "--wait", "postgres"])
 
     def sql(statement):
-        return run(
+        return execute(
             [
                 "docker",
                 "exec",

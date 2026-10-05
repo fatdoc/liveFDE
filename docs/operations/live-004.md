@@ -55,3 +55,5 @@ python3 scripts/checks/repository.py --task LIVE-004-ENG
 ```
 
 最后一条检查暂存改动；提交后使用 `--base <base-sha>` 检查整个任务提交范围。未配置远程，不宣称远程 CI 或 PR 已执行。
+
+资源保护补充：初始化器拒绝继承的全部 `DOCKER_*`、`COMPOSE_*` 变量，以及 `LIVE_RUNTIME`、`PG_PASSWORD`（包括空值）。请在未导出这些覆盖项的终端运行。读取当前 context 后，只允许本地绝对 unix socket，并对后续全部调用固定该 endpoint；Compose 显式接收经校验的 runtime/password。私有 env 出现未知字段也会拒绝。负例测试确保这些拒绝发生在操作容器前。

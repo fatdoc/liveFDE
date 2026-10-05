@@ -1,11 +1,11 @@
 # 当前事实与任务
 更新：2026-10-05，非自动监控。
 已有 React Demo、CPB 审计、本轮规范/模板；尚无新 Python API 接通、迁移、真实分析闭环或平台采集。
-Git：app/.git，首次提交待 LIVE-001 最终门禁；无 remote。前端已迁入 frontend/web，旧 CPB 已归档；ENG 完成搬迁，ARC/QA 正在独立验收。
+Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0f；无 remote。前端 frontend/web，旧 CPB 已归档；独立技术/浏览器验收通过，试验 worktree 已验证并移除。
 
 | 任务 | owner | 状态 | 依赖 |
 |---|---|---|---|
-| LIVE-001 | ENG-01 | review | 搬迁/构建完成；ARC 浏览器与 QA 独立静态审查 |
+| LIVE-001 | ENG-01 | done | 技术验收和 PM 最终核对通过；代码基线1366573，详见reports/LIVE-001/qa.md |
 | LIVE-002 | ENG-01 | backlog | 001 |
 | LIVE-003 | ARC-01 | backlog | 001 |
 | LIVE-004 | BE-01 | backlog | 002/003，拆子任务 |

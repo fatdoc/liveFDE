@@ -11,4 +11,4 @@
 
 实际安装元数据 Requires-Python：fastapi 0.142.2 >=3.10；pydantic 2.13.5 >=3.9；pydantic-settings 2.15.0 >=3.10；SQLAlchemy 2.0.54 >=3.7；psycopg 3.3.6 >=3.10；Alembic 1.20.0 >=3.10；Celery 5.6.3 >=3.9；uvicorn 0.54.0 >=3.10。uv 解析+本地运行是本组合兼容证据；官方网页不一定描述完全相同 patch。
 
-官方 Docker images 使用 postgres:16.11-bookworm / rabbitmq:4.1.5-management 精确版本标签。首次拉取后记录 digest，生产发布另做镜像扫描/更新评估，本轮不发布。
+官方 Docker images 使用 postgres 16.15（本机已有官方镜像，按 sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94 固定） / rabbitmq:4.1.5-management 精确版本标签。首次拉取后记录 digest，生产发布另做镜像扫描/更新评估，本轮不发布。

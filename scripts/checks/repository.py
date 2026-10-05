@@ -74,9 +74,7 @@ def path_errors(name):
         or ".sqlite" in name
     ):
         errors.append("runtime/binary/credential artifact")
-    if any(
-        part.startswith(".env") and not part.endswith(".example") for part in path.parts
-    ):
+    if any(part.startswith(".env") and not part.endswith(".example") for part in path.parts):
         errors.append("private environment")
     if name.startswith("services/") and not name.startswith("services/backend/"):
         errors.append("unknown service")
@@ -115,12 +113,9 @@ def main():
         diff += [args.base, "HEAD"] if args.base else ["--cached"]
         for name in diff_paths(git(*diff)):
             if not any(
-                name.startswith(p) if p.endswith("/") else name == p
-                for p in SCOPES[args.task]
+                name.startswith(p) if p.endswith("/") else name == p for p in SCOPES[args.task]
             ):
-                errors.append(
-                    f"{name}: outside {args.task} ownership (including rename source)"
-                )
+                errors.append(f"{name}: outside {args.task} ownership (including rename source)")
     for error in errors:
         print(error)
     print(f"Repository policy: {len(errors)} violation(s)")

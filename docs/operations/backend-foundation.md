@@ -37,7 +37,7 @@ Alembic 暂无 revision，`upgrade head` 验证连接和迁移基础，BE 后续
 ```sh
 python3 scripts/checks/repository.py
 python3 -m unittest discover -s scripts/checks -p 'test_*.py'
-uv run --project services/backend ruff check services/backend scripts/checks
+uv run --project services/backend ruff check --config services/backend/pyproject.toml services/backend scripts/checks
 uv run --project services/backend pytest services/backend/tests
 npm --prefix frontend/web run build
 npm --prefix frontend/web run test:sites
@@ -47,3 +47,14 @@ npm --prefix frontend/web run test:sites
 ## 数据与回滚
 数据 bind mount 在工作区 runtime，不创建 Docker named volume。日志与 smoke JSON 同目录；源代码 checkout 内 .venv/node_modules 是被忽略的开发依赖，不作为运行数据提交。
 只停止/移除本项目容器：`docker compose --env-file ... -f infra/compose.yaml down`，禁止 `down -v`/全局 prune/删除用户卷。数据保留，代码通过 revert 回滚。Docker 本身镜像缓存和虚拟机属于全局工具缓存。
+
+## 本次机器的原生 RabbitMQ 验证路径
+Docker Hub 下载受限，本机已有 Homebrew RabbitMQ 4.2.3；本次真实端到端基础验证使用该版本，Compose 中 RabbitMQ 4.1.5 尚未启动验证，不能称 Docker 全栈已验证。
+
+```sh
+uv run --project services/backend python scripts/checks/runtime_smoke.py --env-file /absolute/workspace/runtime/live-002/private.env --native-rabbit /opt/homebrew/opt/rabbitmq/sbin/rabbitmq-server
+```
+
+脚本限制 DSN 为 live002 用户/数据库、127.0.0.1:15432/5673，拒绝 Compose/Docker 环境覆盖和工作区外 runtime（含 symlink 逃逸）。原生节点名 live002@localhost，TCP5673/分布式25673，数据/配置/日志均在 runtime/live-002/rabbit-native；清除继承的 RabbitMQ/Erlang 变量，只结束自己创建的进程组，绝不调用全局 stop 或杀其他节点。端口已用则退出。测试后停止 API、worker、原生 MQ，PG 容器保留健康；8188 是测试过程地址而非常驻预览。
+
+CI feature/PR 根据分支 LIVE 任务 ID、base SHA 运行 ownership（含 rename 两端）；未注册任务失败。main 仅跑全树结构检查，任务路径批准来自 feature/PR，不声称本地 main 已受远程保护。003 契约样例检查文件存在时才执行；本分支不存在，集成后由 ARC 验证。

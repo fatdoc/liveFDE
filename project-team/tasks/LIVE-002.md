@@ -1,5 +1,5 @@
 # LIVE-002 后端工程骨架与门禁
-- 状态：in_progress；owner ENG-01；独立 reviewer 由 ARC 指派；QA 独立。
+- 状态：review；owner ENG-01；独立 reviewer 由 ARC 指派；QA 独立。
 - 依赖：LIVE-001；base ca9de2b；branch feat/LIVE-002-foundation。
 - 工作副本：工作区 `.worktrees/live-002-eng`，不与 ARC/003 共写。
 - 独占：services/backend/（仅基础包/锁/配置/健康/worker预检/Alembic与基础测试）、infra/、scripts/checks/、.github/workflows/、docs/operations/backend-foundation.md、本卡、project-team/reports/LIVE-002/。不写STATUS/access/前端/契约。

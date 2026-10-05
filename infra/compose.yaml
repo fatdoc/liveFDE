@@ -1,7 +1,7 @@
 name: live-fde-002
 services:
   postgres:
-    image: postgres:16.11-bookworm
+    image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
     environment:
       POSTGRES_USER: live002
       POSTGRES_DB: live002

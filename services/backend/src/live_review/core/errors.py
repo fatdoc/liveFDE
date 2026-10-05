@@ -16,15 +16,16 @@ class ApiError(Exception):
 
 
 def response(request: Request, status: int, code: str, message: str, details=None):
+    request_id = getattr(request.state, "request_id", str(uuid4()))
     return JSONResponse(
         {
             "code": code,
             "message": message,
-            "request_id": getattr(request.state, "request_id", str(uuid4())),
+            "request_id": request_id,
             "details": details or {},
         },
         status_code=status,
-        headers={"Cache-Control": "private,no-store"},
+        headers={"Cache-Control": "private,no-store", "X-Request-ID": request_id},
     )
 
 

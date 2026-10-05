@@ -244,3 +244,51 @@ def test_configuration_requires_secure_production_origins():
             environment="production",
             trusted_origins=["http://localhost:5188"],
         )
+
+
+def test_non_ascii_csrf_rejected_and_session_retained(identity):
+    client, username, _, _ = identity
+    assert login(client, username).status_code == 200
+    response = client.post(
+        "/api/v1/auth/logout",
+        headers=[
+            (b"origin", ORIGIN["Origin"].encode()),
+            (b"sec-fetch-site", b"same-origin"),
+            (b"x-csrf-token", b"\xff"),
+        ],
+    )
+    assert response.status_code == 403
+    assert response.json()["code"] == "csrf_rejected"
+    assert response.json()["request_id"] == response.headers["x-request-id"]
+    assert client.get("/api/v1/auth/me").status_code == 200
+
+
+def test_unhandled_exception_has_safe_correlated_error():
+    from fastapi import FastAPI
+
+    from live_review.core.errors import install_errors
+
+    isolated_app = FastAPI()
+    install_errors(isolated_app)
+
+    @isolated_app.get("/api/failure")
+    def failure():
+        raise RuntimeError("sensitive internal fixture")
+
+    with TestClient(isolated_app, raise_server_exceptions=False) as client:
+        response = client.get("/api/failure")
+    assert response.status_code == 500
+    assert response.json()["code"] == "internal_error"
+    assert response.json()["request_id"] == response.headers["x-request-id"]
+    assert response.headers["cache-control"] == "private,no-store"
+    assert "sensitive" not in response.text
+
+
+def test_identity_openapi_declares_public_response():
+    schema = app.openapi()
+    for path, method in (("/api/v1/auth/login", "post"), ("/api/v1/auth/me", "get")):
+        response = schema["paths"][path][method]["responses"]["200"]["content"]["application/json"]
+        assert response["schema"]["$ref"] == "#/components/schemas/LoginResponse"
+    fields = schema["components"]["schemas"]["UserView"]["properties"]
+    assert set(fields) == {"id", "workspace_id", "display_name", "role"}
+    assert "content" not in schema["paths"]["/api/v1/auth/logout"]["post"]["responses"]["204"]

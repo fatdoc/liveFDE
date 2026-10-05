@@ -44,7 +44,9 @@ CurrentAdmin = Annotated[Admin, Depends(current_admin)]
 def require_mutation(request: Request, admin: CurrentAdmin) -> Admin:
     require_origin(request)
     supplied = request.headers.get("x-csrf-token", "")
-    if not secrets.compare_digest(supplied, request.state.auth_session.csrf_token):
+    if not supplied.isascii() or not secrets.compare_digest(
+        supplied, request.state.auth_session.csrf_token
+    ):
         raise ApiError(403, "csrf_rejected", "Valid CSRF token required")
     return admin
 

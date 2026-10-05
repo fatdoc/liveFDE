@@ -51,6 +51,7 @@ class MediaConfig(FrozenModel):
 class ProviderRoute(FrozenModel):
     enabled: bool = False
     protocol: Literal["disabled", "offline_fixture", "openai_compatible"] = "disabled"
+    operation: Literal["audio_transcriptions"] | None = None
     provider: str | None = Field(default=None, max_length=64, pattern=r"^[a-z][a-z0-9_-]*$")
     model: str | None = Field(default=None, min_length=1, max_length=128)
     base_url: str | None = Field(default=None, max_length=512)
@@ -92,21 +93,28 @@ class ProviderRoute(FrozenModel):
 
     @model_validator(mode="after")
     def coherent_route(self):
-        if not self.enabled:
+        if self.protocol == "disabled":
             if (
-                self.protocol != "disabled"
+                self.enabled
                 or any(
                     value is not None
-                    for value in (self.provider, self.model, self.base_url, self.key_env)
+                    for value in (
+                        self.provider,
+                        self.model,
+                        self.base_url,
+                        self.key_env,
+                        self.operation,
+                    )
                 )
                 or self.max_requests
                 or self.max_cost_usd
             ):
-                raise ValueError("disabled_route_has_configuration")
+                raise ValueError("invalid_disabled_profile")
         elif self.protocol == "offline_fixture":
             if (
                 self.provider != "synthetic"
                 or self.model != "fixture-v1"
+                or self.operation is not None
                 or self.base_url is not None
                 or self.key_env is not None
                 or self.max_requests < 1
@@ -132,6 +140,11 @@ class Providers(FrozenModel):
     def fixture_asr_only(self):
         if any(route.protocol == "offline_fixture" for route in (self.text, self.vision)):
             raise ValueError("fixture_only_supports_asr")
+        if (
+            self.asr.protocol == "openai_compatible"
+            and self.asr.operation != "audio_transcriptions"
+        ):
+            raise ValueError("asr_requires_audio_transcriptions")
         return self
 
 
@@ -247,8 +260,9 @@ def resolve_execution(
     *,
     environment: str,
     environ: Mapping[str, str] | None = None,
+    allow_network: bool = False,
 ) -> ExecutionRoute:
-    """Resolve only implemented offline ASR; real protocol declarations never call a vendor."""
+    """Resolve authorized ASR credentials in memory; this function never performs network I/O."""
     validate_environment(captured.content, environment)
     validate_environment(current_config, environment)
     if capability not in {"asr", "text", "vision"}:
@@ -260,10 +274,25 @@ def resolve_execution(
     route = getattr(captured.content.providers, capability)
     if not route.enabled:
         raise ProviderConfigError("provider_unconfigured")
-    if route.protocol != "offline_fixture":
-        # Future adapter may resolve key_env from environ only after explicit enablement.
-        # Never read a real credential while the protocol itself is unsupported.
+    if route.protocol == "offline_fixture":
+        return ExecutionRoute(
+            capability=capability, route=route, config_hash=captured.config_hash, synthetic=True
+        )
+    if capability != "asr" or route.operation != "audio_transcriptions":
         raise ProviderConfigError("provider_protocol_unsupported")
+    if allow_network is not True:
+        raise ProviderConfigError("network_not_authorized")
+    secret = (os.environ if environ is None else environ).get(route.key_env)
+    if (
+        not isinstance(secret, str)
+        or not 1 <= len(secret) <= 8192
+        or (not secret.isascii() or any(c.isspace() for c in secret))
+    ):
+        raise ProviderConfigError("provider_credential_unavailable")
     return ExecutionRoute(
-        capability=capability, route=route, config_hash=captured.config_hash, synthetic=True
+        capability=capability,
+        route=route,
+        config_hash=captured.config_hash,
+        synthetic=False,
+        api_key=SecretStr(secret),
     )

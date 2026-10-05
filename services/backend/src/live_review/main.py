@@ -8,6 +8,8 @@ from live_review.core.database import build_engine
 from live_review.core.errors import install_errors
 from live_review.core.health import dependencies_ready
 from live_review.modules.identity.router import router as identity_router
+from live_review.modules.sessions.router import router as sessions_router
+from live_review.modules.streamers.router import router as streamers_router
 
 
 @asynccontextmanager
@@ -22,6 +24,8 @@ app = FastAPI(title="Live Review Foundation", version="0.1.0", lifespan=lifespan
 
 install_errors(app)
 app.include_router(identity_router)
+app.include_router(streamers_router)
+app.include_router(sessions_router)
 
 
 @app.get("/health/live")

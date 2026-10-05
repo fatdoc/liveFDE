@@ -3,6 +3,8 @@ from alembic import context
 from live_review.core.config import get_settings
 from live_review.core.database import Base, build_engine
 from live_review.modules.identity import models  # noqa: F401
+from live_review.modules.sessions import models as session_models  # noqa: F401
+from live_review.modules.streamers import models as streamer_models  # noqa: F401
 
 metadata = Base.metadata
 if context.is_offline_mode():

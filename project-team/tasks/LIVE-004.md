@@ -1,5 +1,5 @@
 # LIVE-004 身份、场次与材料
-- 状态：verified；owner BE-01；reviewer ARC/独立 BE；QA QA-01
+- 状态：done；owner BE-01；reviewer ARC/独立 BE；QA QA-01
 - 依赖：LIVE-002/003
 - 允许：backend 包 core、modules/{identity,streamers,sessions,materials}、integrations/storage、migrations、对应 tests；均在 services/backend。
 - 进 ready 前拆 LIVE-004A 登录、004B 场次、004C 上传，每个单一 owner/独立范围。
@@ -11,6 +11,8 @@
 - 隔离：Docker project live-fde-004/15440；4a/4b/4c/qa/integration五个数据库、角色及storage目录，runtime/live-004，禁止共库迁移和碰旧端口。
 - PM验收输入：Admin-only（不实现未确认RBAC）；真实PG/API，空库及A→B→C保留数据升级、鉴权/CSRF/Origin、并发revision、未知时间null、上传未finalize不可用、hash/格式/路径/幂等/Range/跨workspace隔离、进程重启后真实字节可读；实际OpenAPI导出，草案/已实现分开。
 - 前端接线仍属012/013；本轮不改Demo，不调用模型或采集平台。
-- 交付：功能代码/测试/独立Review完成；统筹接线收尾待独立核对和PM验收。
+- 交付：功能代码/测试/独立Review完成；统筹接线独立核对和PM验收通过。
 
-- 本轮集成：A f34319f、B e1c4cb8、C2541817及修复213870d；真实全套32通过/0skip，综合HTTP与增量迁移通过。独立review见对应reports，待PM最终核对。
+- 本轮集成：A f34319f、B e1c4cb8、C2541817及修复213870d；真实全套32通过/0skip，综合HTTP与增量迁移通过。独立review见对应reports，PM最终产品验收通过。
+
+- 最终代码集成：a9a15d2f3d96cedb38b0a476e847dad3dfa0c996；独立批准树d3f6af1bcafb2f27d1a6251fd6e4832707d0e84c与提交树一致。PM-01（01a10b7c-30e0-7fa3-9545-0001d85a33b3）最终验收通过，仅身份/场次/材料后端；见reports/LIVE-004/final-review.md及change.md。

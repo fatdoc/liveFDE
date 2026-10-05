@@ -8,7 +8,7 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-001 | ENG-01 | done | 技术验收和 PM 最终核对通过；代码基线1366573，详见reports/LIVE-001/qa.md |
 | LIVE-002 | ENG-01 | done | 独立审查18e721f和PM核对通过，集成19fede3；PG/原生MQ真实验证 |
 | LIVE-003 | ARC-01 | done | 独立审查 b7d4efa、PM核对通过，集成26aaf4a；17正例/15负例 |
-| LIVE-004 | ARC/BE | verified | A/B/C独立Review通过；32真实测试/0skip、HTTP升级重启/原字节一致；待PM最终核对 |
+| LIVE-004 | ARC/BE | done | 独立Review和PM最终验收通过；集成a9a15d2；32真实测试/0skip，详见reports/LIVE-004 |
 | LIVE-005 | BE-01 | backlog | 004 |
 | LIVE-006 | AI-01 | backlog | 002/003 |
 | LIVE-007～014 | 见计划 | backlog | docs/05 |

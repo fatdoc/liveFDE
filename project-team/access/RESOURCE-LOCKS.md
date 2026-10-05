@@ -23,3 +23,5 @@
 - QA读取指定提交，原作者不得最终自审；ARC负责串行主checkout和状态，PM不并写。
 
 004统筹追加精确范围：.github/workflows/checks.yml（真实PG测试不允许skip）、scripts/checks/{live004_smoke,backend_integration_tests,export_openapi}.py、repository.py的004scope/材料fixture条目、docs/contracts实际OpenAPI与范围清单；均由ARC写，qa_live002独立审查。最终文档状态收尾可更新AGENTS/README/docs索引/本轮卡和报告。
+
+LIVE-004收尾：业务代码集成a9a15d2，独立QA与PM验收通过；各作者写锁和QA数据库使用锁已释放，worktree/数据库只读保留作为审计证据。ARC在收尾文档提交后释放main index本轮独占；下轮需重新登记，不自动启动任务或复用数据库。5188与15440保留，8194测试进程已退出。

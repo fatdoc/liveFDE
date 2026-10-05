@@ -22,3 +22,9 @@ Ruff检查、格式化、范围门禁及diff --check结果随提交交接。业�
 - 取消正在上传的外部HTTP不能撤销供应商已接受任务，返回未知结果，靠005持久intent禁止重复调用。
 - 本次无DB迁移。回滚代码前停止接线调用，保留原片和已有runtime产物用于审计，不能删除用户资料。子进程使用POSIX现有handler进程组；独立部署FFmpeg/FFprobe需安装并检查版本。
 - partial transcript应保留已知文本与缺失原因，但不能令正式分析链完整成功。具体worker状态与产物注册由统筹的独立接线任务负责。
+
+## 独立 Review 修复
+
+QA 发现空白文本误判 complete，ARC 要求保留缺时间戳原文并补传输边界。本修复：空白partial；缺/坏时间戳和text-only文本在unlocated/raw_text持久输出，null不编造；巨大有限时间戳未知；25,000,000字节音频前置上限；monotonic总读取期限；ASRUnknownCall from None。兼容旧缓存字段默认值。新增MockTransport测试均未外连。
+
+修复后全套媒体/ASR测试33项（日志runtime/live-006/media-tests-fix.log），覆盖三种Unicode空白、文本保留与往返序列化、溢出、安全异常链、超大文件0请求、慢流总deadline及显式无语音。测试文件集中同一ASR契约约350行，业务源文件仍各少于200行。原作者不能自批，须QA绑定修复后的head复审。

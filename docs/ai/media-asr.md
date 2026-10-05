@@ -40,11 +40,11 @@ FFprobe/FFmpeg 参数都是数组，无 shell。输入协议只允许 file/pipe�
 
 `ASRProvider.transcribe_segment(segment, audio_path, cancel=...) -> SegmentTranscript` 返回局部时间戳，coverage full/partial/unknown、missing_words、no_speech。pipeline 转为 source_relative 全局毫秒；缺时间戳、越界、乱序/重叠、缺词、缺段、失败、空文本均不可 complete。明确 no_speech+full+无缺词才能允许无文本完整段。现有兼容协议适配器不会从空响应自行推断 no_speech。
 
-兼容适配器发 multipart `model`、`file`、`response_format=verbose_json`、`timestamp_granularities[]=segment`。响应 segments.start/end 秒转换为毫秒；缺字段保留缺失语义，不编造。顶层 text 与拼接 segments.text 去空白后不一致记 missing_words。保留原始文本，不将格式正规化后的文本替换为原话。
+兼容适配器发 multipart `model`、`file`、`response_format=verbose_json`、`timestamp_granularities[]=segment`。响应 segments.start/end 秒转换为毫秒；缺字段保留缺失语义，不编造。缺失、越界、乱序时间戳及空白语句放入 `unlocated`（原text保留，start_ms/end_ms为null，附原因）；每段 `raw_text` 保留供应商顶层原文，text-only不丢原话。空白文本不能complete，显式no_speech契约才允许无文本完整段。顶层 text 与拼接 segments.text 去空白后不一致记 missing_words。保留原始文本，不将格式正规化后的文本替换为原话。
 
-默认禁网络，真实构造必须显式 allow_network=True，密钥以 SecretStr 内存传入。只允许 HTTPS（test MockTransport 可使用合成HTTP）；follow_redirects=False、trust_env=False、不重试、不记录 token/错误体。响应限制1 MiB；请求数与累计音频时长在整批与每段前检查。max_cost_usd 在缺供应商计价/usage时不能作为已验证的实际费用硬上限，授权层应评估；本轮支出为零。
+默认禁网络，真实构造必须显式 allow_network=True，密钥以 SecretStr 内存传入。只允许 HTTPS（test MockTransport 可使用合成HTTP）；follow_redirects=False、trust_env=False、不重试、不记录 token/错误体。单音频文件限制25,000,000字节（整批manifest与实际文件双检，超限不发HTTP），响应限制1 MiB；请求数与累计音频时长在整批与每段前检查。monotonic总期限在响应头、每块、读取结束与解析后检查，超限即unknown；阻塞中的单次I/O仍由httpx timeout兜底，不能声称供应商已被撤销。max_cost_usd 在缺供应商计价/usage时不能作为已验证的实际费用硬上限，授权层应评估；本轮支出为零。
 
-timeout/网络异常/5xx/成功状态但坏JSON/响应超限为 call_result_unknown，立即停止后续段，禁止盲目重试。确定HTTP拒绝与重定向给安全失败code。LIVE-005接线必须每段在请求前 begin_paid_call、结果或确定拒绝后 finish_paid_call，未知不 finish；已知结果复用。真实网络入口和授权由队列/operator接线统一提供，本模块 CLI 不另开绕过持久intent的付费路径。
+timeout/网络异常/5xx/成功状态但坏JSON/溢出或不可用的巨大时间戳/响应超限为 call_result_unknown，立即停止后续段，禁止盲目重试。确定HTTP拒绝与重定向给安全失败code。LIVE-005接线必须每段在请求前 begin_paid_call、结果或确定拒绝后 finish_paid_call，未知不 finish；已知结果复用。真实网络入口和授权由队列/operator接线统一提供，本模块 CLI 不另开绕过持久intent的付费路径。
 
 ## 独立 CLI 与产物
 
@@ -63,3 +63,5 @@ uv run --project services/backend python -m live_review.integrations.asr offline
 extract 写 UUID/audio.wav、segment-*.wav、extraction.json。offline-transcribe 写新的 transcript-UUID.json 并打印 artifact 摘要；退出码0为完整合成协议结果、3为partial/failed、2为输入或执行错误。它是合成测试，不是真实听写。小型fixture格式为 `{"segments":{"0":{"coverage":"full","missing_words":false,"utterances":[{"text":"合成测试","start_ms":0,"end_ms":100}]}}}`。
 
 官方依据：[FFmpeg 协议白名单](https://ffmpeg.org/ffmpeg-protocols.html)、[FFprobe](https://ffmpeg.org/ffprobe.html)、[Audio transcription API](https://platform.openai.com/docs/api-reference/audio/createTranscription)。
+
+QA修复（2026-10-06）：未知异常使用 `from None` 抑制原始供应商异常链在常规traceback展示，避免回显敏感错误体。所有校验失败保持安全code；不将返回文本strip后替换原话。

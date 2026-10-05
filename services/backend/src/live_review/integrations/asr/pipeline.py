@@ -1,7 +1,13 @@
 import wave
 from pathlib import Path
 
-from live_review.integrations.asr.models import ASRProvider, SegmentOutcome, Transcript, Utterance
+from live_review.integrations.asr.models import (
+    ASRProvider,
+    SegmentOutcome,
+    Transcript,
+    UnlocatedUtterance,
+    Utterance,
+)
 from live_review.integrations.media.files import verify_artifact
 from live_review.integrations.media.models import Extraction
 from live_review.integrations.media.pipeline import milliseconds
@@ -36,17 +42,23 @@ def _validate_audio(extraction: Extraction, root: Path):
 
 
 def _merge(segment, response):
-    results, issue, previous_end = [], None, 0
+    results, unlocated, issue, previous_end = [], [], None, 0
     duration = segment.end_ms - segment.start_ms
     for item in response.utterances:
-        if item.start_ms is None or item.end_ms is None:
-            issue = "timestamp_missing"
-            continue
-        if not 0 <= item.start_ms < item.end_ms <= duration:
-            issue = "timestamp_out_of_range"
-            continue
-        if item.start_ms < previous_end:
-            issue = "timestamp_overlap_or_order"
+        reason = None
+        if not item.text.strip():
+            reason = "blank_transcript"
+        elif item.start_ms is None or item.end_ms is None:
+            reason = "timestamp_missing"
+        elif not 0 <= item.start_ms < item.end_ms <= duration:
+            reason = "timestamp_out_of_range"
+        elif item.start_ms < previous_end:
+            reason = "timestamp_overlap_or_order"
+        if reason:
+            issue = issue or reason
+            unlocated.append(
+                UnlocatedUtterance(segment_index=segment.index, text=item.text, reason=reason)
+            )
             continue
         previous_end = item.end_ms
         results.append(
@@ -57,19 +69,27 @@ def _merge(segment, response):
                 end_ms=segment.start_ms + item.end_ms,
             )
         )
+    if not response.utterances and response.raw_text:
+        reason = "timestamp_missing" if response.raw_text.strip() else "blank_transcript"
+        unlocated.append(
+            UnlocatedUtterance(segment_index=segment.index, text=response.raw_text, reason=reason)
+        )
+        issue = issue or reason
     if response.missing_words:
         issue = issue or "words_missing"
     if response.coverage != "full":
         issue = issue or "coverage_incomplete"
     if not results and not response.no_speech:
         issue = issue or "empty_transcript"
-    if results and response.no_speech:
+    if (results or unlocated) and response.no_speech:
         issue = issue or "conflicting_speech_state"
     return SegmentOutcome(
         segment_index=segment.index,
         status="partial" if issue else "complete",
         error_code=issue,
         utterances=tuple(results),
+        unlocated=tuple(unlocated),
+        raw_text=response.raw_text,
     )
 
 
@@ -98,8 +118,9 @@ def transcribe(
                     raise MediaError("segment_audio_mismatch")
             response = provider.transcribe_segment(segment, path, cancel=cancel)
             outcome = _merge(segment, response)
-            text_size += sum(len(item.text) for item in outcome.utterances)
-            utterance_count += len(outcome.utterances)
+            text_size += sum(len(item.text) for item in (*outcome.utterances, *outcome.unlocated))
+            text_size += len(outcome.raw_text or "")
+            utterance_count += len(outcome.utterances) + len(outcome.unlocated)
             if text_size > 1024 * 1024 or utterance_count > 10000:
                 raise MediaError("transcript_size_limit")
             outcomes.append(outcome)
@@ -137,4 +158,5 @@ def transcribe(
         complete=complete,
         segments=tuple(outcomes),
         utterances=utterances,
+        unlocated=tuple(item for result in outcomes for item in result.unlocated),
     )

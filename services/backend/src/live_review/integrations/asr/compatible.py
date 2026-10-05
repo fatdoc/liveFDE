@@ -2,6 +2,7 @@
 
 import json
 import math
+import time
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -65,6 +66,8 @@ class OpenAICompatibleASRProvider:
         self._requests, self._samples = 0, 0
 
     def preflight(self, segments):
+        if any(segment.artifact.size_bytes > 25_000_000 for segment in segments):
+            raise MediaError("asr_audio_size_limit")
         if self._requests + len(segments) > self._max_requests:
             raise MediaError("asr_request_budget_exceeded")
         if self._samples + sum(s.end_sample - s.start_sample for s in segments) > self._max_samples:
@@ -73,6 +76,14 @@ class OpenAICompatibleASRProvider:
     def transcribe_segment(self, segment, audio_path: Path, *, cancel=None):
         check_cancel(cancel)
         self.preflight((segment,))
+        if not 0 < audio_path.stat().st_size <= 25_000_000:
+            raise MediaError("asr_audio_size_limit")
+        deadline = time.monotonic() + self._timeout
+
+        def check_deadline():
+            if time.monotonic() >= deadline:
+                raise ASRUnknownCall
+
         self._requests += 1
         self._samples += segment.end_sample - segment.start_sample
         try:
@@ -96,6 +107,7 @@ class OpenAICompatibleASRProvider:
                     },
                     files={"file": ("audio.wav", audio, "audio/wav")},
                 ) as response:
+                    check_deadline()
                     if 300 <= response.status_code < 400:
                         raise MediaError("asr_redirect_rejected")
                     if response.status_code >= 500:
@@ -106,38 +118,45 @@ class OpenAICompatibleASRProvider:
                         raise ASRUnknownCall
                     content = bytearray()
                     for chunk in response.iter_bytes():
+                        check_deadline()
                         # Once sent, cancellation cannot establish provider outcome.
                         if cancel and cancel():
                             raise ASRUnknownCall
-                        content.extend(chunk)
-                        if len(content) > 1024 * 1024:
+                        if len(content) + len(chunk) > 1024 * 1024:
                             raise ASRUnknownCall
-        except httpx.HTTPError as error:
-            raise ASRUnknownCall from error
+                        content.extend(chunk)
+                    check_deadline()
+        except httpx.HTTPError:
+            raise ASRUnknownCall from None
         try:
             payload = json.loads(content)
-            return self._parse(payload)
-        except (ValueError, TypeError, KeyError, AttributeError) as error:
-            raise ASRUnknownCall from error
+            result = self._parse(payload)
+            check_deadline()
+            return result
+        except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+            raise ASRUnknownCall from None
 
     @staticmethod
     def _parse(payload):
         segments = payload.get("segments")
         if not isinstance(segments, list) or not segments:
             # Text-only responses cannot invent timestamped completeness.
-            return SegmentTranscript(coverage="unknown", missing_words=True)
+            text = payload.get("text")
+            return SegmentTranscript(
+                coverage="unknown",
+                missing_words=True,
+                raw_text=text if isinstance(text, str) else None,
+            )
         if len(segments) > 2000:
             raise ValueError("Response size")
         utterances = []
         for segment in segments:
 
             def timestamp(value):
-                if (
-                    isinstance(value, bool)
-                    or not isinstance(value, (int, float))
-                    or not math.isfinite(value)
-                ):
+                if isinstance(value, bool) or not isinstance(value, (int, float)):
                     return None
+                if abs(value) > 86400 or not math.isfinite(value):
+                    raise ValueError("Invalid timestamp")
                 return round(value * 1000)
 
             utterances.append(
@@ -157,5 +176,8 @@ class OpenAICompatibleASRProvider:
             payload["text"]
         ) != normalized("".join(u.text for u in utterances))
         return SegmentTranscript(
-            utterances=tuple(utterances), coverage="full", missing_words=missing
+            utterances=tuple(utterances),
+            coverage="full",
+            missing_words=missing,
+            raw_text=payload.get("text") if isinstance(payload.get("text"), str) else None,
         )

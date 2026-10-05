@@ -225,3 +225,137 @@ def test_duration_budget_and_cancel_before_transport(extracted):
     with pytest.raises(MediaError, match="canceled"):
         transcribe(extraction, artifact_root=root, provider=provider, cancel=lambda: True)
     assert not calls
+
+
+@pytest.mark.parametrize("text", ["   ", "\t\n", "\u3000"])
+def test_whitespace_response_cannot_be_complete(extracted, text):
+    extraction, root = extracted
+    result = transcribe(
+        extraction,
+        artifact_root=root,
+        provider=compatible(
+            lambda _: httpx.Response(
+                200, json={"text": text, "segments": [{"text": text, "start": 0, "end": 0.001}]}
+            )
+        ),
+    )
+    assert not result.complete and result.status == "partial"
+    assert not result.utterances
+    assert result.unlocated[0].text == text
+    assert result.unlocated[0].start_ms is None and result.unlocated[0].end_ms is None
+    assert result.segments[0].error_code == "blank_transcript"
+
+
+@pytest.mark.parametrize("mode", ["missing", "text_only", "out_of_range"])
+def test_known_text_preserved_without_fabricated_timestamps(extracted, mode):
+    extraction, root = extracted
+    text = "  原话必须原样保留，包括空格。 "
+    payload = {"text": text}
+    if mode != "text_only":
+        payload["segments"] = [
+            {"text": text, "start": None if mode == "missing" else -1, "end": 0.001}
+        ]
+    result = transcribe(
+        extraction,
+        artifact_root=root,
+        provider=compatible(lambda _: httpx.Response(200, json=payload)),
+    )
+    assert not result.complete and not result.utterances
+    assert result.unlocated[0].text == text
+    assert result.unlocated[0].start_ms is None and result.unlocated[0].end_ms is None
+    assert result.segments[0].raw_text == text
+    from live_review.integrations.asr import Transcript
+
+    assert Transcript.model_validate(result.model_dump(mode="json")) == result
+
+
+def test_large_timestamp_unknown_and_traceback_redacted(extracted):
+    import traceback
+
+    extraction, root = extracted
+    calls = []
+
+    def handle(request):
+        calls.append(request)
+        return httpx.Response(
+            200,
+            json={"text": "known", "segments": [{"text": "known", "start": 1e308, "end": 1e308}]},
+        )
+
+    with pytest.raises(ASRUnknownCall) as raised:
+        transcribe(extraction, artifact_root=root, provider=compatible(handle))
+    assert len(calls) == 1
+    assert raised.value.__cause__ is None and raised.value.__suppress_context__
+
+    def secret_error(request):
+        raise httpx.ReadTimeout("private-synthetic-secret", request=request)
+
+    with pytest.raises(ASRUnknownCall) as raised:
+        transcribe(extraction, artifact_root=root, provider=compatible(secret_error))
+    assert "private-synthetic-secret" not in "".join(traceback.format_exception(raised.value))
+
+
+def test_audio_file_cap_before_transport(extracted, tmp_path):
+    extraction, root = extracted
+    calls = []
+    provider = compatible(lambda request: calls.append(request))
+    large = tmp_path / "oversize.wav"
+    with large.open("wb") as stream:
+        stream.truncate(25_000_001)
+    with pytest.raises(MediaError, match="asr_audio_size_limit"):
+        provider.transcribe_segment(extraction.segments[0], large)
+    oversized = extraction.segments[0].model_copy(
+        update={
+            "artifact": extraction.segments[0].artifact.model_copy(
+                update={"size_bytes": 25_000_001}
+            )
+        }
+    )
+    with pytest.raises(MediaError, match="asr_audio_size_limit"):
+        provider.preflight((oversized,))
+    assert not calls
+
+
+def test_slow_stream_total_deadline_unknown(extracted):
+    import time
+
+    extraction, root = extracted
+    calls, chunks = [], []
+
+    class SlowStream(httpx.SyncByteStream):
+        def __iter__(self):
+            for _ in range(20):
+                time.sleep(0.025)
+                chunks.append(1)
+                yield b" "
+
+    def handle(request):
+        calls.append(request)
+        return httpx.Response(200, stream=SlowStream())
+
+    with pytest.raises(ASRUnknownCall):
+        transcribe(
+            extraction, artifact_root=root, provider=compatible(handle, timeout_seconds=0.06)
+        )
+    assert len(calls) == 1 and len(chunks) < 20
+
+
+def test_explicit_no_speech_is_required_for_empty_complete(extracted):
+    extraction, root = extracted
+    payload = {
+        "segments": {
+            str(s.index): {
+                "coverage": "full",
+                "missing_words": False,
+                "no_speech": True,
+                "utterances": [],
+            }
+            for s in extraction.segments
+        }
+    }
+    result = transcribe(
+        extraction,
+        artifact_root=root,
+        provider=OfflineFixtureProvider(payload, enabled=True, environment="test"),
+    )
+    assert result.complete and not result.utterances and not result.unlocated

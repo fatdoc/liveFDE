@@ -18,6 +18,7 @@ class SegmentTranscript(FrozenModel):
     coverage: Literal["full", "partial", "unknown"] = "unknown"
     missing_words: bool = True
     no_speech: bool = False
+    raw_text: str | None = Field(default=None, max_length=1024 * 1024)
 
 
 class ASRProvider(Protocol):
@@ -37,11 +38,21 @@ class Utterance(FrozenModel):
     end_ms: int
 
 
+class UnlocatedUtterance(FrozenModel):
+    segment_index: int
+    text: str
+    start_ms: None = None
+    end_ms: None = None
+    reason: str
+
+
 class SegmentOutcome(FrozenModel):
     segment_index: int
     status: Literal["complete", "partial", "failed"]
     error_code: str | None = None
     utterances: tuple[Utterance, ...] = ()
+    unlocated: tuple[UnlocatedUtterance, ...] = ()
+    raw_text: str | None = None
 
 
 class Transcript(FrozenModel):
@@ -55,5 +66,6 @@ class Transcript(FrozenModel):
     complete: bool
     segments: tuple[SegmentOutcome, ...]
     utterances: tuple[Utterance, ...]
+    unlocated: tuple[UnlocatedUtterance, ...] = ()
     timestamp_unit: Literal["milliseconds"] = "milliseconds"
     timeline: Literal["source_relative"] = "source_relative"

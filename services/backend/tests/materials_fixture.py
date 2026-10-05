@@ -36,8 +36,9 @@ def materials(monkeypatch):
     get_settings.cache_clear()
     subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], cwd=ROOT, check=True)
     # Explicit composition uses real router/dependencies; ARC wires production main.
-    if not any(getattr(route, "path", "") == "/api/v1/materials/uploads" for route in app.routes):
+    if "/api/v1/materials/uploads" not in app.openapi()["paths"]:
         app.include_router(router, prefix="/api/v1")
+        app.openapi_schema = None
     with TestClient(
         app, raise_server_exceptions=False, client=(f"fd00::{uuid4().int % 65535:x}", 50000)
     ) as client:

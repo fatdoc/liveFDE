@@ -75,7 +75,8 @@ def read_chunks(path, start, count):
             yield chunk
 
 
-@router.api_route("/materials/{material_id}/content", methods=["GET", "HEAD"])
+@router.get("/materials/{material_id}/content", operation_id="get_material_content")
+@router.head("/materials/{material_id}/content", operation_id="head_material_content")
 def content(material_id: UUID, request: Request, admin: CurrentAdmin, db: Database):
     # Authorization must precede filesystem metadata, ETag, and Range interpretation.
     _, blob = get_material(db, material_id, admin)

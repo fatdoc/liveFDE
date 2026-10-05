@@ -2,7 +2,6 @@ import secrets
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Request, Response
-from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import delete, select
 
 from live_review.core.auth import (
@@ -15,6 +14,7 @@ from live_review.core.auth import (
 )
 from live_review.core.errors import ApiError
 from live_review.modules.identity.models import Admin, AuthSession
+from live_review.modules.identity.schemas import LoginRequest, LoginResponse
 from live_review.modules.identity.security import (
     DUMMY_HASH,
     hasher,
@@ -23,12 +23,6 @@ from live_review.modules.identity.security import (
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["identity"])
-
-
-class LoginRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    username: str = Field(min_length=1, max_length=100)
-    password: str = Field(min_length=1, max_length=1024)
 
 
 def user_view(admin: Admin):
@@ -40,7 +34,7 @@ def user_view(admin: Admin):
     }
 
 
-@router.post("/login")
+@router.post("/login", response_model=LoginResponse)
 def login(data: LoginRequest, request: Request, response: Response, db: Database):
     require_origin(request)
     settings = request.app.state.settings
@@ -78,7 +72,7 @@ def login(data: LoginRequest, request: Request, response: Response, db: Database
     return {"user": user_view(admin), "csrf_token": csrf}
 
 
-@router.get("/me")
+@router.get("/me", response_model=LoginResponse)
 def me(request: Request, admin: CurrentAdmin):
     return {"user": user_view(admin), "csrf_token": request.state.auth_session.csrf_token}
 

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import SecretStr, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     upload_lease_seconds: int = 300
     ffprobe_path: str = "ffprobe"
     service_name: str = "live-review"
+    job_lease_seconds: int = 30
+    job_dispatch_interval_seconds: float = Field(default=2, gt=0, allow_inf_nan=False)
+    job_test_handlers: bool = False
 
     environment: str = "development"
     trusted_origins: list[str] = ["http://127.0.0.1:5188", "http://localhost:5188"]
@@ -37,6 +40,10 @@ class Settings(BaseSettings):
             raise ValueError("Production requires HTTPS origins")
         if min(self.session_ttl_seconds, self.login_limit, self.login_window_seconds) < 1:
             raise ValueError("Authentication limits must be positive")
+        if self.job_lease_seconds < 1 or self.job_dispatch_interval_seconds <= 0:
+            raise ValueError("Job timing must be positive")
+        if self.environment == "production" and self.job_test_handlers:
+            raise ValueError("Synthetic job handlers are forbidden in production")
         return self
 
 

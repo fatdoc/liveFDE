@@ -18,7 +18,7 @@ UUID主键、workspace_id、created_at/updated_at UTC；更新聚合有revision>
 | reports、report_revisions、report_sources | revision(report,number)unique；kind/streamer/时间边界；来源session/run/transcript/report版本固化；缺失原因集合 |
 | assets、asset_revisions、review_events | revision(asset,number)unique；聚合revision并发token、latest_revision_id与published_revision_id分开；原话/teaching_notes/adapted_script独立；事件actor/action/from/to/revision/reason |
 | favorites、usage_events | favorite(user,asset)unique；usage(user,asset_revision)unique或幂等upsert；不冒称销量 |
-| prep_plans、prep_revisions、prep_items、prep_asset_refs | revision(plan,number)unique；item(revision,item_id)和(revision,position)unique；source_report_revision_id可空；refs固定asset_revision |
+| prep_plans、prep_revisions、prep_items、prep_asset_refs | revision(plan,number)unique；item(revision,item_id)和(revision,position)unique；scheduled_local_date必填、scheduled_at可空及time_precision；source_report_revision_id可空；refs固定asset_revision |
 | idempotency_records | workspace/actor/method/route/key unique；request_hash/response_ref/expires_at；不能保存密码请求body |
 
 所有索引先服务明确查询：workspace+session_local_date、streamer+session_local_date、asset状态/分类、job状态+lease。V1关键词参数化ILIKE，后续真实慢查询再索引优化，不先建向量库。
@@ -45,7 +45,7 @@ PDF reference只作reference_document(page>=1)，可定位页但seekable=false�
 weekly默认Asia/Shanghai，周一00:00到下周一00:00，左闭右开；2026-09-28周的UTC边界为2026-09-27T16:00:00Z至2026-10-04T16:00:00Z。
 按session_local_date归属；若已知started_at，必须与其在Asia/Shanghai的日期一致。同场跨午夜不拆成两场；仅知道日期时started_at=null，不补00:00伪造实测。来源快照保留time_precision/time_source，周报按日期范围查而非用虚假时间排序。同一天未知时间场次按稳定ID顺序而非假定先后；本版只计所选主播。
 来源集合包括范围内全部未归档场次的ID；included只取可用分析run/转写版本，excluded带pending/failed/no_material/no_analysis原因。部分来源可生成并标coverage=partial，零可用来源422；不能把缺失当零分。
-快照固定session revision/analysis_run/transcript_revision；源修改后status=stale但不篡改旧报告。重跑新报告revision，保留人工作品可比较。
+included和excluded均保留streamer_id/session_local_date/started_at/time_precision/time_source/timezone；校验同主播、日期在所选范围。快照固定session revision/analysis_run/transcript_revision；源修改后status=stale但不篡改旧报告。重跑新报告revision，保留人工作品可比较。
 range_summary允许任意非空日期范围，UI明确“日期范围总结”；不能当成标准周报或跨规则可比较成长趋势。
 
 ## 后续实现验收矩阵

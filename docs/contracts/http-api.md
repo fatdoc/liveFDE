@@ -43,7 +43,7 @@ If-Range强ETag不匹配返回完整200，不返回旧部分；ETag来自内容h
 |---|---|---|
 | POST /sessions/{id}/analysis-runs | Idempotency-Key；{material_ids,vision_enabled,prompt_version,rule_version:null或已配置ID} | 202 {analysis_run_id,job_id,status:queued} |
 | GET /sessions/{id}/analysis-runs | — | 历史输入快照/状态/产物ID列表 |
-| GET /jobs/{id} | — | {id,status,current_stage,attempt,progress:null或实测,steps,error:null或安全错误,can_retry,cancel_requested} |
+| GET /jobs/{id} | — | {id,revision,status,current_stage,attempt,progress:null或实测,steps:[{stage,status,reason}],error:null或安全错误,can_retry,cancel_requested} |
 | POST /jobs/{id}/retry | Idempotency-Key；{expected_revision,from_stage} | 202 原job新attempt；非法阶段409 |
 | POST /jobs/{id}/cancel | {expected_revision} | 202 cancel_requested；终态返回200终态，无重复供应商调用 |
 | GET /sessions/{id}/transcripts | material_id? | 版本列表 |
@@ -76,10 +76,12 @@ ASR chunks全局偏移统一毫秒，start/end同时已知或同时null。并非
 报告actions为结构化[{id,text,owner,verification,evidence_ids}]；说明无证据时assertion_kind=hypothesis并声明限制。周报备注为人工字段，不因模型重跑覆盖。
 
 ## 备播
-GET/POST /prep-plans：创建{title,streamer_id,scheduled_at,source_report_revision_id?}→201 {id,revision,status:draft,items:[]}。
-GET/PATCH /prep-plans/{id}：PATCH{expected_revision,title?,scheduled_at?}。
+GET/POST /prep-plans：创建{title,streamer_id,scheduled_local_date,scheduled_at:null或RFC3339,time_precision:date或minute或second,timezone,source_report_revision_id?}→201 {id,revision,status:draft,items:[]}。
+GET/PATCH /prep-plans/{id}：PATCH{expected_revision,title?,scheduled_local_date?,scheduled_at?,time_precision?}。
 PUT /prep-plans/{id}/items：{expected_revision,items:[{id,title,minutes,goal,body_doc,interaction_prompt,asset_revision_ids}]}，items数组顺序为权威，ID唯一；有序全量更新同事务，409保留本地草稿。
 body_doc是限制节点的Tiptap JSON（段落/文本/粗体/斜体/列表），后端拒绝未知节点/危险URL，不接受任意HTML脚本。预览/导出统一安全渲染。
-POST /prep-plans/{id}/confirmations：{expected_revision}→ready；新编辑回draft。确认时重查所有引用，撤回/未审409 asset_not_approved，不能静默替换。
+POST /prep-plans/{id}/confirmations：{expected_revision}→ready；新编辑回draft。确认要求至少一个环节、每个环节有非空标题和非空可见正文，minutes为正整数；不强制引用资产，但引用存在时须合规。确认时重查所有引用，撤回/未审409 asset_not_approved，不能静默替换。
 POST /prep-plans/{id}/exports：同报告异步导出模式，固定plan_revision。
 旧计划读取保留原asset_revision_ids及引用快照，另附 current_status/withdrawal_warning；撤回不会抹掉旧稿，但禁止将其新加入计划或重新确认就绪。
+
+备播时间与场次采用相同精度规则：仅选日期时scheduled_at=null，不补午夜；有时间时必须与scheduled_local_date和Asia/Shanghai一致，计划日期不是实际开播证据。

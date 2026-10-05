@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 
 ROOT = Path(__file__).parent
 SCHEMA = json.loads((ROOT / 'draft.schema.json').read_text())
@@ -24,6 +24,7 @@ def semantic(kind, data):
         if data['kind'] == 'transcript_quote':
             source = SEGMENTS.get(data['segment_id'])
             require(source is not None, 'unknown source segment')
+            require(data['source_id'] == source['source_id'], 'wrong source material')
             require(data['source_revision_id'] == source['source_revision_id'], 'wrong source revision')
             require(data['quote'] == source['text'], 'quote differs from source')
             require((start, end) == (source['start_ms'], source['end_ms']), 'invented timing')
@@ -47,8 +48,12 @@ def semantic(kind, data):
         end = datetime.fromisoformat(data['end_exclusive_utc'].replace('Z', '+00:00')).astimezone(ZoneInfo(data['timezone']))
         require(end > start, 'invalid report range')
         if data['kind'] == 'weekly':
-            require(start.weekday() == 0 and start.hour == start.minute == start.second == 0, 'week must start Monday midnight')
+            require(start.weekday() == 0 and start.hour == start.minute == start.second == start.microsecond == 0, 'week must start Monday midnight')
             require(end == start + timedelta(days=7), 'week must span seven local dates')
+        for row in data['included'] + data['excluded']:
+            semantic('SessionTime', row)
+            require(row['streamer_id'] == data['streamer_id'], 'wrong report streamer')
+            require(start.date().isoformat() <= row['session_local_date'] < end.date().isoformat(), 'source outside report dates')
         included = [row['session_id'] for row in data['included']]
         excluded = [row['session_id'] for row in data['excluded']]
         require(bool(included), 'report needs analyzed sources')
@@ -81,7 +86,7 @@ def main():
     for case in FIXTURES['invalid']:
         try:
             validate(case)
-        except (ValueError, __import__('jsonschema').ValidationError):
+        except (ValueError, ValidationError):
             continue
         raise AssertionError('negative fixture accepted: ' + case['name'])
     print(f"PASS: {len(FIXTURES['valid'])} valid fixtures; {len(FIXTURES['invalid'])} negative fixtures rejected")

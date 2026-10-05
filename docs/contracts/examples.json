@@ -7,14 +7,16 @@
       "source_revision_id": "00000000-0000-4000-8000-000000000003",
       "text": "先确认具体问题，再安排下一步。",
       "start_ms": 12000,
-      "end_ms": 16000
+      "end_ms": 16000,
+      "source_id": "00000000-0000-4000-8000-000000000002"
     },
     {
       "id": "00000000-0000-4000-8000-000000000006",
       "source_revision_id": "00000000-0000-4000-8000-000000000003",
       "text": "先确认具体问题，再安排下一步。",
       "start_ms": null,
-      "end_ms": null
+      "end_ms": null,
+      "source_id": "00000000-0000-4000-8000-000000000002"
     }
   ],
   "valid": [
@@ -107,7 +109,15 @@
         "progress": null,
         "error": null,
         "can_retry": false,
-        "cancel_requested": false
+        "cancel_requested": false,
+        "revision": 1,
+        "steps": [
+          {
+            "stage": "asr",
+            "status": "running",
+            "reason": null
+          }
+        ]
       }
     },
     {
@@ -129,7 +139,15 @@
           }
         },
         "can_retry": true,
-        "cancel_requested": false
+        "cancel_requested": false,
+        "revision": 1,
+        "steps": [
+          {
+            "stage": "asr",
+            "status": "failed",
+            "reason": null
+          }
+        ]
       }
     },
     {
@@ -199,13 +217,25 @@
             "session_id": "00000000-0000-4000-8000-000000000012",
             "session_revision": 1,
             "analysis_run_id": "00000000-0000-4000-8000-000000000016",
-            "transcript_revision_id": "00000000-0000-4000-8000-000000000003"
+            "transcript_revision_id": "00000000-0000-4000-8000-000000000003",
+            "session_local_date": "2026-09-28",
+            "started_at": null,
+            "time_precision": "date",
+            "time_source": "user_entered",
+            "timezone": "Asia/Shanghai",
+            "streamer_id": "00000000-0000-4000-8000-000000000015"
           }
         ],
         "excluded": [
           {
             "session_id": "00000000-0000-4000-8000-000000000017",
-            "reason": "failed"
+            "reason": "failed",
+            "session_local_date": "2026-09-28",
+            "started_at": null,
+            "time_precision": "date",
+            "time_source": "user_entered",
+            "timezone": "Asia/Shanghai",
+            "streamer_id": "00000000-0000-4000-8000-000000000015"
           }
         ],
         "weekly_notes": "人工备注：下周回看开场；该文字不能被模型重跑覆盖。",
@@ -578,6 +608,184 @@
           "published_revision_id": null,
           "latest_status": "pending_review"
         }
+      }
+    },
+    {
+      "name": "wrong_source_material",
+      "fixture": true,
+      "schema": "Evidence",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "kind": "transcript_quote",
+        "source_id": "00000000-0000-4000-8000-000000000099",
+        "source_revision_id": "00000000-0000-4000-8000-000000000003",
+        "segment_id": "00000000-0000-4000-8000-000000000004",
+        "frame_id": null,
+        "quote": "先确认具体问题，再安排下一步。",
+        "start_ms": 12000,
+        "end_ms": 16000,
+        "page": null,
+        "seekable": true
+      }
+    },
+    {
+      "name": "fractional_week_midnight",
+      "fixture": true,
+      "schema": "ReportSnapshot",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000014",
+        "kind": "weekly",
+        "streamer_id": "00000000-0000-4000-8000-000000000015",
+        "timezone": "Asia/Shanghai",
+        "start_utc": "2026-09-27T16:00:00.500Z",
+        "end_exclusive_utc": "2026-10-04T16:00:00.500Z",
+        "coverage": "partial",
+        "included": [
+          {
+            "session_id": "00000000-0000-4000-8000-000000000012",
+            "session_revision": 1,
+            "analysis_run_id": "00000000-0000-4000-8000-000000000016",
+            "transcript_revision_id": "00000000-0000-4000-8000-000000000003",
+            "session_local_date": "2026-09-28",
+            "started_at": null,
+            "time_precision": "date",
+            "time_source": "user_entered",
+            "timezone": "Asia/Shanghai",
+            "streamer_id": "00000000-0000-4000-8000-000000000015"
+          }
+        ],
+        "excluded": [
+          {
+            "session_id": "00000000-0000-4000-8000-000000000017",
+            "reason": "failed",
+            "session_local_date": "2026-09-28",
+            "started_at": null,
+            "time_precision": "date",
+            "time_source": "user_entered",
+            "timezone": "Asia/Shanghai",
+            "streamer_id": "00000000-0000-4000-8000-000000000015"
+          }
+        ],
+        "weekly_notes": "人工备注：下周回看开场；该文字不能被模型重跑覆盖。",
+        "scoring": {
+          "score": null,
+          "rule_version": null,
+          "reason": "rules_not_configured"
+        }
+      }
+    },
+    {
+      "name": "source_outside_week",
+      "fixture": true,
+      "schema": "ReportSnapshot",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000014",
+        "kind": "weekly",
+        "streamer_id": "00000000-0000-4000-8000-000000000015",
+        "timezone": "Asia/Shanghai",
+        "start_utc": "2026-09-27T16:00:00Z",
+        "end_exclusive_utc": "2026-10-04T16:00:00Z",
+        "coverage": "partial",
+        "included": [
+          {
+            "session_id": "00000000-0000-4000-8000-000000000012",
+            "session_revision": 1,
+            "analysis_run_id": "00000000-0000-4000-8000-000000000016",
+            "transcript_revision_id": "00000000-0000-4000-8000-000000000003",
+            "session_local_date": "2026-10-05",
+            "started_at": null,
+            "time_precision": "date",
+            "time_source": "user_entered",
+            "timezone": "Asia/Shanghai",
+            "streamer_id": "00000000-0000-4000-8000-000000000015"
+          }
+        ],
+        "excluded": [
+          {
+            "session_id": "00000000-0000-4000-8000-000000000017",
+            "reason": "failed",
+            "session_local_date": "2026-09-28",
+            "started_at": null,
+            "time_precision": "date",
+            "time_source": "user_entered",
+            "timezone": "Asia/Shanghai",
+            "streamer_id": "00000000-0000-4000-8000-000000000015"
+          }
+        ],
+        "weekly_notes": "人工备注：下周回看开场；该文字不能被模型重跑覆盖。",
+        "scoring": {
+          "score": null,
+          "rule_version": null,
+          "reason": "rules_not_configured"
+        }
+      }
+    },
+    {
+      "name": "source_wrong_streamer",
+      "fixture": true,
+      "schema": "ReportSnapshot",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000014",
+        "kind": "weekly",
+        "streamer_id": "00000000-0000-4000-8000-000000000015",
+        "timezone": "Asia/Shanghai",
+        "start_utc": "2026-09-27T16:00:00Z",
+        "end_exclusive_utc": "2026-10-04T16:00:00Z",
+        "coverage": "partial",
+        "included": [
+          {
+            "session_id": "00000000-0000-4000-8000-000000000012",
+            "session_revision": 1,
+            "analysis_run_id": "00000000-0000-4000-8000-000000000016",
+            "transcript_revision_id": "00000000-0000-4000-8000-000000000003",
+            "session_local_date": "2026-09-28",
+            "started_at": null,
+            "time_precision": "date",
+            "time_source": "user_entered",
+            "timezone": "Asia/Shanghai",
+            "streamer_id": "00000000-0000-4000-8000-000000000099"
+          }
+        ],
+        "excluded": [
+          {
+            "session_id": "00000000-0000-4000-8000-000000000017",
+            "reason": "failed",
+            "session_local_date": "2026-09-28",
+            "started_at": null,
+            "time_precision": "date",
+            "time_source": "user_entered",
+            "timezone": "Asia/Shanghai",
+            "streamer_id": "00000000-0000-4000-8000-000000000015"
+          }
+        ],
+        "weekly_notes": "人工备注：下周回看开场；该文字不能被模型重跑覆盖。",
+        "scoring": {
+          "score": null,
+          "rule_version": null,
+          "reason": "rules_not_configured"
+        }
+      }
+    },
+    {
+      "name": "job_missing_concurrency_token",
+      "fixture": true,
+      "schema": "Job",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000013",
+        "status": "running",
+        "current_stage": "asr",
+        "attempt": 1,
+        "progress": null,
+        "error": null,
+        "can_retry": false,
+        "cancel_requested": false,
+        "steps": [
+          {
+            "stage": "asr",
+            "status": "running",
+            "reason": null
+          }
+        ]
       }
     }
   ]

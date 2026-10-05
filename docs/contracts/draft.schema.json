@@ -392,6 +392,43 @@
         },
         "cancel_requested": {
           "type": "boolean"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "stage": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "pending",
+                  "running",
+                  "succeeded",
+                  "failed",
+                  "skipped",
+                  "canceled"
+                ]
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "stage",
+              "status",
+              "reason"
+            ]
+          }
         }
       },
       "required": [
@@ -402,7 +439,9 @@
         "progress",
         "error",
         "can_retry",
-        "cancel_requested"
+        "cancel_requested",
+        "revision",
+        "steps"
       ]
     },
     "EmptyList": {
@@ -630,13 +669,50 @@
               "transcript_revision_id": {
                 "type": "string",
                 "format": "uuid"
+              },
+              "session_local_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "started_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "time_precision": {
+                "enum": [
+                  "date",
+                  "minute",
+                  "second"
+                ]
+              },
+              "timezone": {
+                "const": "Asia/Shanghai"
+              },
+              "time_source": {
+                "enum": [
+                  "user_entered",
+                  "media_metadata"
+                ]
+              },
+              "streamer_id": {
+                "type": "string",
+                "format": "uuid"
               }
             },
             "required": [
               "session_id",
               "session_revision",
               "analysis_run_id",
-              "transcript_revision_id"
+              "transcript_revision_id",
+              "session_local_date",
+              "started_at",
+              "time_precision",
+              "timezone",
+              "time_source",
+              "streamer_id"
             ]
           }
         },
@@ -657,11 +733,48 @@
                   "no_material",
                   "no_analysis"
                 ]
+              },
+              "session_local_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "started_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "time_precision": {
+                "enum": [
+                  "date",
+                  "minute",
+                  "second"
+                ]
+              },
+              "timezone": {
+                "const": "Asia/Shanghai"
+              },
+              "time_source": {
+                "enum": [
+                  "user_entered",
+                  "media_metadata"
+                ]
+              },
+              "streamer_id": {
+                "type": "string",
+                "format": "uuid"
               }
             },
             "required": [
               "session_id",
-              "reason"
+              "reason",
+              "session_local_date",
+              "started_at",
+              "time_precision",
+              "timezone",
+              "time_source",
+              "streamer_id"
             ]
           }
         },

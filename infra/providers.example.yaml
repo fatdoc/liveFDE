@@ -1,0 +1,28 @@
+# YAML is the only policy source. Credentials belong to environment variables.
+schema_version: 1
+revision: unconfigured-v1
+media:
+  segment_seconds: 300
+  ffmpeg_timeout_seconds: 600
+  ffprobe_timeout_seconds: 30
+  sample_rate: 16000
+  channels: 1
+  max_duration_seconds: 14400
+providers:
+  asr: {enabled: false, protocol: disabled}
+  text: {enabled: false, protocol: disabled}
+  vision: {enabled: false, protocol: disabled}
+
+# Optional inactive ASR profile (replace asr above; placeholders are not a chosen vendor):
+# asr:
+#   enabled: false
+#   protocol: openai_compatible
+#   operation: audio_transcriptions
+#   provider: your_vendor
+#   model: your-audio-model
+#   base_url: https://example.invalid/v1
+#   key_env: YOUR_VENDOR_API_KEY
+#   timeout_seconds: 60
+#   max_requests: 100
+#   max_cost_usd: 1.0
+# Explicit per-run authorization is separately required; never store a key value here.

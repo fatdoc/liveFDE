@@ -1,0 +1,21 @@
+# Synthetic integration fixture only; rejected in production. Not real ASR.
+schema_version: 1
+revision: synthetic-fixture-v1
+media:
+  segment_seconds: 300
+  ffmpeg_timeout_seconds: 600
+  ffprobe_timeout_seconds: 30
+  sample_rate: 16000
+  channels: 1
+  max_duration_seconds: 14400
+providers:
+  asr:
+    enabled: true
+    protocol: offline_fixture
+    provider: synthetic
+    model: fixture-v1
+    timeout_seconds: 60
+    max_requests: 100
+    max_cost_usd: 0.0
+  text: {enabled: false, protocol: disabled}
+  vision: {enabled: false, protocol: disabled}

@@ -9,7 +9,7 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-002 | ENG-01 | done | 独立审查18e721f和PM核对通过，集成19fede3；PG/原生MQ真实验证 |
 | LIVE-003 | ARC-01 | done | 独立审查 b7d4efa、PM核对通过，集成26aaf4a；17正例/15负例 |
 | LIVE-004 | ARC/BE | done | 独立Review和PM最终验收通过；集成a9a15d2；32真实测试/0skip，详见reports/LIVE-004 |
-| LIVE-005 | BE-01 | backlog | 004 |
+| LIVE-005 | BE-01 | in_progress | 004已done；用户授权，独立BE/ENG/QA，资源见access/RESOURCE-LOCKS.md |
 | LIVE-006 | AI-01 | backlog | 002/003 |
 | LIVE-007～014 | 见计划 | backlog | docs/05 |
 | LIVE-015～017 | 见计划 | backlog | M5 |

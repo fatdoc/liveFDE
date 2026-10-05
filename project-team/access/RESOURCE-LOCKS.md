@@ -25,3 +25,12 @@
 004统筹追加精确范围：.github/workflows/checks.yml（真实PG测试不允许skip）、scripts/checks/{live004_smoke,backend_integration_tests,export_openapi}.py、repository.py的004scope/材料fixture条目、docs/contracts实际OpenAPI与范围清单；均由ARC写，qa_live002独立审查。最终文档状态收尾可更新AGENTS/README/docs索引/本轮卡和报告。
 
 LIVE-004收尾：业务代码集成a9a15d2，独立QA与PM验收通过；各作者写锁和QA数据库使用锁已释放，worktree/数据库只读保留作为审计证据。ARC在收尾文档提交后释放main index本轮独占；下轮需重新登记，不自动启动任务或复用数据库。5188与15440保留，8194测试进程已退出。
+
+## LIVE-005 轮次
+- base8cc9ea5，用户经PM授权任务队列与失败恢复，不包含006/前端/付费调用。
+- BE-01 /root/eng_live002：.worktrees/live-005-be，feat/LIVE-005-jobs；jobs/workers/0004_jobs迁移/tests jobs及母卡/change.md。
+- ENG-01 /root/be_live004a：.worktrees/live-005-eng，chore/LIVE-005-environment；infra/compose.live005.yml、scripts/checks/live005_environment.py及测试、docs/operations/live-005.md、reports/LIVE-005/environment.md。
+- ARC-01：main串行集成；core/config.py、main.py、migrations/env.py、tests/test_job_config.py、scripts/checks/{repository,backend_integration_tests,live005_smoke,live005_scenarios}.py、docs/contracts、operations/backend-foundation.md、STATUS及本表、reports/LIVE-005收尾。
+- 独立QA /root/qa_live002：指定SHA只读审查，runtime/live-005下记录与测试；不批准自己的代码。
+- PG15450/project live-fde-005；MQ5675/25675/node live005@localhost；runtime/live-005/{be,qa,integration,qa_identity}.env隔离DB/role/vhost/storage。API烟测8195。旧5188/5432/6379/15432/15440不动。
+- 不把合成任务处理器当视频分析；006与后续仍backlog。任务/索引/运行资源本轮结束后显式释放。

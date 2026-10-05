@@ -38,3 +38,16 @@ LIVE-004收尾：业务代码集成a9a15d2，独立QA与PM验收通过；各作�
 LIVE-005统筹补充测试入口守卫：scripts/checks/test_backend_integration_tests.py由ARC编写，QA独立审查；pytest启动前同时限定PG与MQ/vhost，当前本地整套仅允许live-005/qa.env，CI仍使用独立live002端点，不允许新005套件迁移旧004库。
 
 LIVE-005收尾：业务与统筹集成8a34b5f独立QA/PM验收通过；BE/ENG/QA运行锁已交还，ARC完成纯文档提交后释放本轮main index锁。8个worktree保留只读审计；本轮PG15450、MQ5675及数据保留，API8195、worker/handler已退出。下轮重新登记资源，不自动启动006或复用其他库。
+
+## LIVE-006 轮次（base43dc947）
+- 用户授权抽音频/带时间戳转写；YAML为配置源，不默认vendor，不真实联网或收费。
+- MEDIA /root/eng_live002：.worktrees/live-006-media，feat/LIVE-006-media；integrations/{media,asr}、test_media/test_asr、fixtures小JSON、docs/ai/media-asr.md、本卡/change.md。
+- CFG /root/be_live004a：.worktrees/live-006-config，feat/LIVE-006-yaml；core/provider_config.py、pyproject/uv.lock、test_provider_config、infra/providers*.example.yaml、docs/ai/provider-configuration.md、config报告。
+- ARC：main统筹，scripts/checks/{live006_environment,live006_smoke,test_live006_environment,repository}.py、infra/compose.live006.yml、docs/ai/{banana-reference,live006-acceptance}.md、实际范围/STATUS/资源及本轮报告。独立QA /root/qa_live002审查代码和实际产物，原作者不自批。
+- 006本地任务测试PG15460/live-fde-006，runtime/live-006；live006主验收库/role，ARC与QA顺序交接，禁止并跑。媒体/config作者测试不需要DB。旧005 DB/MQ不动；006使用同005 runner本地执行，消息投递沿用005既有实现不重复宣称本轮MQ验收。所有生成WAV/视频/日志均在runtime/live-006，Git只放代码/小型fixture/报告。
+
+006接线分派：BE /root/be_live004a 在 .worktrees/live-006-jobs（feat/LIVE-006-jobs）独占 workers/handlers.py、workers/media_*.py、tests/test_media_jobs.py、docs/ai/media-jobs.md；CFG完成后转入，不与ARC并写。ARC保留环境/烟测/主checkout串行集成。
+
+接线实际文件：workers/media_{jobs,artifacts,calls,operator}.py及handlers.py、test_media_jobs.py、docs/ai/media-jobs.md。BE完成802dfe8后交还15460锁；ARC开始串行集成烟测，QA待交接后独立运行。
+
+006回归隔离：同一专用PG15460内每次建立live006_suite_<UUID>独立数据库（owner live006），核验current_database/current_user、连接不含query；应用/worker沿用数据库名。原live006烟测与失败试验schema保留，不DROP或修改已有数据。目标名随每次target.json/JUnit登记。先前search_path方案被core.statement_timeout连接options覆盖已弃用，失败证据保留。

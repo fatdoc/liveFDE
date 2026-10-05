@@ -1,6 +1,6 @@
 # LIVE-005 本地变更单
 
-状态：ready_for_review；作者 BE-01（任务 /root/eng_live002），独立 QA /root/qa_live002，集成负责人 ARC-01。作者不作最终批准。
+作者交接时状态：ready_for_review（最终独立验收与done记录见integration.md及final-review.md）；作者 BE-01（任务 /root/eng_live002），独立 QA /root/qa_live002，集成负责人 ARC-01。作者不作最终批准。
 
 ## 基线与范围
 

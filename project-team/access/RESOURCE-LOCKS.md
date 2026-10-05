@@ -36,3 +36,5 @@ LIVE-004收尾：业务代码集成a9a15d2，独立QA与PM验收通过；各作�
 - 不把合成任务处理器当视频分析；006与后续仍backlog。任务/索引/运行资源本轮结束后显式释放。
 
 LIVE-005统筹补充测试入口守卫：scripts/checks/test_backend_integration_tests.py由ARC编写，QA独立审查；pytest启动前同时限定PG与MQ/vhost，当前本地整套仅允许live-005/qa.env，CI仍使用独立live002端点，不允许新005套件迁移旧004库。
+
+LIVE-005收尾：业务与统筹集成8a34b5f独立QA/PM验收通过；BE/ENG/QA运行锁已交还，ARC完成纯文档提交后释放本轮main index锁。8个worktree保留只读审计；本轮PG15450、MQ5675及数据保留，API8195、worker/handler已退出。下轮重新登记资源，不自动启动006或复用其他库。

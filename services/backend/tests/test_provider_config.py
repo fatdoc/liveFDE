@@ -131,6 +131,7 @@ def remote_data():
             "asr": {
                 "enabled": True,
                 "protocol": "openai_compatible",
+                "operation": "audio_transcriptions",
                 "provider": "example",
                 "model": "example-model",
                 "base_url": "https://example.invalid/v1",
@@ -142,7 +143,7 @@ def remote_data():
     }
 
 
-def test_real_protocol_is_declaration_only_no_secret_resolution_or_fallback():
+def test_real_protocol_requires_explicit_authorization_before_secret_resolution():
     class ForbiddenEnvironment(dict):
         def get(self, key, default=None):
             raise AssertionError("must not resolve any real credential")
@@ -150,7 +151,7 @@ def test_real_protocol_is_declaration_only_no_secret_resolution_or_fallback():
     config = ProviderConfig.model_validate(remote_data())
     captured = snapshot(config)
     assert "EXAMPLE_API_KEY" in captured.model_dump_json()
-    with pytest.raises(ProviderConfigError, match="provider_protocol_unsupported"):
+    with pytest.raises(ProviderConfigError, match="network_not_authorized"):
         resolve_execution(
             captured, "asr", config, environment="production", environ=ForbiddenEnvironment()
         )
@@ -190,3 +191,66 @@ def test_snapshot_copy_cannot_bypass_execution_integrity():
 def test_boolean_not_accepted_as_channel_count(tmp_path):
     with pytest.raises(ProviderConfigError):
         load_text(tmp_path, "revision: x\nmedia: {channels: true}")
+
+
+def test_authorized_asr_resolves_secret_only_in_memory():
+    config = ProviderConfig.model_validate(remote_data())
+    captured = snapshot(config)
+    route = resolve_execution(
+        captured,
+        "asr",
+        config,
+        environment="production",
+        allow_network=True,
+        environ={"EXAMPLE_API_KEY": "synthetic-secret"},
+    )
+    assert route.synthetic is False
+    assert route.api_key.get_secret_value() == "synthetic-secret"
+    assert "synthetic-secret" not in repr(route)
+    assert "synthetic-secret" not in route.model_dump_json()
+    assert "synthetic-secret" not in captured.model_dump_json()
+    with pytest.raises(ProviderConfigError, match="credential_unavailable") as exc:
+        resolve_execution(
+            captured,
+            "asr",
+            config,
+            environment="production",
+            allow_network=True,
+            environ={"EXAMPLE_API_KEY": "secret\ninvalid"},
+        )
+    assert "secret" not in str(exc.value)
+
+
+def test_inactive_profile_retained_without_activation():
+    data = remote_data()
+    data["providers"]["asr"]["enabled"] = False
+    config = ProviderConfig.model_validate(data)
+    assert config.providers.asr.model == "example-model"
+    with pytest.raises(ProviderConfigError, match="provider_unconfigured"):
+        resolve_execution(
+            snapshot(config),
+            "asr",
+            config,
+            environment="production",
+            allow_network=True,
+            environ={"EXAMPLE_API_KEY": "test-only"},
+        )
+
+
+def test_audio_operation_required_and_no_text_fallback():
+    data = remote_data()
+    data["providers"]["asr"].pop("operation")
+    with pytest.raises(ValidationError):
+        ProviderConfig.model_validate(data)
+    data = remote_data()
+    data["providers"]["text"] = data["providers"].pop("asr")
+    config = ProviderConfig.model_validate(data)
+    with pytest.raises(ProviderConfigError, match="provider_protocol_unsupported"):
+        resolve_execution(
+            snapshot(config),
+            "text",
+            config,
+            environment="production",
+            allow_network=True,
+            environ={"EXAMPLE_API_KEY": "test-only"},
+        )

@@ -10,7 +10,7 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-003 | ARC-01 | done | 独立审查 b7d4efa、PM核对通过，集成26aaf4a；17正例/15负例 |
 | LIVE-004 | ARC/BE | done | 独立Review和PM最终验收通过；集成a9a15d2；32真实测试/0skip，详见reports/LIVE-004 |
 | LIVE-005 | BE-01 | done | 集成8a34b5f；独立QA及PM最终验收通过；52真实测试无skip、11故障场景、20工程守卫 |
-| LIVE-006 | AI/CFG/BE/ARC | in_review | 配置/媒体/接线各独立Review通过，126后端测试0skip、28工程检查；最终组合审查中；0真实模型调用 |
+| LIVE-006 | AI/CFG/BE/ARC | done | 集成649eb07；独立QA与PM最终验收通过；126后端测试0skip、28工程检查；0真实模型调用 |
 | LIVE-007～014 | 见计划 | backlog | docs/05 |
 | LIVE-015～017 | 见计划 | backlog | M5 |
 
@@ -22,3 +22,5 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 LIVE-004环境：PG15440保留；8194仅烟测已退出。原5188 Demo仍未接后端。原LIVE-002 PG15432保留，未用于本轮业务迁移。各QA迁移基线分库，未清空/降级已有库。
 
 LIVE-005结束：PG15450与MQ5675保留数据及运行环境；API8195和本轮worker/handler均退出，开发副本保留审计。前端仍Demo；随后用户经PM另行授权LIVE-006（见本轮记录）。
+
+LIVE-006结束：代码649eb0759d1adf397e24f09b9ba458e612989939，独立批准树a994b27d04d219301d27ac674f909f09b1ee56d2。PG15460/live006和本轮独立回归库/运行实物保留；所有烟测worker/FFmpeg已退出，各岗位写锁与QA数据库锁已交还。纯文档提交后释放main index锁；LIVE-007及后续仍backlog，不自动启动。前端仍Demo，真实供应商调用须另行确认配置与预算。

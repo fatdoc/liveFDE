@@ -1,6 +1,6 @@
 # LIVE-006 集成验证
 
-统筹 `/root`；基线 `43dc947904525abcfe2b81aa28235216a0ae281b`。配置作者519e313、媒体作者1ce1b466be333598a8f37324c97f5bd1d916d953、接线作者802dfe8fe3597f5820cced34f3a4e1c5e73db6b3各独立批准；详见同目录 config-review/media-review/jobs-review。配置已集成5fa4469，环境eb82bc0；最终组合待QA绑定树、提交后记录，不提前宣称整轮完成。
+统筹 `/root`；基线 `43dc947904525abcfe2b81aa28235216a0ae281b`。配置作者519e313、媒体作者1ce1b466be333598a8f37324c97f5bd1d916d953、接线作者802dfe8fe3597f5820cced34f3a4e1c5e73db6b3各独立批准；详见同目录 config-review/media-review/jobs-review。配置已集成5fa4469，环境eb82bc0；最终组合代码649eb0759d1adf397e24f09b9ba458e612989939，独立批准树a994b27d04d219301d27ac674f909f09b1ee56d2与提交一致，PM最终验收通过。最终报告见final-review.md。
 
 ## 实际运行
 
@@ -25,3 +25,5 @@
 0真实外部模型请求/费用；离线fixture和MockTransport分开标记。将来确认兼容供应商、密钥env和样本/预算后，操作员显式授权才执行真实请求。金额为声明上限，没有价格时不声称精确费用控制。未做视觉、报告、资产审核、前端接入或平台抓取。
 
 未新增业务迁移/HTTP接口，无remote、未建远程PR或部署。回退需串行撤销006配置/媒体/注册接线提交，保留已有004/005schema及运行产物，不能靠删数据库回退。新任务停止派发后再回退，不删除已知/未知调用记录。全部工作副本仍保留供审计。
+
+QA最终亲跑新的正式入口烟测 `runtime/live-006/integration/522d497025914348afdc128797a62e3b/result.json` 并独立核验实物；专属回归库只读核对见runtime/live-006/qa-final-db.json。PM在PM-01任务中明确批准本轮限定范围，不授权真实模型调用或启动后续功能。

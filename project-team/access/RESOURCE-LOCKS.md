@@ -51,3 +51,5 @@ LIVE-005收尾：业务与统筹集成8a34b5f独立QA/PM验收通过；BE/ENG/QA
 接线实际文件：workers/media_{jobs,artifacts,calls,operator}.py及handlers.py、test_media_jobs.py、docs/ai/media-jobs.md。BE完成802dfe8后交还15460锁；ARC开始串行集成烟测，QA待交接后独立运行。
 
 006回归隔离：同一专用PG15460内每次建立live006_suite_<UUID>独立数据库（owner live006），核验current_database/current_user、连接不含query；应用/worker沿用数据库名。原live006烟测与失败试验schema保留，不DROP或修改已有数据。目标名随每次target.json/JUnit登记。先前search_path方案被core.statement_timeout连接options覆盖已弃用，失败证据保留。
+
+LIVE-006收尾：代码649eb07独立QA与PM最终验收通过；CFG/MEDIA/JOBS/QA均已交还写锁和15460数据库使用权，3个本轮worktree只读保留，PG15460及所有本轮实物/回归库保留。无本轮worker/FFmpeg常驻；ARC完成纯文档收尾提交后释放main index独占。下一轮需重新登记资源，不自动启动007或真实模型调用。

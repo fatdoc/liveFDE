@@ -22,9 +22,10 @@ python3 scripts/checks/live004_environment.py
 | BE 场次 | live004_4b | runtime/live-004/4b.env | runtime/live-004/storage-4b |
 | BE 材料 | live004_4c | runtime/live-004/4c.env | runtime/live-004/storage-4c |
 | QA 独立复验 | live004_qa | runtime/live-004/qa.env | runtime/live-004/storage-qa |
+| QA 身份基线复审 | live004_qa_identity | runtime/live-004/qa_identity.env | runtime/live-004/storage-qa_identity |
 | ARC 集成 | live004_integration | runtime/live-004/integration.env | runtime/live-004/storage-integration |
 
-每个 env 提供 `LIVE_DATABASE_URL`、`LIVE_BROKER_URL`、`LIVE_STORAGE_ROOT`。各数据库撤销 PUBLIC CONNECT，已实测自身可连接、其他任务库拒绝连接。各 owner 只迁移自己分配的数据库。
+每个 env 提供 `LIVE_DATABASE_URL`、`LIVE_BROKER_URL`、`LIVE_STORAGE_ROOT`。各数据库撤销 PUBLIC CONNECT，已实测自身可连接、其他任务库拒绝连接。各 owner 只迁移自己分配的数据库。QA 同样按迁移基线隔离：`qa_identity` 保留在身份 A 基线，原 `qa` 可继续 B/C 增量；不能让旧分支连接已升级到未来 revision 的库，也不能降级或删库制造兼容。
 Broker 使用本机不可用的端口 1 占位，**本轮没有启动或验证队列**；需要依赖齐全的 `/ready` 不应据此宣称成功。不得用现存 RabbitMQ 凭证替代占位而伪称本轮隔离。
 加载 env 使用 dotenv 或逐行切分首个 `=` 写入进程环境，路径有空格，不可直接 `source` 该 dotenv 文件。不要把 URL/密码打印到日志、报告或命令行。
 

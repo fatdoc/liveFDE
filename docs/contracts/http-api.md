@@ -1,5 +1,5 @@
 # HTTP API 设计 draft-1
-所有业务路由 /api/v1，未实现。仅 LIVE-002 工程 /health/live、/health/ready 另列实际实现；不把下表当已部署能力。
+业务路由 /api/v1；本文件是完整设计。LIVE-004已实现身份/场次/材料，具体边界以implementation-status.md及openapi.json为准；其余下表内容尚未实现。工程端点 /health/live、/health/ready另列。
 
 ## 通用协议
 JSON UTF-8；UUID；RFC3339 UTC存储；定位整数毫秒/未知null。列表 {items,total,limit,offset}，limit默认20最大100，确定性排序 created_at desc,id desc。
@@ -85,3 +85,5 @@ POST /prep-plans/{id}/exports：同报告异步导出模式，固定plan_revisio
 旧计划读取保留原asset_revision_ids及引用快照，另附 current_status/withdrawal_warning；撤回不会抹掉旧稿，但禁止将其新加入计划或重新确认就绪。
 
 备播时间与场次采用相同精度规则：仅选日期时scheduled_at=null，不补午夜；有时间时必须与scheduled_local_date和Asia/Shanghai一致，计划日期不是实际开播证据。
+
+LIVE-004补充：GET /sessions/{id}/materials提供已关联材料分页列表，支持刷新/重启后找回，先做场次工作区授权；HEAD content忽略Range，返回完整metadata200；过期上传410。完整实现细节见implementation-status.md。

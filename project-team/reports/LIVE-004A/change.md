@@ -12,7 +12,7 @@ CLI: 在 services/backend 下使用 `uv run python -m live_review.modules.identi
 
 依赖来源：argon2-cffi==25.1.0 官方 https://argon2-cffi.readthedocs.io/en/stable/howto.html ，pypdf==6.19.0 官方 PyPI https://pypi.org/project/pypdf/ （材料模块请求，使用由 LIVE-004C 实现）。uv.lock 固定完整解析结果。
 
-限制：独立初审发现非ASCII CSRF错误500、兜底500缺响应请求ID两项P2，均已修复并新增真实请求回归，待最终head复审；前端接入、RBAC、多客户 SaaS、密码重置、会话/限流历史清理不在本任务。代理部署需另审 origin 与客户端地址方案（当前不信任任何 forwarding header，代理下按代理 IP 共享限流）。无远程 CI、无上线。
+限制：独立初审发现非ASCII CSRF错误500、兜底500缺响应请求ID两项P2，均已修复并新增真实请求回归，最终996b4f4已独立复审批准；前端接入、RBAC、多客户 SaaS、密码重置、会话/限流历史清理不在本任务。代理部署需另审 origin 与客户端地址方案（当前不信任任何 forwarding header，代理下按代理 IP 共享限流）。无远程 CI、无上线。
 
 回滚：停 API，先撤销后续依赖迁移再降级 0001（会删除身份数据，仅空开发库适用）；已有真实客户身份库只前向修复。凭证位于 runtime，不入 Git。
 

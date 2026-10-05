@@ -69,10 +69,12 @@ SCOPES = {
         "services/backend/src/live_review/integrations/storage/",
         "services/backend/migrations/versions/0003_materials.py",
         "services/backend/tests/test_materials.py",
+        "services/backend/tests/materials_fixture.py",
         "project-team/tasks/LIVE-004C.md",
         "project-team/reports/LIVE-004C/",
     ],
     "LIVE-004": [
+        ".github/workflows/checks.yml",
         "scripts/checks/",
         "infra/",
         "docs/contracts/",

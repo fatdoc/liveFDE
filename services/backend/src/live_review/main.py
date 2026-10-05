@@ -8,6 +8,7 @@ from live_review.core.database import build_engine
 from live_review.core.errors import install_errors
 from live_review.core.health import dependencies_ready
 from live_review.modules.identity.router import router as identity_router
+from live_review.modules.materials.router import router as materials_router
 from live_review.modules.sessions.router import router as sessions_router
 from live_review.modules.streamers.router import router as streamers_router
 
@@ -26,6 +27,7 @@ install_errors(app)
 app.include_router(identity_router)
 app.include_router(streamers_router)
 app.include_router(sessions_router)
+app.include_router(materials_router, prefix="/api/v1")
 
 
 @app.get("/health/live")

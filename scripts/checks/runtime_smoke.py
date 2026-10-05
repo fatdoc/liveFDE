@@ -21,7 +21,12 @@ def main():
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     env = os.environ.copy()
-    for key in ("COMPOSE_PROJECT_NAME", "COMPOSE_FILE", "DOCKER_HOST", "DOCKER_CONTEXT"):
+    for key in (
+        "COMPOSE_PROJECT_NAME",
+        "COMPOSE_FILE",
+        "DOCKER_HOST",
+        "DOCKER_CONTEXT",
+    ):
         if env.get(key):
             raise SystemExit(f"Refusing inherited {key}")
     for line in args.env_file.read_text().splitlines():
@@ -54,7 +59,12 @@ def main():
         expected = env["PG_PASSWORD" if key == "LIVE_DATABASE_URL" else "MQ_PASSWORD"]
         if url.password != expected:
             raise SystemExit(f"Password mismatch for {key}")
-    for key in ("COMPOSE_PROJECT_NAME", "COMPOSE_FILE", "DOCKER_HOST", "DOCKER_CONTEXT"):
+    for key in (
+        "COMPOSE_PROJECT_NAME",
+        "COMPOSE_FILE",
+        "DOCKER_HOST",
+        "DOCKER_CONTEXT",
+    ):
         if env.get(key):
             raise SystemExit(f"Refusing override {key}")
     endpoint = subprocess.check_output(
@@ -119,7 +129,9 @@ def main():
         deadline = time.monotonic() + 35
         while time.monotonic() < deadline:
             try:
-                with urllib.request.urlopen("http://127.0.0.1:8188" + path, timeout=10) as response:
+                with urllib.request.urlopen(
+                    "http://127.0.0.1:8188" + path, timeout=10
+                ) as response:
                     code, body = response.status, json.load(response)
             except urllib.error.HTTPError as exc:
                 code, body = exc.code, json.load(exc)
@@ -173,7 +185,9 @@ def main():
         )
         config.chmod(0o600)
         (base / "env.conf").touch()
-        native_env = {k: v for k, v in env.items() if not k.startswith(("RABBITMQ_", "ERL_"))} | {
+        native_env = {
+            k: v for k, v in env.items() if not k.startswith(("RABBITMQ_", "ERL_"))
+        } | {
             "RABBITMQ_NODENAME": "live002@localhost",
             "RABBITMQ_NODE_PORT": "5673",
             "RABBITMQ_DIST_PORT": "25673",
@@ -211,7 +225,12 @@ def main():
         else:
             run([*compose, "up", "-d", "--wait"])
         run([str(python), "-m", "alembic", "upgrade", "head"])
-        results.append({"alembic": "upgrade head successful; no business revisions"})
+        results.append(
+            {
+                "alembic": "upgrade head successful",
+                "heads": run([str(python), "-m", "alembic", "heads"]).splitlines(),
+            }
+        )
         api_args = [
             "-m",
             "uvicorn",
@@ -238,7 +257,9 @@ def main():
         time.sleep(3)
         worker_ping()
         results.append(
-            json.loads(run([str(python), "-m", "live_review.workers.dispatcher", "--check"]))
+            json.loads(
+                run([str(python), "-m", "live_review.workers.dispatcher", "--check"])
+            )
         )
         stop(api)
         api = start(api_args, "api-restart.log")
@@ -253,7 +274,9 @@ def main():
             else:
                 run([*compose, "stop", service])
             check("/health/live", 200)
-            check("/health/ready", 503, "database" if service == "postgres" else "broker")
+            check(
+                "/health/ready", 503, "database" if service == "postgres" else "broker"
+            )
             if service == "rabbitmq" and args.native_rabbit:
                 native_start()
             else:
@@ -264,7 +287,13 @@ def main():
     finally:
         # Restore only project-owned dependencies; preserve all bind-mounted data.
         subprocess.run(
-            [*compose, "up", "-d", "--wait", *(["postgres"] if args.native_rabbit else [])],
+            [
+                *compose,
+                "up",
+                "-d",
+                "--wait",
+                *(["postgres"] if args.native_rabbit else []),
+            ],
             env=env,
             capture_output=True,
             check=False,

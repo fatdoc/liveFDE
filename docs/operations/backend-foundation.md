@@ -1,6 +1,6 @@
 # LIVE-002 工程环境
 
-范围：可启动基础包、真实 PG/RabbitMQ 开发依赖、健康探针、Celery 进程、dispatcher 预检及 Alembic 入口。没有业务 API、任务持久化/outbox、登录、模型或正式 schema。
+范围：可启动基础包、真实 PG/RabbitMQ 开发依赖、健康探针、Celery 进程、dispatcher 预检及 Alembic 入口。本文件保留LIVE-002工程启动范围；LIVE-004已增加身份/场次/材料，实际业务范围见../contracts/implementation-status.md，outbox/模型仍未实现。
 
 ## 独立启动
 从产品 Git 根执行，Python 3.11、uv 0.9.26、Node 22、Docker Compose v2：
@@ -31,7 +31,7 @@ uv run alembic upgrade head
 
 Dispatcher 当前仅依赖预检，明确退出，不声称已经常驻分发。Celery 没有业务任务和结果后端，后续结果由业务 PostgreSQL 保存。健康 readiness 检查数据库和 broker，不代表 worker/模型/业务链路已就绪；worker 用 inspect ping 单独检查。公开响应不返回 DSN/异常文本。
 
-Alembic 暂无 revision，`upgrade head` 验证连接和迁移基础，BE 后续创建唯一首修订；不能将空迁移作为业务表已经交付。
+LIVE-002基线时Alembic为空；LIVE-004后 `upgrade head` 会创建身份/场次/材料业务表。只对登记的隔离开发库执行，当前唯一head与验收见LIVE-004报告；不得将旧空迁移说明用于判断当前数据库。
 
 ## 本地门禁
 ```sh

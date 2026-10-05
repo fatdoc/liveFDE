@@ -1,5 +1,5 @@
 # LIVE-004C 材料上传、关联与授权读取
-- owner BE-02（本轮执行子任务 /root/eng_live002）；reviewer 独立QA/ARC；状态 review。
+- owner BE-02（本轮执行子任务 /root/eng_live002）；reviewer 独立QA/ARC；状态 verified。
 - base da128af；branch feat/LIVE-004C-materials；工作副本 .worktrees/live-004c-be。
 - 独占 services/backend/src/live_review/modules/materials/、integrations/storage/、migrations/versions/0003_materials.py、tests/test_materials.py、tests/materials_fixture.py、本卡、reports/LIVE-004C/。
 - 共享依赖A身份996b4f4与B场次d76009e已按ARC授权引入，仅依赖并非批准；B场次0002已引入，C0003串行。不改main/core/config/锁，由ARC接线。
@@ -8,3 +8,5 @@
 - 限制：无远程URL抓取、无ASR、无上传续传、无自动清理原材料；租约失效以token隔离，旧任务不覆盖新blob。
 - 回滚：代码revert，迁移downgrade仅在该任务测试DB显式验证；禁止清用户卷/原材料。
 - 交付：提交SHA及独立结论由后续报告记录，不自批/不合并main。
+
+- 本轮集成：A f34319f、B e1c4cb8、C2541817及修复213870d；真实全套32通过/0skip，综合HTTP与增量迁移通过。独立review见对应reports，待PM最终核对。

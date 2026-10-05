@@ -2,7 +2,7 @@
 生效：2026-10-05，用户最新决定优先于旧 CPB/模板说明。
 - 必读 docs/README.md、04-directory-contract.md、09-git-rules.md 和当前任务卡。
 - Python/FastAPI + React/TypeScript + PostgreSQL，独立部署，不连接原 CPB 服务、账号或数据库。
-- 唯一新后端 services/backend/（已建工程骨架，业务后续实现）。现有前端 frontend/web/，已由 prototype 迁入；不新做第二套 UI。
+- 唯一新后端 services/backend/（已实现工程基础及身份/场次/材料，其他业务后续实现）。现有前端 frontend/web/，已由 prototype 迁入；不新做第二套 UI。
 - 旧 backend/、ai-scoring/、frontend/{admin,user,teacher}/ 等 CPB 副本已移至工作区 archives/cpb-reference-20261005，只读参考；原 CPB 与客户资料只读。
 - 一任务、一 owner、一分支、一 worktree。没有首次提交前不启动并行 worktree。先完成 LIVE-001。
 - 只修改任务允许路径；目录、契约、依赖锁、迁移 head 由统筹协调。明确路径 git add，检查 staged diff，不提交他人成果。

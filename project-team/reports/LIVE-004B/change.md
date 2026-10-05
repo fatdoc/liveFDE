@@ -1,5 +1,5 @@
 # LIVE-004B 本地变更单
-作者ARC-01；依赖base1f4595e；review待独立QA绑定head，无远程PR。
+作者ARC-01；依赖base1f4595e；qa_live003批准d76009e，身份同步后的组合测试通过，无远程PR。
 
 新增PG持久主播/场次模块，以workspace复合FK防跨工作区关联。日期精度保持真实：date只存日期，分钟/秒必须带时区、匹配上海日期与精度。时长null、处理pending，不提供假分析。修订行锁检查expected_revision，同版本并发仅一次成功。
 

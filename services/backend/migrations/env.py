@@ -2,8 +2,8 @@ from alembic import context
 
 from live_review.core.config import get_settings
 from live_review.core.database import Base, build_engine
+from live_review.modules.identity import models  # noqa: F401
 
-# No business tables/revision in LIVE-002. BE adds the first coordinated revision.
 metadata = Base.metadata
 if context.is_offline_mode():
     context.configure(

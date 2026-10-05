@@ -321,7 +321,8 @@ def test_new_api_process_reads_original_bytes(materials):
     command = (
         "from live_review.main import app; "
         "from live_review.modules.materials.router import router; "
-        "app.include_router(router,prefix='/api/v1'); "
+        "app.include_router(router,prefix='/api/v1') "
+        "if '/api/v1/materials/uploads' not in app.openapi()['paths'] else None; "
         "import uvicorn,sys; uvicorn.run(app,host='127.0.0.1',port=int(sys.argv[1]))"
     )
     pids = []
@@ -412,3 +413,25 @@ def test_concurrent_finalizers_deduplicate_in_database(materials):
     with Session(app.state.engine) as db:
         blobs = db.scalars(select(Blob).where(Blob.workspace_id == admin.workspace_id)).all()
         assert len(blobs) == 1
+
+
+def test_openapi_operation_ids_are_unique(materials):
+    client, *_ = materials
+    import warnings
+
+    app.openapi_schema = None
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", message="Duplicate Operation ID.*", category=UserWarning)
+        response = client.get("/openapi.json")
+    assert response.status_code == 200, response.text
+    schema = response.json()
+    operations = [
+        operation["operationId"]
+        for path in schema["paths"].values()
+        for method, operation in path.items()
+        if method in {"get", "post", "put", "patch", "delete", "head", "options"}
+    ]
+    assert len(operations) == len(set(operations))
+    content = schema["paths"]["/api/v1/materials/{material_id}/content"]
+    assert content["get"]["operationId"] == "get_material_content"
+    assert content["head"]["operationId"] == "head_material_content"

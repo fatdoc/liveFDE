@@ -39,3 +39,6 @@ PDF解析有20MiB上限；生产高并发/恶意资源消耗测试、独立解�
 
 ## 独立评审修正
 QA指出初版fixture直接写入platform=manual，超出正式API枚举。已将专用fixture统一为other，并在每个测试初始化后通过正式GET /api/v1/sessions/{id}验证200且platform=other；不再仅依赖ORM插入成功作为场次有效证据。该修正仅涉及测试/报告，后端行为未改变。修正后完整15项真实PG材料测试重新通过，Ruff通过。
+
+## 集成OpenAPI修正
+将材料content的GET/HEAD分别注册并显式指定get_material_content/head_material_content，避免同一api_route生成重复operationId。新增全量OpenAPI ID唯一性测试，强制重建schema并把重复ID警告当失败。修正fixture对当前FastAPI惰性IncludedRouter的检测：使用公开OpenAPI paths判断模块是否已组合，避免反复include；真实进程重启fixture也兼容正式main已经接线。完整16项真实PG/HTTP/进程重启回归通过（19.20s），仅保留既有Starlette/httpx弃用警告，没有Operation ID警告；Ruff通过。

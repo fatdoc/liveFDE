@@ -11,4 +11,10 @@ celery_app.conf.update(
     task_ignore_result=True,
     broker_connection_retry_on_startup=True,
     worker_prefetch_multiplier=1,
+    worker_pool="solo",
+    imports=["live_review.workers.tasks"],
+    broker_transport_options={"confirm_publish": True},
+    task_acks_late=True,
+    task_reject_on_worker_lost=True,
+    task_default_delivery_mode="persistent",
 )

@@ -10,6 +10,10 @@ class HandlerUnavailable(Exception):
 
 
 def resolve(name, settings):
+    if name in {"media.extract", "media.asr"}:
+        from live_review.workers.media_jobs import run_stage
+
+        return lambda context: run_stage(context, settings, name)
     if settings.job_test_handlers and settings.environment != "production":
         handlers = {
             "fixture.echo": echo,

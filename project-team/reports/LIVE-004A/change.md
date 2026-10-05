@@ -8,7 +8,7 @@ Base: da128af。Owner: /root/be_live004a，分支 feat/LIVE-004A-auth。
 
 CLI: 在 services/backend 下使用 `uv run python -m live_review.modules.identity.cli --username <name> --display-name <name> --workspace-name <name>`；密码交互 getpass（12–1024字符），自动化可 --password-stdin，禁止把密码放参数。生产设置 LIVE_ENVIRONMENT=production 与精确 HTTPS LIVE_TRUSTED_ORIGINS JSON 数组，Cookie Secure；开发明确非 Secure。
 
-自检：在 runtime/live-004/4a.env 指向的独立 PG 15440 执行真实迁移（首次空库和重复 upgrade），pytest 8 passed（5 identity + 3 existing health），Ruff pass。覆盖登录/旧cookie轮换失效/退出/过期/禁用/恶意Origin与Host/CSRF/安全错误/拒绝workspace注入/并发限流/真实CLI哈希。测试通过 LIVE_TEST_DATABASE_URL 显式启用；无该变量时集成用例 skip，不宣称通过。
+自检：在 runtime/live-004/4a.env 指向的独立 PG 15440 执行真实迁移（首次空库和重复 upgrade），pytest 10 passed（7 identity + 3 existing health），Ruff pass。覆盖登录/旧cookie轮换失效/退出/过期/禁用/恶意Origin与Host/CSRF/安全错误/拒绝workspace注入/并发限流/真实CLI哈希、两个独立workspace身份、token仅哈希落库和生产Secure配置。测试通过 LIVE_TEST_DATABASE_URL 显式启用；无该变量时集成用例 skip，不宣称通过。
 
 依赖来源：argon2-cffi==25.1.0 官方 https://argon2-cffi.readthedocs.io/en/stable/howto.html ，pypdf==6.19.0 官方 PyPI https://pypi.org/project/pypdf/ （材料模块请求，使用由 LIVE-004C 实现）。uv.lock 固定完整解析结果。
 

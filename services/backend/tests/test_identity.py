@@ -193,3 +193,54 @@ def test_bootstrap_cli(identity):
         assert admin.password_hash.startswith("$argon2id$")
         db.delete(admin)
         db.commit()
+
+
+def test_second_workspace_identity_and_production_cookie(identity):
+    client, username, _, workspace_id = identity
+    app.state.settings = app.state.settings.model_copy(update={"environment": "production"})
+    # TLS transport at proxy is explicit; configured trusted development origin stays for fixture.
+    response = login(client, username)
+    assert "Secure" in response.headers["set-cookie"]
+    cookie = client.cookies.get(COOKIE_NAME)
+    with Session(app.state.engine) as db:
+        stored = db.get(AuthSession, token_hash(cookie))
+        assert stored and stored.token_hash != cookie
+        second_workspace = Workspace(name="Another synthetic tenant")
+        db.add(second_workspace)
+        db.flush()
+        other = Admin(
+            workspace_id=second_workspace.id,
+            username="other-" + uuid4().hex,
+            display_name="Other",
+            password_hash=hasher.hash(PASSWORD),
+        )
+        db.add(other)
+        db.commit()
+        other_id, other_workspace_id, other_username = other.id, other.workspace_id, other.username
+    app.state.settings = app.state.settings.model_copy(update={"environment": "development"})
+    try:
+        with TestClient(app) as other_client:
+            other_response = login(other_client, other_username)
+            assert other_response.json()["user"]["workspace_id"] == str(other_workspace_id)
+            assert other_response.json()["user"]["workspace_id"] != str(workspace_id)
+            assert other_client.get("/api/v1/auth/me").json()["user"]["id"] == str(other_id)
+    finally:
+        with Session(app.state.engine) as db:
+            db.query(AuthSession).filter(AuthSession.admin_id == other_id).delete()
+            db.query(Admin).filter(Admin.id == other_id).delete()
+            db.query(Workspace).filter(Workspace.id == other_workspace_id).delete()
+            db.commit()
+
+
+def test_configuration_requires_secure_production_origins():
+    from pydantic import ValidationError
+
+    from live_review.core.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(
+            database_url="postgresql://unused",
+            broker_url="amqp://unused",
+            environment="production",
+            trusted_origins=["http://localhost:5188"],
+        )

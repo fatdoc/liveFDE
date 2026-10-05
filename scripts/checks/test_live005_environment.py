@@ -1,6 +1,7 @@
 """Resource guards must reject overrides before any Docker/container operation."""
 
 import os
+import socket
 import tempfile
 import unittest
 from pathlib import Path
@@ -131,6 +132,44 @@ class RabbitBoundaryTests(unittest.TestCase):
             for candidate in (target, link):
                 with self.assertRaisesRegex(SystemExit, "mode 600"):
                     environment.read_private(candidate)
+
+
+class PortLifecycleTests(unittest.TestCase):
+    def test_time_wait_does_not_prevent_rebinding_but_listener_is_rejected(self):
+        with socket.socket() as server:
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server.bind(("127.0.0.1", 0))
+            port = server.getsockname()[1]
+            server.listen()
+            self.assertFalse(environment.port_available(port))
+            with socket.create_connection(("127.0.0.1", port)) as client:
+                accepted, _ = server.accept()
+                accepted.close()  # server enters TIME_WAIT after receiving peer FIN
+                client.recv(1)
+        self.assertTrue(environment.port_available(port))
+
+    def test_shutdown_waits_for_process_and_both_ports(self):
+        with (
+            patch.object(environment, "owned_mq_pid", return_value=12345) as owned,
+            patch.object(environment, "run"),
+            patch.object(environment, "rabbit_environment", return_value={}),
+            patch.object(environment, "stopped_pid", side_effect=[False, True, True]),
+            patch.object(environment, "port_available", side_effect=[True, False, True, True]),
+            patch.object(environment.time, "sleep") as sleep,
+        ):
+            environment.mq_stop({}, {})
+            owned.assert_called_once()
+            self.assertEqual(sleep.call_count, 2)
+
+    def test_occupied_port_start_rejected_before_launch(self):
+        with (
+            patch.object(environment, "owned_mq_pid", return_value=None),
+            patch.object(environment, "port_available", return_value=False),
+            patch.object(environment.subprocess, "Popen") as launch,
+        ):
+            with self.assertRaisesRegex(SystemExit, "occupied MQ port"):
+                environment.mq_start({}, {})
+            launch.assert_not_called()
 
 
 if __name__ == "__main__":

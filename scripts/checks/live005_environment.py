@@ -303,6 +303,29 @@ def write_mq_config():
         temp.replace(path)
 
 
+def port_available(port):
+    # Match server rebinding semantics: TIME_WAIT is not a live listener.
+    # Do not set SO_REUSEPORT: another listener must still make this fail.
+    with socket.socket() as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+    return True
+
+
+def stopped_pid(pid, environment):
+    result = subprocess.run(
+        ["ps", "-p", str(pid), "-o", "stat="],
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode != 0 or result.stdout.strip().startswith("Z")
+
+
 def mq_start(environment, config):
     if owned_mq_pid(environment):
         run(
@@ -313,11 +336,8 @@ def mq_start(environment, config):
         print("MQ existing owned process healthy and retained")
         return
     for port in (5675, 25675):
-        with socket.socket() as probe:
-            try:
-                probe.bind(("127.0.0.1", port))
-            except OSError:
-                raise SystemExit(f"Refusing occupied MQ port {port}") from None
+        if not port_available(port):
+            raise SystemExit(f"Refusing occupied MQ port {port}")
     write_mq_config()
     child_environment = rabbit_environment(environment, config)
     with (MQ_BASE / "console.log").open("a") as log:
@@ -352,7 +372,8 @@ def mq_start(environment, config):
 
 
 def mq_stop(environment, config):
-    if not owned_mq_pid(environment):
+    pid = owned_mq_pid(environment)
+    if not pid:
         print("MQ owned process already stopped")
         return
     run(
@@ -361,8 +382,11 @@ def mq_stop(environment, config):
         timeout=45,
     )
     for _ in range(30):
-        if not owned_mq_pid(environment):
-            print("MQ owned node stopped; data retained")
+        # After authenticated shutdown, the PID file and opened runtime files can
+        # disappear before the process/listeners finish closing. Never reclassify
+        # this known process by its shrinking fd set and never send another kill.
+        if stopped_pid(pid, environment) and all(port_available(p) for p in (5675, 25675)):
+            print("MQ owned node stopped; listeners closed; data retained")
             return
         time.sleep(1)
     raise SystemExit("MQ stop incomplete; no forced termination attempted")

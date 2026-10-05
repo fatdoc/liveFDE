@@ -1,0 +1,584 @@
+{
+  "contract_version": "draft-1",
+  "notice": "Synthetic fixtures only, not API responses or real analysis",
+  "source_segments": [
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "source_revision_id": "00000000-0000-4000-8000-000000000003",
+      "text": "先确认具体问题，再安排下一步。",
+      "start_ms": 12000,
+      "end_ms": 16000
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "source_revision_id": "00000000-0000-4000-8000-000000000003",
+      "text": "先确认具体问题，再安排下一步。",
+      "start_ms": null,
+      "end_ms": null
+    }
+  ],
+  "valid": [
+    {
+      "name": "known_transcript_evidence",
+      "fixture": true,
+      "schema": "Evidence",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "kind": "transcript_quote",
+        "source_id": "00000000-0000-4000-8000-000000000002",
+        "source_revision_id": "00000000-0000-4000-8000-000000000003",
+        "segment_id": "00000000-0000-4000-8000-000000000004",
+        "frame_id": null,
+        "quote": "先确认具体问题，再安排下一步。",
+        "start_ms": 12000,
+        "end_ms": 16000,
+        "page": null,
+        "seekable": true
+      }
+    },
+    {
+      "name": "unknown_time_text_only",
+      "fixture": true,
+      "schema": "Evidence",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000005",
+        "kind": "transcript_quote",
+        "source_id": "00000000-0000-4000-8000-000000000002",
+        "source_revision_id": "00000000-0000-4000-8000-000000000003",
+        "segment_id": "00000000-0000-4000-8000-000000000006",
+        "frame_id": null,
+        "quote": "先确认具体问题，再安排下一步。",
+        "start_ms": null,
+        "end_ms": null,
+        "page": null,
+        "seekable": false
+      }
+    },
+    {
+      "name": "pdf_reference_not_quote",
+      "fixture": true,
+      "schema": "Evidence",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000007",
+        "kind": "reference_document",
+        "source_id": "00000000-0000-4000-8000-000000000002",
+        "source_revision_id": "00000000-0000-4000-8000-000000000003",
+        "segment_id": null,
+        "frame_id": null,
+        "quote": null,
+        "start_ms": null,
+        "end_ms": null,
+        "page": 2,
+        "seekable": false
+      }
+    },
+    {
+      "name": "empty_sessions",
+      "fixture": true,
+      "schema": "EmptyList",
+      "data": {
+        "items": [],
+        "total": 0,
+        "limit": 20,
+        "offset": 0
+      }
+    },
+    {
+      "name": "duplicate_material_association",
+      "fixture": true,
+      "schema": "DuplicateLink",
+      "data": {
+        "session_id": "00000000-0000-4000-8000-000000000012",
+        "material_id": "00000000-0000-4000-8000-000000000002",
+        "role": "primary",
+        "already_linked": true,
+        "status": "available"
+      }
+    },
+    {
+      "name": "job_running",
+      "fixture": true,
+      "schema": "Job",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000013",
+        "status": "running",
+        "current_stage": "asr",
+        "attempt": 1,
+        "progress": null,
+        "error": null,
+        "can_retry": false,
+        "cancel_requested": false
+      }
+    },
+    {
+      "name": "job_failed_partial_asr",
+      "fixture": true,
+      "schema": "Job",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000013",
+        "status": "failed",
+        "current_stage": "asr",
+        "attempt": 1,
+        "progress": null,
+        "error": {
+          "code": "asr_chunk_failed",
+          "message": "合成失败示例，不是真实用户错误",
+          "request_id": "00000000-0000-4000-8000-000000000008",
+          "details": {
+            "failed_chunk": 2
+          }
+        },
+        "can_retry": true,
+        "cancel_requested": false
+      }
+    },
+    {
+      "name": "revision_conflict",
+      "fixture": true,
+      "schema": "Error",
+      "data": {
+        "code": "revision_conflict",
+        "message": "合成失败示例，不是真实用户错误",
+        "request_id": "00000000-0000-4000-8000-000000000008",
+        "details": {
+          "current_revision": 3,
+          "resource": "/api/v1/assets/00000000-0000-4000-8000-000000000010"
+        }
+      }
+    },
+    {
+      "name": "idempotency_conflict",
+      "fixture": true,
+      "schema": "Error",
+      "data": {
+        "code": "idempotency_conflict",
+        "message": "合成失败示例，不是真实用户错误",
+        "request_id": "00000000-0000-4000-8000-000000000008",
+        "details": {}
+      }
+    },
+    {
+      "name": "asset_withdrawn_in_existing_plan",
+      "fixture": true,
+      "schema": "PrepReference",
+      "data": {
+        "asset_id": "00000000-0000-4000-8000-000000000010",
+        "asset_revision_id": "00000000-0000-4000-8000-000000000011",
+        "approved_at_reference": true,
+        "quote_snapshot": "先确认具体问题，再安排下一步。",
+        "adapted_script_snapshot": "先说说你最想解决的具体问题。",
+        "current_status": "withdrawn",
+        "withdrawal_warning": true,
+        "can_reconfirm": false
+      }
+    },
+    {
+      "name": "scoring_not_configured",
+      "fixture": true,
+      "schema": "Score",
+      "data": {
+        "score": null,
+        "rule_version": null,
+        "reason": "rules_not_configured"
+      }
+    },
+    {
+      "name": "weekly_partial_coverage",
+      "fixture": true,
+      "schema": "ReportSnapshot",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000014",
+        "kind": "weekly",
+        "streamer_id": "00000000-0000-4000-8000-000000000015",
+        "timezone": "Asia/Shanghai",
+        "start_utc": "2026-09-27T16:00:00Z",
+        "end_exclusive_utc": "2026-10-04T16:00:00Z",
+        "coverage": "partial",
+        "included": [
+          {
+            "session_id": "00000000-0000-4000-8000-000000000012",
+            "session_revision": 1,
+            "analysis_run_id": "00000000-0000-4000-8000-000000000016",
+            "transcript_revision_id": "00000000-0000-4000-8000-000000000003"
+          }
+        ],
+        "excluded": [
+          {
+            "session_id": "00000000-0000-4000-8000-000000000017",
+            "reason": "failed"
+          }
+        ],
+        "weekly_notes": "人工备注：下周回看开场；该文字不能被模型重跑覆盖。",
+        "scoring": {
+          "score": null,
+          "rule_version": null,
+          "reason": "rules_not_configured"
+        }
+      }
+    },
+    {
+      "name": "ai_structured_candidate",
+      "fixture": true,
+      "schema": "ProviderResult",
+      "data": {
+        "schema_version": "draft-1",
+        "analysis_run_id": "00000000-0000-4000-8000-000000000016",
+        "evidence": [
+          {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "kind": "transcript_quote",
+            "source_id": "00000000-0000-4000-8000-000000000002",
+            "source_revision_id": "00000000-0000-4000-8000-000000000003",
+            "segment_id": "00000000-0000-4000-8000-000000000004",
+            "frame_id": null,
+            "quote": "先确认具体问题，再安排下一步。",
+            "start_ms": 12000,
+            "end_ms": 16000,
+            "page": null,
+            "seekable": true
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000005",
+            "kind": "transcript_quote",
+            "source_id": "00000000-0000-4000-8000-000000000002",
+            "source_revision_id": "00000000-0000-4000-8000-000000000003",
+            "segment_id": "00000000-0000-4000-8000-000000000006",
+            "frame_id": null,
+            "quote": "先确认具体问题，再安排下一步。",
+            "start_ms": null,
+            "end_ms": null,
+            "page": null,
+            "seekable": false
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "kind": "reference_document",
+            "source_id": "00000000-0000-4000-8000-000000000002",
+            "source_revision_id": "00000000-0000-4000-8000-000000000003",
+            "segment_id": null,
+            "frame_id": null,
+            "quote": null,
+            "start_ms": null,
+            "end_ms": null,
+            "page": 2,
+            "seekable": false
+          }
+        ],
+        "assertions": [
+          {
+            "kind": "fact",
+            "text": "所引片段先确认问题。",
+            "evidence_ids": [
+              "00000000-0000-4000-8000-000000000001"
+            ],
+            "limitation": null
+          },
+          {
+            "kind": "hypothesis",
+            "text": "可尝试压缩开场，效果尚需核验。",
+            "evidence_ids": [],
+            "limitation": "未覆盖全场和真实反馈。"
+          }
+        ],
+        "candidate_assets": [
+          {
+            "id": "00000000-0000-4000-8000-000000000010",
+            "revision_id": "00000000-0000-4000-8000-000000000011",
+            "revision": 1,
+            "status": "pending_review",
+            "quote": "先确认具体问题，再安排下一步。",
+            "evidence_id": "00000000-0000-4000-8000-000000000001",
+            "teaching_notes": "先澄清问题，再提出行动。",
+            "adapted_script": "先说说你最想解决的具体问题。",
+            "conditions": "对方问题较笼统时",
+            "cautions": "不承诺效果。"
+          }
+        ],
+        "scoring": {
+          "score": null,
+          "rule_version": null,
+          "reason": "rules_not_configured"
+        }
+      }
+    },
+    {
+      "name": "file_permission_denied",
+      "fixture": true,
+      "schema": "Error",
+      "data": {
+        "code": "not_found",
+        "message": "合成失败示例，不是真实用户错误",
+        "request_id": "00000000-0000-4000-8000-000000000008",
+        "details": {}
+      }
+    },
+    {
+      "name": "range_unsatisfied",
+      "fixture": true,
+      "schema": "Error",
+      "data": {
+        "code": "range_not_satisfiable",
+        "message": "合成失败示例，不是真实用户错误",
+        "request_id": "00000000-0000-4000-8000-000000000008",
+        "details": {
+          "size_bytes": 1024
+        }
+      }
+    },
+    {
+      "name": "date_only_session",
+      "fixture": true,
+      "schema": "SessionTime",
+      "data": {
+        "session_local_date": "2026-09-28",
+        "started_at": null,
+        "time_precision": "date",
+        "timezone": "Asia/Shanghai"
+      }
+    },
+    {
+      "name": "pending_draft_preserves_published",
+      "fixture": true,
+      "schema": "AssetDraftEdit",
+      "data": {
+        "before": {
+          "revision": 1,
+          "latest_revision_id": "00000000-0000-4000-8000-000000000011",
+          "published_revision_id": "00000000-0000-4000-8000-000000000011",
+          "latest_status": "approved"
+        },
+        "after": {
+          "revision": 2,
+          "latest_revision_id": "00000000-0000-4000-8000-000000000018",
+          "published_revision_id": "00000000-0000-4000-8000-000000000011",
+          "latest_status": "pending_review"
+        }
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "invented_seek_unknown",
+      "fixture": true,
+      "schema": "Evidence",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000005",
+        "kind": "transcript_quote",
+        "source_id": "00000000-0000-4000-8000-000000000002",
+        "source_revision_id": "00000000-0000-4000-8000-000000000003",
+        "segment_id": "00000000-0000-4000-8000-000000000006",
+        "frame_id": null,
+        "quote": "先确认具体问题，再安排下一步。",
+        "start_ms": null,
+        "end_ms": null,
+        "page": null,
+        "seekable": true
+      }
+    },
+    {
+      "name": "partial_time_pair",
+      "fixture": true,
+      "schema": "Evidence",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "kind": "transcript_quote",
+        "source_id": "00000000-0000-4000-8000-000000000002",
+        "source_revision_id": "00000000-0000-4000-8000-000000000003",
+        "segment_id": "00000000-0000-4000-8000-000000000004",
+        "frame_id": null,
+        "quote": "先确认具体问题，再安排下一步。",
+        "start_ms": 12000,
+        "end_ms": null,
+        "page": null,
+        "seekable": true
+      }
+    },
+    {
+      "name": "pdf_pretends_quote",
+      "fixture": true,
+      "schema": "Evidence",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000007",
+        "kind": "reference_document",
+        "source_id": "00000000-0000-4000-8000-000000000002",
+        "source_revision_id": "00000000-0000-4000-8000-000000000003",
+        "segment_id": null,
+        "frame_id": null,
+        "quote": "伪造主播原话",
+        "start_ms": null,
+        "end_ms": null,
+        "page": 2,
+        "seekable": false
+      }
+    },
+    {
+      "name": "fact_without_evidence",
+      "fixture": true,
+      "schema": "Assertion",
+      "data": {
+        "kind": "fact",
+        "text": "没有依据的事实",
+        "evidence_ids": [],
+        "limitation": null
+      }
+    },
+    {
+      "name": "invented_score",
+      "fixture": true,
+      "schema": "Score",
+      "data": {
+        "score": 88,
+        "rule_version": null,
+        "reason": "rules_not_configured"
+      }
+    },
+    {
+      "name": "reversed_time",
+      "fixture": true,
+      "schema": "Evidence",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "kind": "transcript_quote",
+        "source_id": "00000000-0000-4000-8000-000000000002",
+        "source_revision_id": "00000000-0000-4000-8000-000000000003",
+        "segment_id": "00000000-0000-4000-8000-000000000004",
+        "frame_id": null,
+        "quote": "先确认具体问题，再安排下一步。",
+        "start_ms": 17000,
+        "end_ms": 12000,
+        "page": null,
+        "seekable": true
+      }
+    },
+    {
+      "name": "withdrawn_without_warning",
+      "fixture": true,
+      "schema": "PrepReference",
+      "data": {
+        "asset_id": "00000000-0000-4000-8000-000000000010",
+        "asset_revision_id": "00000000-0000-4000-8000-000000000011",
+        "approved_at_reference": true,
+        "quote_snapshot": "先确认具体问题，再安排下一步。",
+        "adapted_script_snapshot": "先说说你最想解决的具体问题。",
+        "current_status": "withdrawn",
+        "withdrawal_warning": false,
+        "can_reconfirm": false
+      }
+    },
+    {
+      "name": "candidate_from_pdf",
+      "fixture": true,
+      "schema": "ProviderResult",
+      "data": {
+        "schema_version": "draft-1",
+        "analysis_run_id": "00000000-0000-4000-8000-000000000016",
+        "evidence": [
+          {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "kind": "transcript_quote",
+            "source_id": "00000000-0000-4000-8000-000000000002",
+            "source_revision_id": "00000000-0000-4000-8000-000000000003",
+            "segment_id": "00000000-0000-4000-8000-000000000004",
+            "frame_id": null,
+            "quote": "先确认具体问题，再安排下一步。",
+            "start_ms": 12000,
+            "end_ms": 16000,
+            "page": null,
+            "seekable": true
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000005",
+            "kind": "transcript_quote",
+            "source_id": "00000000-0000-4000-8000-000000000002",
+            "source_revision_id": "00000000-0000-4000-8000-000000000003",
+            "segment_id": "00000000-0000-4000-8000-000000000006",
+            "frame_id": null,
+            "quote": "先确认具体问题，再安排下一步。",
+            "start_ms": null,
+            "end_ms": null,
+            "page": null,
+            "seekable": false
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "kind": "reference_document",
+            "source_id": "00000000-0000-4000-8000-000000000002",
+            "source_revision_id": "00000000-0000-4000-8000-000000000003",
+            "segment_id": null,
+            "frame_id": null,
+            "quote": null,
+            "start_ms": null,
+            "end_ms": null,
+            "page": 2,
+            "seekable": false
+          }
+        ],
+        "assertions": [
+          {
+            "kind": "fact",
+            "text": "所引片段先确认问题。",
+            "evidence_ids": [
+              "00000000-0000-4000-8000-000000000001"
+            ],
+            "limitation": null
+          },
+          {
+            "kind": "hypothesis",
+            "text": "可尝试压缩开场，效果尚需核验。",
+            "evidence_ids": [],
+            "limitation": "未覆盖全场和真实反馈。"
+          }
+        ],
+        "candidate_assets": [
+          {
+            "id": "00000000-0000-4000-8000-000000000010",
+            "revision_id": "00000000-0000-4000-8000-000000000011",
+            "revision": 1,
+            "status": "pending_review",
+            "quote": "先确认具体问题，再安排下一步。",
+            "evidence_id": "00000000-0000-4000-8000-000000000007",
+            "teaching_notes": "先澄清问题，再提出行动。",
+            "adapted_script": "先说说你最想解决的具体问题。",
+            "conditions": "对方问题较笼统时",
+            "cautions": "不承诺效果。"
+          }
+        ],
+        "scoring": {
+          "score": null,
+          "rule_version": null,
+          "reason": "rules_not_configured"
+        }
+      }
+    },
+    {
+      "name": "fabricated_midnight",
+      "fixture": true,
+      "schema": "SessionTime",
+      "data": {
+        "session_local_date": "2026-09-28",
+        "started_at": "2026-09-27T16:00:00Z",
+        "time_precision": "date",
+        "timezone": "Asia/Shanghai"
+      }
+    },
+    {
+      "name": "draft_unpublishes_approved",
+      "fixture": true,
+      "schema": "AssetDraftEdit",
+      "data": {
+        "before": {
+          "revision": 1,
+          "latest_revision_id": "00000000-0000-4000-8000-000000000011",
+          "published_revision_id": "00000000-0000-4000-8000-000000000011",
+          "latest_status": "approved"
+        },
+        "after": {
+          "revision": 2,
+          "latest_revision_id": "00000000-0000-4000-8000-000000000018",
+          "published_revision_id": null,
+          "latest_status": "pending_review"
+        }
+      }
+    }
+  ]
+}

@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 WORKSPACE = Path("/Users/docfat/Desktop/个人/project/直播体系FDE")
 ROOT = Path(__file__).resolve().parents[2]
 RUNTIME = WORKSPACE / "runtime/live-004"
-ROLES = ("4a", "4b", "4c", "qa", "integration")
+ROLES = ("4a", "4b", "4c", "qa", "integration", "qa_identity")
 CONTAINER = "live-fde-004-postgres-1"
 
 

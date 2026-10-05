@@ -25,3 +25,7 @@
 ARC 对 `ac0088d` 指出：Compose 进程继承的环境变量可能覆盖已校验 env-file，导致资源目标绕过检查。修复为：在任何 Docker 调用前拒绝所有继承的 `DOCKER_*`、`COMPOSE_*`、`LIVE_RUNTIME`、`PG_PASSWORD`（空值也拒绝）；检查当前 context 是本地绝对 unix socket，随后将该 endpoint 固定到明确传给全部子进程的环境。Compose 的 runtime/password 只由校验过的私有文件写入，并拒绝文件未知字段。
 
 新增 3 项测试（共 8 项）覆盖 20 个继承覆盖负例、5 个非本地/畸形 context 负例及子进程环境传递，确认拒绝发生在容器操作之前。Ruff 和全部 8 项测试通过。实际重复初始化成功，并比较前后六个私有 env 的 SHA256、所有本轮数据库 OID/owner，均保持不变。修复仍待 ARC 对新 SHA 复审。
+
+## QA 身份基线隔离增量
+
+ARC 指派：原 QA 数据库已升到场次迁移 0002，而身份 A 分支只有 0001。新增固定登记 `qa_identity`，实际创建 `live004_qa_identity` 数据库/用户，私有 env 为工作区 `runtime/live-004/qa_identity.env`，存储 `runtime/live-004/storage-qa_identity`。仅创建新增库，既有五库/凭证未改，不执行 downgrade/drop。已交接 `/root/qa_live002`，用于身份分支独立复审。QA 后续按迁移基线分配数据库，避免较新 schema 污染旧分支验证。

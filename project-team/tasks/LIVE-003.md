@@ -1,5 +1,5 @@
 # LIVE-003 数据与 API 契约
-- 状态：review；owner ARC-01；reviewer BE/QA 独立子任务（提交后绑定）
+- 状态：done；owner ARC-01；reviewer /root/qa_live003（独立审查）
 - 依赖：LIVE-001；可先读 docs/02、07
 - 允许：docs/contracts/**、docs/13-window-collaboration.md 的轮次汇报约定、本任务卡、project-team/reports/LIVE-003/**；实现模块另派 BE。
 - 目标：关系/唯一约束、状态机、版本冲突、API 请求响应、证据引用、上传与任务幂等、错误统一。
@@ -9,4 +9,4 @@
 - branch：docs/LIVE-003-contracts；worktree：/Users/docfat/Desktop/个人/project/直播体系FDE/.worktrees/live-003-arc；base：ca9de2b。
 - 验收细化：10路由各有用户操作映射和请求/响应；身份/文件权限、revision冲突、周边界及覆盖、原话/解析/适配、固定已审版本与撤回、未知时间null、幂等/Range/统一错误；FE/AI合成样例可机器校验；草案不得冒充API已实现。
 - PM追加输入：工作台筛选/创建、场次上传/定位、报告修订/导出任务、周报行动备注、审核编辑解析及适配、学习库筛选收藏、备播排序正文、设置名称/提醒明确V1语义。失败样例覆盖空列表/重复关联/处理中失败/冲突/撤回/评分未配置。
-- 交付：17个正例和15个负例校验通过；等待独立Review绑定最终head，本人不自批。
+- 交付：17个正例和15个负例校验通过；独立Review批准 b7d4efa，main集成26aaf4a；PM-01任务01a10b7c-30e0-7fa3-9545-0001d85a33b3已核对通过。

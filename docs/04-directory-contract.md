@@ -2,7 +2,7 @@
 ARC 负责结构，ENG 执行搬迁，QA 检查。新顶级目录必须先登记；现有模块职责内增加普通文件无需逐个询问用户。
 
 ## 当前与目标
-Git 根 app/；外层 docs 是 app/docs 符号链接。LIVE-001 已将前端迁到 frontend/web、旧 CPB 移到 archives/cpb-reference-20261005。下图中 services/backend、infra 等后端目录仍为后续目标，不提前建空壳；实际清单见 operations/live-001-migration.json。
+Git 根 app/；外层 docs 是 app/docs 符号链接。LIVE-001 已将前端迁到 frontend/web、旧 CPB 移到 archives/cpb-reference-20261005。LIVE-002已实现 services/backend、infra、scripts/checks 工程基础；图中业务modules/integrations/prompts及未使用目录仍为后续目标，不提前建空壳；实际清单见 operations/live-001-migration.json。
 ```text
 直播体系FDE/                        工作区
 ├── app/                           唯一产品 Git 根
@@ -63,6 +63,6 @@ OpenAPI 快照 docs/contracts/openapi.json；生成客户端 frontend/web/src/ap
 ## 结构门禁
 LIVE-002 实现顶级目录白名单、运行产物/未知路径检查、rename 两端 owner 校验。
 存量旧目录是临时例外，注明 owner/解除任务；不允许继续在旧目录追加新系统代码。
-自动检查只管可机械判断部分，不能代替职责 Review。目前尚未实现自动 CI。
+自动检查只管可机械判断部分，不能代替职责 Review。LIVE-002已提供本地结构门禁和CI配置；未配置remote，未在远程执行。
 
 用户明确所有项目模块均留在本工作区。worktree 统一使用工作区 .worktrees/<task-id>-<role>/，不用工作区外的默认路径；首次提交后再按任务创建。全局包缓存/Codex 元数据不要求搬迁。

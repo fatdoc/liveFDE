@@ -6,5 +6,5 @@
 - 变更：dispatcher仅--check预检；worker无业务任务/result backend；Alembic无业务修订；ready只检查PG+MQ，不代表worker可用。
 - 环境：工作区runtime/live-002，Docker postgres独立bind；原生RabbitMQ独立节点/数据；不连接5432/6379，不修改Demo5188。
 - 初审修复：限制smoke DSN与环境覆盖/目录真实边界；CI按task/base检查owner；实测跨owner rename失败；依赖故障需匹配单独down字段。
-- Review：由独立qa_live002对最终SHA确认，作者不自批；集成SHA由ARC回填。
+- Review：独立qa_live002批准18e721f3c123b064104c90d94732374d6ed80063，记录review.md；main串行集成19fede3。
 - 回滚：revert本任务提交；只停止本任务容器/进程，保留数据，不删用户卷。

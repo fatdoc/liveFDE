@@ -20,3 +20,5 @@
 
 [任务看板](../project-team/STATUS.md) · [窗口启动模板](../project-team/templates/WINDOW-START.md) · [Review 模板](../project-team/templates/REVIEW.md)
 正式文档只维护本目录一份；工作区 docs 是本目录的符号链接。
+
+[业务契约草案](contracts/README.md) · [后端工程操作](operations/backend-foundation.md)。契约不是已实现API；工程验证和未测限制见任务报告。

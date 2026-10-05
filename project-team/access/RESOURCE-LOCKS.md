@@ -6,3 +6,10 @@
 | app/.git index/HEAD、LIVE-001 状态与评审记录 | ARC-01 | LIVE-001 | 无首次提交 | 首次提交及 worktree 验证完成 | 完成，收尾记录提交后释放 |
 | localhost:5188 Demo 预览 | ARC-01 | LIVE-001 | frontend/web PID69984 | PM验收后统一安排下一任务 | 保留预览，不抢占 |
 需登记锁文件/迁移head/OpenAPI/生成客户端/共同配置/端口/DB。开始认领，交接明确释放，不抢其他窗口资源。
+
+## LIVE-002 / LIVE-003 轮次
+- ENG-01：.worktrees/live-002-eng 中 services/backend、infra、scripts/checks、.github/workflows、docs/operations、LIVE-002 卡和报告独占。端口/DB/卷由探针确认，禁止碰5432/6379/5188。
+- ARC-01：.worktrees/live-003-arc 中 docs/contracts、docs/13-window-collaboration.md、LIVE-003 卡和报告独占；不修改 ENG worktree。
+- main 的 STATUS/access 仅统筹维护，集成串行；PM 不并写。共同 base ca9de2b；两个任务均独立提交/评审。
+
+002/003实现worktree已交接只读保留；独立review完成，ARC负责main串行集成和收尾，完成提交后释放index独占。runtime/live-002及15432/5673/25673/8188集成烟测已完成；PG容器及数据保留，API/worker/原生MQ测试后停止。未删除worktree或用户数据；下轮重新登记后方可复用。

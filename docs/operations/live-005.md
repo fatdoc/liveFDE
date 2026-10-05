@@ -52,3 +52,9 @@ python3 scripts/checks/live005_environment.py pg-stop
 - 旧5432/15432/15440/5188与旧MQ节点未停止、未重配。尚未执行业务worker/dispatcher故障恢复、005迁移或客户容器部署；这些不由本报告冒充通过。
 
 官方机制参考：[定义文件启动导入](https://www.rabbitmq.com/docs/definitions)、[密码哈希](https://www.rabbitmq.com/docs/passwords)、[运行目录变量](https://www.rabbitmq.com/docs/relocate)。本机CLI针对中文路径有unicode转换诊断噪声，退出码、节点就绪及真实AMQP结果均已验证；不得单凭CLI文字判定业务成功。
+
+## 2026-10-06 MQ 重启竞态修复
+
+集成smoke在真实AMQP连接后复现：node已停止，但启动探针对25675普通bind返回占用。原因是TIME_WAIT与真实listener未区分。现探针使用SO_REUSEADDR（不用SO_REUSEPORT），TIME_WAIT可重绑、活listener仍拒绝。停止在首次确认归属后定向认证stop，并同时等原PID退出/僵尸及5675、25675均可重绑；不再在关机收缩fd时把已确认进程误判为外部进程。
+
+新增真实临时TCP listener/TIME_WAIT回归和停止等待顺序、占用拒绝测试，共10项通过。随后在本轮独立integration vhost发布durable queue与delivery_mode=2消息，连续两次实际mq-restart，首次读取requeue、第二次读取ack，均核对原payload后仅删除本测试专用queue。恢复完成后保留MQ运行；未删除其他队列/数据。

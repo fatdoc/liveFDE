@@ -11,3 +11,5 @@ Owner /root/be_live004a（本轮转岗ENG），base 8cc9ea5，branch chore/LIVE-
 最终保留PG15450/MQ5675、25675运行。故障窗口需ARC协调，用脚本mq-stop/mq-start/mq-restart；pg-stop仅本轮容器，所有停止保留数据。共享主机EPMD不管理、不终止。旧资源未改。
 
 未验证：005业务迁移、worker/dispatcher/outbox、真实模型和客户Compose部署。该交付只证明环境与隔离，不是LIVE-005完整业务验收。回滚代码可revert；运行停止用精确命令，不删runtime与凭证。
+
+2026-10-06 生命周期修复：ARC集成真实连接后复现 `Refusing occupied MQ port 25675`；已停node但普通bind受TIME_WAIT影响。端口探针改SO_REUSEADDR并明确不用SO_REUSEPORT，停止等已确认PID及两监听端口共同释放。10项守卫/生命周期回归与Ruff通过；真实integration vhost持久消息经历连续两次mq-restart仍能读取原payload，最终ack并只删除本测试queue。结果摘要 runtime/live-005/mq-lifecycle-fix-results.txt。MQ已恢复就绪；源分支提交后仍需ARC独立review与集成。

@@ -1,9 +1,50 @@
 import unittest
 
-from repository import diff_paths, path_errors
+from ci_policy import task_for_branch
+from repository import SCOPES, diff_paths, path_errors
 
 
 class PolicyTests(unittest.TestCase):
+    def test_task_branch_ids_are_not_truncated(self):
+        for task in (
+            "LIVE-002",
+            "LIVE-003",
+            "LIVE-004A",
+            "LIVE-004B",
+            "LIVE-004C",
+            "LIVE-004-ENG",
+            "LIVE-004",
+        ):
+            self.assertEqual(task_for_branch(f"feat/{task}-implementation"), task)
+        for branch in (
+            "feat/LIVE-004D-new",
+            "feat/LIVE-004AB-new",
+            "feat/LIVE-999-new",
+            "feat/misc",
+            "feat/LIVE-004A1-new",
+            "chore/LIVE-004-UNKNOWN-new",
+            "chore/LIVE-004-ENGFOO-new",
+        ):
+            with self.assertRaises(ValueError, msg=branch):
+                task_for_branch(branch)
+        self.assertIsNone(task_for_branch("main"))
+
+    def test_business_scopes_do_not_grant_sibling_or_lock_access(self):
+        def allowed(task, path):
+            return any(path.startswith(p) if p.endswith("/") else path == p for p in SCOPES[task])
+
+        prefix = "services/backend/"
+        for task in ("LIVE-004B", "LIVE-004C"):
+            self.assertFalse(allowed(task, prefix + "uv.lock"))
+            self.assertFalse(allowed(task, prefix + "src/live_review/core/config.py"))
+        self.assertFalse(allowed("LIVE-004A", prefix + "migrations/versions/0002_sessions.py"))
+        self.assertFalse(
+            allowed("LIVE-004B", prefix + "src/live_review/modules/materials/router.py")
+        )
+        self.assertFalse(allowed("LIVE-004C", prefix + "src/live_review/main.py"))
+        self.assertFalse(allowed("LIVE-004-ENG", prefix + "src/live_review/main.py"))
+        self.assertTrue(allowed("LIVE-004B", prefix + "migrations/versions/0002_sessions.py"))
+
     def test_artifacts_and_secrets(self):
         for path in [
             "unknown/a.py",

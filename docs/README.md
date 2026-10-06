@@ -21,4 +21,6 @@
 [任务看板](../project-team/STATUS.md) · [窗口启动模板](../project-team/templates/WINDOW-START.md) · [Review 模板](../project-team/templates/REVIEW.md)
 正式文档只维护本目录一份；工作区 docs 是本目录的符号链接。
 
+[统一ASR操作与边界](asr.md) · [本地模型](asr-local.md) · [常驻worker](asr-worker.md) · [腾讯协议](asr-tencent.md) · [LIVE-006C验收](../project-team/reports/LIVE-006C/change.md)。
+
 [业务契约草案](contracts/README.md) · [后端工程操作](operations/backend-foundation.md)。草案不等于已实现API；身份/场次/材料的实际范围与OpenAPI见contracts/implementation-status.md，工程和业务验证见任务报告。

@@ -16,13 +16,13 @@
 
 未实现：ASR以外的workspace settings/preferences、dashboard聚合、业务分析入口、报告、资产审核、学习库、备播及导出、正式评分、平台采集。没有多角色RBAC；管理员是唯一产品角色，主播是业务对象。
 
-上传说明：首版允许MP4/WAV/MP3（ffprobe真实解析且禁止网络协议）、UTF-8纯文本（上限10MiB）、未加密可解析PDF（上限20MiB），总体上限可配置，默认512MiB。没有续传，失败可整文件重试；expired返回410。客户端原始文件名仅展示，不作为磁盘路径。LIVE-006由操作员显式提交抽音/转写；上传不自动开始分析，任何材料均不自动成为主播原话证据。临时失败文件保留便于恢复，自动过期清理尚未实现，必须单独安排保留策略。
+上传说明：当前允许MP4/WAV/MP3/M4A/AAC（后两种由LIVE-006C加入，ffprobe真实解析且禁止网络协议）、UTF-8纯文本（上限10MiB）、未加密可解析PDF（上限20MiB），总体上限可配置，默认512MiB。没有续传，失败可整文件重试；expired返回410。客户端原始文件名仅展示，不作为磁盘路径。LIVE-006由操作员显式提交抽音/转写；上传不自动开始分析，任何材料均不自动成为主播原话证据。临时失败文件保留便于恢复，自动过期清理尚未实现，必须单独安排保留策略。
 
 认证说明：先用受控CLI建管理员，无默认口令/公开注册。浏览器发送HttpOnly/SameSite Cookie；生产必须HTTPS与Secure。变更接口带可信Origin与X-CSRF-Token（从login/me获取）。OpenAPI导出用于结构对齐，以上运行时会话/CSRF规则同样必须遵守。
 
 生成方式：从app执行 `uv run --project services/backend python scripts/checks/export_openapi.py`。不运行数据库或模型即可导出声明schema；导出成功本身不算接口验收，真实证据见project-team/reports/LIVE-004。
 
-任务边界：create_job是供未来业务入口调用的内部事务函数，创建job/阶段/outbox不自行提交；调用方须将业务记录一并提交，并负责业务输入版本的唯一性。当前没有公开创建任务或analysis-runs接口，不声称已实现同输入长期去重。retry接口的幂等和重复消息的租约保护已分开实现。阶段产物为受限JSON存入PG；成功阶段与有理由的skipped阶段在重试时保留。progress目前null，不伪造视频处理百分比。
+任务边界：create_job是供未来业务入口调用的内部事务函数，创建job/阶段/outbox不自行提交；调用方须将业务记录一并提交，并负责业务输入版本的唯一性。LIVE-006C已通过ASR入口创建限定类型任务，仍没有任意公开创建任务或analysis-runs接口，不声称已实现同输入长期去重。retry接口的幂等和重复消息的租约保护已分开实现。阶段产物为受限JSON存入PG；成功阶段与有理由的skipped阶段在重试时保留。progress目前null，不伪造视频处理百分比。
 
 LIVE-006注册media.extract/media.asr处理器，由本地受控操作员CLI提交；ASR须显式YAML配置，网络默认拒绝，生产禁止离线fixture。原005合成fixture处理器仍仅开发显式开启；未注册处理器明确失败。任务取消先返回cancel_requested；只有受控处理子进程确认停止才记录canceled，无法确认停止保持安全失败。供应商调用前先持久化intent，未知结果阻止自动重放；本轮没有实际模型或付费调用。006已增加FFmpeg抽音/分段、音轨全局时间戳、离线fixture及audio/transcriptions兼容传输协议；没有公开analysis-runs创建入口，也未接前端。完整manifest/转写存于受控文件，任务阶段仅保存哈希引用和摘要；部分转写保留证据并失败。不能把fixture当作真实识别结果。真实服务商、识别质量和计费未验。
 

@@ -18,6 +18,7 @@ def config_environment(settings, requested=None):
     if runtime not in {"development", "production"}:
         raise MediaError("runtime_environment_invalid")
     selected = requested or runtime
+    selected = {"dev": "development", "prod": "production"}.get(selected, selected)
     if selected not in ENVIRONMENTS:
         raise MediaError("configuration_environment_invalid")
     if runtime == "development" and selected not in {"development", "test"}:

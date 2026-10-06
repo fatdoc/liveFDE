@@ -28,7 +28,9 @@ def main(argv=None):
     config_source.add_argument("--config", type=Path, help="Explicit legacy v1 single YAML")
     config_source.add_argument("--config-dir", type=Path, help="Layered v2 model registry")
     create.add_argument("--model-id", help="Registry model or alias; default asr.default")
-    create.add_argument("--config-env", choices=["development", "test", "staging", "production"])
+    create.add_argument(
+        "--config-env", choices=["dev", "development", "test", "staging", "prod", "production"]
+    )
     create.add_argument("--local-config", type=Path)
     create.add_argument("--dotenv", type=Path)
     create.add_argument("--fixture", type=Path)

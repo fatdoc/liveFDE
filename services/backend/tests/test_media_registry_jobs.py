@@ -294,3 +294,51 @@ def test_v2_submit_keeps_credentials_out_of_payload_and_settings(tmp_path, monke
     assert "synthetic-submit-secret" not in json.dumps(received[0]) + repr(settings)
     assert "api_key" not in json.dumps(received[0])
     client.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "runtime,alias,canonical",
+    [
+        ("development", "dev", "development"),
+        ("production", "prod", "production"),
+    ],
+)
+def test_environment_aliases_normalized_before_policy(runtime, alias, canonical):
+    assert config_environment(SimpleNamespace(environment=runtime), alias) == canonical
+
+
+def test_production_dev_alias_cannot_downgrade():
+    with pytest.raises(MediaError, match="configuration_environment_downgrade"):
+        config_environment(SimpleNamespace(environment="production"), "dev")
+
+
+@pytest.mark.parametrize("alias", ["dev", "prod"])
+def test_operator_parser_accepts_config_environment_alias(alias, monkeypatch):
+    from uuid import uuid4
+
+    from live_review.workers import media_operator
+
+    class Parsed(Exception):
+        pass
+
+    def after_parse():
+        raise Parsed
+
+    monkeypatch.setattr(media_operator, "get_settings", after_parse)
+    # Reaching Settings proves argparse accepted the alias, without opening a DB.
+    with pytest.raises(Parsed):
+        media_operator.main(
+            [
+                "submit",
+                "--workspace-id",
+                str(uuid4()),
+                "--admin-id",
+                str(uuid4()),
+                "--material-id",
+                str(uuid4()),
+                "--config-dir",
+                "/synthetic/config",
+                "--config-env",
+                alias,
+            ]
+        )

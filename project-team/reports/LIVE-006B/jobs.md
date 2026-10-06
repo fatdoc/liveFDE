@@ -29,3 +29,5 @@ Ruff、staged diff --check、范围门禁结果随最终提交交接。业务源
 无DB迁移；回滚代码时需保留v2任务兼容支持，旧版本不认识v2应停止这些任务而非篡改snapshot成v1。不能删已持久任务或产物。配置变化会使旧任务明确失败；重新提交新配置需要新的job和本job授权，不自动付费重放。
 
 真实外部服务仍需后续明确授权和兼容性验证；本轮没有绕过既有paid-intent保护。scope内未改前端/报告生成/其他模型执行能力。正式部署、远程PR与独立QA结论均由ARC/QA另行记录。
+
+后续边界修复：CLI与配置桥接接受config-env dev/prod，并在防降级检查前正规化为development/production；production+dev仍拒绝。新增5项alias/CLI解析回归，不涉及DB或CFG。

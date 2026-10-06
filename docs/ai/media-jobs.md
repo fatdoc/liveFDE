@@ -54,7 +54,7 @@ uv run --project services/backend python -m live_review.workers.media_operator s
 
 配置分层加载和默认alias定义见 [model-registry.md](model-registry.md)。默认开发配置会自动读 `config_dir.parent/.env`，如 `app/config` 对应 `app/.env`，不需要shell source。只有登记AI密钥及白名单模型设置被使用，不更新os.environ，也不覆盖LIVE_DATABASE_URL/LIVE_BROKER_URL等运行Settings。CLI `--dotenv` 可指定私有密钥文件；`--local-config` 可指定开发local覆盖。文件权限和路径由CFG校验。
 
-可信环境来自原有 `LIVE_ENVIRONMENT`，本任务不修改Settings环境定义。映射为：
+可信环境来自原有 `LIVE_ENVIRONMENT`，本任务不修改Settings环境定义。`--config-env dev/prod` 在边界先正规化为 `development/production`，再应用同一防降级规则；快照与locator只存canonical环境名。映射为：
 
 | runtime Settings | 允许 `--config-env` | 适配器执行策略 |
 |---|---|---|

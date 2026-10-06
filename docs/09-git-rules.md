@@ -4,7 +4,7 @@
 2026-10-06：用户指定公开远端 `https://github.com/fatdoc/liveFDE` 并授权首次完整同步。LIVE-018 保留远端初始化 LICENSE 与本地历史，通过一次初始化 PR 导入；原有分支作为开发记录同步。此授权不等于部署、开启采集或配置分支保护。后续遵循下述 PR 流程，历史报告中的“无 remote”是当时事实。
 
 LIVE-001 启动时（2026-10-05）：app/.git 存在，feat/cpb-live-fork 无提交、跟踪文件 0、remote 为空。外层不是仓库。当前提交/审查状态以 project-team/STATUS.md 和 LIVE-001 交付记录为准。
-旧 master/模板 origin 文档已失效；本轮未建远程或分支保护。
+旧 master/模板 origin 文档已失效；LIVE-001当时未建远程或分支保护，当前远端以本节最新记录为准。
 LIVE-001 保全整理后创建 main 首次本地提交。bootstrap 无法走不存在的 PR，应先独立审查文件清单/本地 diff 再提交，例外留记录。
 
 ## 分支与环境

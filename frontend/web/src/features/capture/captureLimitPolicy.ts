@@ -26,3 +26,6 @@ export function readableDuration(seconds: number) {
   if (seconds % 60 === 0) return `${seconds / 60}分钟`
   return `${seconds}秒`
 }
+
+export const minutesToSeconds = (minutes: number) => Math.round(minutes * 60)
+export const gibToBytes = (gib: number) => Math.round(gib * 1024 ** 3)

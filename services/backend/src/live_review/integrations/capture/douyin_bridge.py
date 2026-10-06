@@ -29,7 +29,7 @@ def select_stream(selected, policy):
     candidates += [selected.get("m3u8_url"), selected.get("record_url")]
     if h265:
         candidates = [value for value in candidates if value != flv]
-    errors = []
+    errors, upgrades = [], []
     for value in candidates:
         if not isinstance(value, str) or not value:
             continue
@@ -47,18 +47,32 @@ def select_stream(selected, policy):
             ):
                 errors.append("unsafe_stream_url")
                 continue
-            if policy.get("https_only", False) and parts.scheme != "https":
-                errors.append("https_required")
-                continue
             domains = policy.get("stream_domains")
             if domains is not None and not any(
                 host == d or host.endswith("." + d) for d in domains
             ):
                 errors.append("domain_not_allowed")
                 continue
+            if policy.get("https_only", False) and parts.scheme != "https":
+                # DLR main.py supports HTTPS adaptation. Generate a candidate only;
+                # the recording relay must still validate TLS and every destination.
+                if (
+                    domains
+                    and (host == "douyincdn.com" or host.endswith(".douyincdn.com"))
+                    and parts.port in {None, 80}
+                    and parts.netloc.lower() in {host, host + ":80"}
+                ):
+                    authority = parts.netloc.removesuffix(":80")
+                    # Preserve path/query bytes, including signatures and empty query markers.
+                    tail = value[value.index("://") + 3 + len(parts.netloc) :]
+                    upgrades.append("https://" + authority + tail)
+                errors.append("https_required")
+                continue
             return value
         except ValueError:
             errors.append("unsafe_stream_url")
+    if upgrades:
+        return upgrades[0]
     raise ParserFailure(errors[0] if errors else "source_schema_changed")
 
 

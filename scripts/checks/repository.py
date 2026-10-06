@@ -97,6 +97,17 @@ CAPTURE_UI_FRONTEND_SCOPE = [
     "project-team/reports/LIVE-021/",
 ]
 SCOPES = {
+    "LIVE-024": [
+        "scripts/checks/repository.py",
+        "services/backend/src/live_review/integrations/capture/douyin_bridge.py",
+        "services/backend/src/live_review/integrations/capture/providers.py",
+        "services/backend/tests/test_capture_bridge.py",
+        "services/backend/tests/test_capture_providers.py",
+        "project-team/tasks/LIVE-024.md",
+        "project-team/STATUS.md",
+        "project-team/access/RESOURCE-LOCKS.md",
+        "project-team/reports/LIVE-024/",
+    ],
     "LIVE-023": [
         'services/backend/src/live_review/integrations/capture/relay.py',
         'services/backend/src/live_review/integrations/capture/recording.py',

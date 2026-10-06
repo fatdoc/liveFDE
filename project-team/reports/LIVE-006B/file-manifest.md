@@ -1,6 +1,6 @@
 # LIVE-006B 逐文件变更清单
 
-相对基线 `74df3b1fed59079abcb3f8c8b5cebc47b7e68deb`，A=新增，M=修改。正文按职责分组，源码与验收报告分列；后续纯文档验收收尾另在最终报告登记。没有删除产品代码文件。
+相对基线 `74df3b1fed59079abcb3f8c8b5cebc47b7e68deb`，A=新增，M=修改。正文按职责分组，源码与验收报告分列；本清单含最终纯文档收尾，精确集成SHA和批准树见final-review.md。没有删除产品代码文件。
 
 ## 配置与使用说明
 
@@ -66,5 +66,5 @@
 | A | `project-team/reports/LIVE-006B/jobs-review.md` |
 | A | `project-team/reports/LIVE-006B/jobs.md` |
 | A | `project-team/tasks/LIVE-006B.md` |
-
-本轮集成阶段新增：`project-team/reports/LIVE-006B/integration.md`；最终独立报告与纯文档收尾将在批准后补列。
+| A | `project-team/reports/LIVE-006B/integration.md` |
+| A | `project-team/reports/LIVE-006B/final-review.md` |

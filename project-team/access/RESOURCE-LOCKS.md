@@ -61,3 +61,5 @@ CFG /root/be_live004a 独占 .worktrees/live-006b-config 的core/model_config、
 006B运行资源：新PG15470 / compose live-fde-006b / runtime/live-006b，role/database live006b。回归每次创建live006b_suite_<UUID>独立库，禁止动15460/006旧记录；ARC与QA/BE串行交接数据库使用。环境脚本基于已审006 guard复用独立目标，私有env随机生成600，不读取旧模型秘密。
 
 006B作者已交还live006b数据库使用权；QA新建live006b_qa_a29eec20dd6d4541b6015701137d2918独立库，32项验收通过后亦交还。ARC主集成仅新建live006b_suite_<UUID>库，实际库名随runtime/live-006b/integration各target.json登记。所有旧库与证据保留。
+
+LIVE-006B收尾：CFG/JOBS开发写入结束，clean worktree只读保留。QA最终v1/v2烟测成功后已交还15470锁，无在跑worker/FFmpeg；PG与所有测试库保留。代码706f28e独立QA/PM验收通过；ARC本次纯文档提交完成后释放main index独占，后续任务需重新登记。

@@ -1,6 +1,6 @@
 # LIVE-006B 分层模型配置与注册表
 
-- 状态：in_review；base74df3b1fed59079abcb3f8c8b5cebc47b7e68deb；用户经PM明确授权；PM只读产品验收。
+- 状态：done；base74df3b1fed59079abcb3f8c8b5cebc47b7e68deb；用户经PM明确授权；PM只读产品验收。
 - CFG /root/be_live004a：.worktrees/live-006b-config，feat/LIVE-006B-registry。允许core/model_config/、core/model_registry.py、tests/test_model_config.py/test_model_registry.py、config/共享配置、.env.example、docs/ai/model-registry.md、reports/LIVE-006B/config.md。
 - BE /root/eng_live002：.worktrees/live-006b-jobs，feat/LIVE-006B-jobs。允许workers/media_jobs.py/media_operator.py/media_configuration.py、integrations/asr/factory.py及__init__.py、tests/test_media_jobs.py/test_media_registry_jobs.py、docs/ai/media-jobs.md、reports/LIVE-006B/jobs.md。
 - ARC /root：主checkout串行集成；.gitignore、scripts/checks/repository.py及对应门禁测试、006B独立验收driver、docs/04-directory-contract.md、docs/ai/configuration-refactor.md与旧配置说明兼容更新、STATUS/access/本卡/本轮报告；需要时更新既有验收driver的边界说明，不改旧历史证据。
@@ -16,4 +16,4 @@ ModelRegistry.get('asr.default'/'llm.default')提供具名不可变模型描述�
 
 验收：层次/合并/来源/字段与类型/禁用门控/快照/秘密边界/旧任务恢复；真实隔离PG与FFmpeg任务回归，传输仅MockTransport；独立Review后集成，PM最终验收才done。
 
-作者最终CFG a2753fb / JOBS7216234已独立批准并分批集成；主204后端tests零跳过、36工程checks与v1/v2烟测通过，等待最终组合QA与PM范围验收。见reports/LIVE-006B/integration.md。
+作者最终CFG a2753fb / JOBS7216234已独立批准并分批集成；主204后端tests零跳过、36工程checks与v1/v2烟测通过，最终组合QA与PM范围验收均通过，代码706f28ef87333718d5ce34c2ddf634fedf11a6f3。见reports/LIVE-006B/integration.md。

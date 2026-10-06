@@ -1,0 +1,60 @@
+# 非自动加载的完整具名配置示例。
+# 按需复制选定项到models.yaml或开发local.yaml；以下均未启用，不代表选定厂商。
+models:
+  future_asr:
+    capability: asr
+    route:
+      enabled: false
+      protocol: openai_compatible
+      operation: audio_transcriptions
+      provider: your_vendor
+      model: your-audio-model
+      base_url: https://example.invalid/v1
+      key_env: YOUR_ASR_API_KEY
+      timeout_seconds: 60
+      max_requests: 100
+      max_cost_usd: 1.0
+  future_llm:
+    capability: llm
+    route:
+      enabled: false
+      protocol: ollama
+      model: your-local-chat-model
+      # 声明可覆盖为局域网地址，例如 http://192.168.1.100:11434；不会主动连接。
+      base_url: http://127.0.0.1:11434
+    parameters:
+      temperature: 0.2
+  future_embedding:
+    capability: embedding
+    route:
+      enabled: false
+      protocol: huggingface
+      model: your-org/your-embedding-model
+    parameters:
+      device: cpu
+      model_path: models/your-embedding-directory
+  future_reranker:
+    capability: reranker
+    route:
+      enabled: false
+      protocol: huggingface
+      model: your-org/your-reranker-model
+    parameters:
+      device: cuda:0
+      model_path: models/your-reranker-directory
+  future_detector:
+    capability: detection
+    route:
+      enabled: false
+      protocol: yolo
+      model: your-detector-model
+    parameters:
+      device: cpu
+      model_path: models/your-detector-weights.pt
+      confidence: 0.5
+aliases:
+  asr.default: future_asr
+  llm.default: future_llm
+  embedding.default: future_embedding
+  reranker.default: future_reranker
+  detection.default: future_detector

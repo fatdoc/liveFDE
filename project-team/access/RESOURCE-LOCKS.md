@@ -92,3 +92,7 @@ base a680ff7；CAP独占.worktrees/LIVE-020-capture的capture模块、workers/ca
 LIVE-023：ARC在独立副本持就绪后端/前端及台账，QA只读复核；PM将runtime20配置及executor串行控制交给ARC，尚未改配置，变更前核任务并drain。
 
 LIVE-023交接：214b8ed审查通过后runtime20已换API25919/executor25920/UI25921，同副本与策略指纹；独立70通过。仅抖音HTTPS/douyincdn.com/60秒50MB开放试录，视频号未开放、无真实源录制。ARC持runtime串行操作锁直至PM交接确认；原备份与数据保留，详见reports/LIVE-023/delivery.md。
+
+LIVE-024：ARC持runtime20串行控制，ENG-02仅在.worktrees/LIVE-024-douyin-parser改bridge/providers及对应测试，root提交；QA-02非作者固定SHA复核。原失败run546dd419及文件保留，无源码写入当前运行的023。
+
+LIVE-024运行已切换：API34403/executor34405使用已审676c439，UI25921保留023，策略未改。一次授权真实复验返回source_empty_response，handler已退出，无媒体；原失败都保留。ARC继续串行控制，PM协调正常浏览器/会话条件，不并发重试。

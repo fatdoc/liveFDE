@@ -79,3 +79,73 @@ def test_layered_policy_separate_from_model_registry(tmp_path):
         },
     )()
     assert load_policy(settings).max_seconds == 10
+
+
+@pytest.fixture
+def mocked_douyin(tmp_path, monkeypatch):
+    provider = providers.DouyinProvider(
+        CapturePolicy(
+            root=tmp_path,
+            douyin_python=Path(sys.executable),
+            douyin_checkout=tmp_path,
+            probe_attempts=1,
+            douyin_cookie_env="LIVE_SYNTHETIC_COOKIE",
+        )
+    )
+    monkeypatch.setattr(provider, "health", lambda: {"dependencies_ready": True})
+    monkeypatch.setattr(
+        providers.subprocess,
+        "run",
+        lambda *a, **k: type("Revision", (), {"stdout": providers.DOUYIN_COMMIT.encode()})(),
+    )
+    return provider
+
+
+@pytest.mark.parametrize("code", sorted(providers.DOUYIN_ERRORS))
+def test_douyin_preserves_only_allowed_error_codes(mocked_douyin, monkeypatch, code):
+    import json
+
+    monkeypatch.setattr(
+        providers, "communicate", lambda *a, **k: json.dumps({"error": code}).encode()
+    )
+    with pytest.raises(CaptureError) as error:
+        mocked_douyin.probe("https://live.douyin.com/123", lambda: None)
+    assert error.value.code == code
+
+
+@pytest.mark.parametrize(
+    "body", [b'{"error":"private-cookie-fixture"}', b"[]", b"null", b'{"error":{}}']
+)
+def test_douyin_unknown_payload_remains_generic(mocked_douyin, monkeypatch, body):
+    monkeypatch.setattr(providers, "communicate", lambda *a, **k: body)
+    with pytest.raises(CaptureError, match="^source_parse_failed$"):
+        mocked_douyin.probe("https://live.douyin.com/123", lambda: None)
+
+
+def test_douyin_absent_cookie_payload_and_stop_are_preserved(mocked_douyin, monkeypatch):
+    import json
+
+    monkeypatch.delenv("LIVE_SYNTHETIC_COOKIE", raising=False)
+
+    def response(command, tick, timeout, payload, cwd):
+        assert json.loads(payload)["cookie"] == ""
+        tick()
+        return b'{"live":false}'
+
+    monkeypatch.setattr(providers, "communicate", response)
+    assert not mocked_douyin.probe("https://live.douyin.com/123", lambda: None).live
+
+    def stop():
+        raise StopCapture
+
+    with pytest.raises(StopCapture):
+        mocked_douyin.probe("https://live.douyin.com/123", stop)
+
+
+def test_douyin_communicate_timeout_is_not_overwritten(mocked_douyin, monkeypatch):
+    def timeout(*args, **kwargs):
+        raise CaptureError("source_timeout")
+
+    monkeypatch.setattr(providers, "communicate", timeout)
+    with pytest.raises(CaptureError, match="^source_timeout$"):
+        mocked_douyin.probe("https://live.douyin.com/123", lambda: None)

@@ -1,5 +1,6 @@
 from uuid import UUID
 
+import pytest
 from capture_fixture import av_file as av_file
 from capture_fixture import capture_env as capture_env
 from capture_fixture import closed_fixture, start_run
@@ -141,3 +142,149 @@ def test_finalize_commit_before_association_crash_recovers(capture_env, av_file,
             )
             == 1
         )
+
+
+@pytest.mark.parametrize(
+    "change,expected",
+    [
+        ("disabled", "actor_not_available"),
+        ("workspace", "actor_not_available"),
+        ("job_actor", "capture_ownership_changed"),
+    ],
+)
+def test_execution_and_manual_import_revalidate_actor(capture_env, av_file, change, expected):
+    from uuid import uuid4
+
+    from materials_fixture import ORIGIN, PASSWORD
+
+    from live_review.modules.capture.models import CaptureRun
+    from live_review.modules.identity.models import Admin
+    from live_review.modules.identity.security import hasher
+
+    fixture, settings, root = capture_env
+    client, _, admin, _, stranger = fixture
+    run, _ = start_run(fixture)
+    manifest = closed_fixture(root, run, av_file)
+    with Session(app.state.engine) as db:
+        alternate = Admin(
+            workspace_id=admin.workspace_id,
+            username=uuid4().hex,
+            display_name="Authorized retry operator",
+            password_hash=hasher.hash(PASSWORD),
+        )
+        username = alternate.username
+        db.add(alternate)
+        if change == "disabled":
+            db.get(Admin, admin.id).active = False
+        elif change == "workspace":
+            db.get(Admin, admin.id).workspace_id = stranger.workspace_id
+        else:
+            db.get(Job, UUID(run["job_id"])).actor_id = stranger.id
+        row = db.get(CaptureRun, UUID(run["capture_run_id"]))
+        row.manifest, row.state = manifest, "recorded"
+        db.commit()
+    run_job(app.state.engine, settings, run["job_id"], 1)
+    login = client.post(
+        "/api/v1/auth/login", headers=ORIGIN, json={"username": username, "password": PASSWORD}
+    )
+    headers = ORIGIN | {"X-CSRF-Token": login.json()["csrf_token"]}
+    endpoint = f"/api/v1/capture/runs/{run['capture_run_id']}"
+    response = client.post(endpoint + "/import", headers=headers)
+    assert response.status_code == 422 and response.json()["code"] == expected
+    status = client.get(endpoint).json()
+    assert status["error_code"] == expected and status["state"] == "recorded"
+    assert status["material_id"] is None and status["manifest"] == manifest
+    with Session(app.state.engine) as db:
+        assert (
+            db.scalar(
+                select(func.count())
+                .select_from(Material)
+                .where(Material.workspace_id == admin.workspace_id)
+            )
+            == 0
+        )
+
+
+def test_import_capture_error_persisted_without_losing_recording(capture_env, av_file):
+    from live_review.modules.capture.models import CaptureRun
+
+    fixture, _, root = capture_env
+    client, headers, _, _, _ = fixture
+    run, _ = start_run(fixture)
+    manifest = closed_fixture(root, run, av_file)
+    with Session(app.state.engine) as db:
+        db.get(Job, UUID(run["job_id"])).status = "failed"
+        row = db.get(CaptureRun, UUID(run["capture_run_id"]))
+        row.manifest, row.state = manifest, "recorded"
+        db.commit()
+    with (root / run["capture_run_id"] / "recording.mp4").open("ab") as stream:
+        stream.write(b"synthetic-corruption")
+    endpoint = f"/api/v1/capture/runs/{run['capture_run_id']}"
+    assert client.post(endpoint + "/import", headers=headers).status_code == 422
+    status = client.get(endpoint).json()
+    assert status["error_code"] == "capture_hash_mismatch"
+    assert status["recording_status"] == "recorded" and status["manifest"] == manifest
+
+
+def test_rejected_retry_preserves_imported_fact(capture_env, av_file):
+    from uuid import uuid4
+
+    from materials_fixture import ORIGIN, PASSWORD
+
+    from live_review.modules.identity.models import Admin
+    from live_review.modules.identity.security import hasher
+
+    fixture, settings, root = capture_env
+    client, _, admin, _, _ = fixture
+    run, _ = start_run(fixture)
+    closed_fixture(root, run, av_file)
+    run_job(app.state.engine, settings, run["job_id"], 1)
+    endpoint = f"/api/v1/capture/runs/{run['capture_run_id']}"
+    before = client.get(endpoint).json()
+    assert before["state"] == "imported" and before["material_id"]
+    with Session(app.state.engine) as db:
+        alternate = Admin(
+            workspace_id=admin.workspace_id,
+            username=uuid4().hex,
+            display_name="Authorized retry operator",
+            password_hash=hasher.hash(PASSWORD),
+        )
+        username = alternate.username
+        db.add(alternate)
+        db.get(Admin, admin.id).active = False
+        db.commit()
+    login = client.post(
+        "/api/v1/auth/login", headers=ORIGIN, json={"username": username, "password": PASSWORD}
+    )
+    headers = ORIGIN | {"X-CSRF-Token": login.json()["csrf_token"]}
+    response = client.post(endpoint + "/import", headers=headers)
+    assert response.status_code == 422 and response.json()["code"] == "actor_not_available"
+    after = client.get(endpoint).json()
+    assert after["state"] == "imported" and after["import_status"] == "imported"
+    assert after["material_id"] == before["material_id"]
+    assert after["error_code"] == "actor_not_available"
+
+    # Simulate stage-result loss after material import committed, then retry as the worker.
+    from datetime import timedelta
+    from types import SimpleNamespace
+
+    from live_review.integrations.capture.contracts import CaptureError
+    from live_review.modules.capture.models import CaptureRun
+    from live_review.modules.jobs.service import now
+    from live_review.workers.capture_jobs import run_stage
+
+    with Session(app.state.engine) as db:
+        job = db.get(Job, UUID(run["job_id"]))
+        data = job.input_data
+        token = uuid4()
+        job.lease_token, job.lease_until = token, now() + timedelta(seconds=60)
+        db.commit()
+    context = SimpleNamespace(
+        engine=app.state.engine, job_id=UUID(run["job_id"]), input_data=lambda: data, token=token
+    )
+    with pytest.raises(CaptureError, match="actor_not_available"):
+        run_stage(context, settings, "capture.import")
+    with Session(app.state.engine) as db:
+        row = db.get(CaptureRun, UUID(run["capture_run_id"]))
+        assert row.state == "imported" and str(row.material_id) == before["material_id"]
+        assert row.error_code == "actor_not_available"

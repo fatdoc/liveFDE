@@ -31,8 +31,22 @@
 
 没有原生低延迟ASR、多人长录音质量或跨片说话人一致性声明。上游风控/取流签名/CDN域可能变化；未验证私有/会员/DRM直播。完整生产broker部署、实际手机兼容、长直播稳定性未验证。单片500MB共享默认/本机50MB，超过既有上传限制保留待导入；已有上传TTL过期需运维处理，不绕过旧校验。进程崩溃无closed manifest不自动修复/导入partial，也不偷偷续录；重新开始新run或后续明确恢复工具处理。
 
-capture_helper为本机API命令行入口，不是前端页面；无后台常驻或任务自动唤醒承诺。API8197/PG15490当前保留以供验收，接收8198只在显式任务运行时占用。私有账号/会话引用在runtime/live-015/preview-account.json（0600），不在Git/报告展示密码。
+capture_helper为本机API命令行入口，不是前端页面；无后台常驻或任务自动唤醒承诺。API8197在安全修复期间主动停止；PG15490保留以供验收，接收8198只在显式任务运行时占用。私有账号/会话引用在runtime/live-015/preview-account.json（0600），不在Git/报告展示密码。
 
 ## 回滚
 
 未集成main前保留本分支/运行证据即可；无需改主仓库。集成后回滚应由ARC串行撤回接线与模块，先停止本轮任务，保留runtime源文件；数据库0006仅新增capture_runs，降级会删除采集元数据，不能在有需要保留的运行记录时盲目降级。旧材料/ASR/任务表和已有迁移均未重写。
+
+## 首轮独立审查阻断与修复
+
+独立QA审查a1702c0后确认：① HLS未加引号URI属性未被重写，存在目的地址校验绕过；② 普通TS分片转成.media后FFmpeg拒绝（独立正常HLS探针direct=0/relay=183）；③ duration替代进程测试依赖Python在1秒内启动，独立专项22项有1失败。原证据在runtime/live-015/qa/，保留不覆盖。ARC另指出执行期actor与工作区复验不足、CaptureError导入失败未持久展示，已一起修复。
+
+修复：新增HLS标签/属性严格解析与URI统一重写（未知/不合规fail-closed），安全后缀映射，真实正常HLS合成AV回归；HLS实测又发现碎片MP4直接复制ADTS AAC时截短，改为视频copy/音频AAC128k。共同execution_actor覆盖worker录制/心跳和worker/API导入；Import持久化所有受控错误；manifest严格验证。故障测试在替代进程launch返回前同步放置合成媒体，避免解释器冷启动与1秒录制限时竞争，不扩大生产max_seconds。
+
+37项修复专项0fail/0skip：runtime/live-015/evidence/live015_suite_751d892dfba94ec68be0b23500f38501/。正常HLS实际音视频产物位于其tmp/test_actual_hls_ts_relay_recor0/recorded-hls/，与早前MP4直流测试分开。后续完整351项通过（0失败/错误/skip），证据runtime/live-015/evidence/live015_suite_1f23603199d843edbb1eb4e01f2889c0/；其tmp/test_actual_hls_ts_relay_recor0与recor1/recorded-hls分别为普通和AES-128合成HLS实物，均2220ms、音视频齐全且完整解码通过。
+
+ARC预审追加：已导入材料后owner失效导致手动重试或worker阶段重试降级状态。两入口共用material_id优先保留状态规则，仍拒绝失效actor并持久记录诊断；补完整导入后的撤权、其他管理员重试、导入提交后stage回写丢失模拟断言。
+
+审查边界：原QA安全探针后续被平台自动安全审核中止（possible cybersecurity risk），未获得该轮完整批准。本轮不重复被拦截探针，采用纯解析层拒绝断言与普通本地HLS播放检验防御修复；后续由非实现作者ARC审查固定修复SHA及普通功能验收，不宣称已完成全量安全测试。未向用户发起额外授权要求，真实平台试录暂缓直到技术复核完成。
+
+最终追加状态修复后的39项capture专项全部通过（0失败/错误/skip）：runtime/live-015/evidence/live015_suite_f7765c45af814ec490788b81a3239ea7/。包括API与worker已导入后撤权重试；Ruff、diff检查和LIVE-015范围检查0违规。

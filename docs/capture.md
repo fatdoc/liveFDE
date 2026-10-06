@@ -114,3 +114,13 @@ services/backend/.venv/bin/python scripts/checks/live015_environment.py .venv/bi
 本轮 PG 时间区固定 UTC：在启动 API 前执行 `services/backend/.venv/bin/python scripts/checks/live015_environment.py --configure-db`。验收脚本也会对每个新库固定 UTC。原因：原有材料幂等 API 的 expires_at 输出直接使用 DB datetime，PG 返回 +08:00 时会与首次 UTC 对象在字符串上不同（同一时间点）。本轮没有顺手改旧材料响应格式；保留首轮331通过/1时区失败日志，UTC配置后的完整回归另有证据。这是部署配置依赖，不是掩去失败。
 
 关闭本轮 API 用其前台终端 Ctrl-C；当前 helper 每次运行结束关闭 DLNA 8198，未运行时无需单独守护进程。停止独立 PG（确认本轮测试/采集均已结束后）：`pg_ctl -D /Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-015/pgdata stop -m fast`。不对其它 PG、预览端口或模型worker执行清理。
+
+## 首轮 Review 后的 HLS 与权限修复
+
+HLS 现在先经过严格标签/属性解析，再交给 FFmpeg：URI 只能使用合规双引号字符串；重复键、未闭合字符串、未知属性、未知扩展标签、变量替换语法均拒绝。key/map/media/session-key/session-data/part/preload-hint/rendition-report/iframe 的 URI 统一受控重写，普通分片与 master 清单后继地址也受控。保留安全分片后缀，避免把 TS 全改为 `.media` 导致 FFmpeg 拒绝；未知 HLS 扩展会明确失败，不承诺所有直播清单变体都支持。
+
+录制输出复制视频流、统一编码 AAC 128k 音频到碎片化 MP4。这样可正确处理 HLS TS 的 ADTS AAC，不再因直接复制 AAC 缺少配置头而只留下约0.3秒片段。普通 AES-128 HLS 用自生成合成密钥验证；这不代表支持付费/会员/DRM直播或视频号 AirPlay 的其它加密协议。
+
+worker 开始采集、采集心跳和公共导入入口会重新检查 actor.active、actor/job/run/workspace 和场次归属。账号撤销或迁移后不得继续取流/导入，手动导入 API 同样覆盖。导入的 ApiError/CaptureError 均持久记录原因；hash/disk/manifest 问题不抹去已录制事实。manifest 使用严格结构、时区/时间顺序、音视频与哈希字段校验，拒绝异常文件类型/符号链接/过大文件；只有与run/platform/source匹配才可恢复。
+
+已存在material_id时，手动重试/worker恢复遭遇撤权等失败仍保留imported状态和材料关联，错误单独展示；不会因后续鉴权失败把已导入事实降回recorded。

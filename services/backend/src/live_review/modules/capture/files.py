@@ -33,3 +33,23 @@ def exclusive(path):
         yield
     finally:
         os.close(descriptor)
+
+
+def load_manifest(path):
+    import stat
+
+    from pydantic import ValidationError
+
+    from live_review.integrations.capture.contracts import CaptureManifest
+
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(descriptor) as stream:
+            info = os.fstat(stream.fileno())
+            if not stat.S_ISREG(info.st_mode) or info.st_size > 65536:
+                raise CaptureError("invalid_manifest")
+            return CaptureManifest.model_validate_json(stream.read(65537)).model_dump(mode="json")
+    except FileNotFoundError:
+        raise CaptureError("capture_not_closed") from None
+    except (OSError, ValueError, ValidationError):
+        raise CaptureError("invalid_manifest") from None

@@ -1,6 +1,5 @@
 """Existing durable jobs own process lifetime, cancellation, leases and outbox delivery."""
 
-import json
 from contextlib import nullcontext
 from uuid import UUID
 
@@ -10,8 +9,9 @@ from live_review.integrations.capture.contracts import CaptureError, StopCapture
 from live_review.integrations.capture.policy import fingerprint, load_policy, require_enabled
 from live_review.integrations.capture.providers import CaptureRegistry
 from live_review.integrations.capture.recording import atomic_json, record
-from live_review.modules.capture.files import directory, exclusive
-from live_review.modules.capture.ingestion import safe_import
+from live_review.modules.capture.authorization import execution_actor
+from live_review.modules.capture.files import directory, exclusive, load_manifest
+from live_review.modules.capture.ingestion import retained_state, safe_import
 from live_review.modules.capture.models import CaptureRun
 from live_review.modules.identity.models import Admin
 from live_review.modules.jobs.execution import locked
@@ -22,8 +22,6 @@ def run_stage(context, settings, handler):
     policy = load_policy(settings)
     require_enabled(policy)
     data = context.input_data()
-    if data.get("policy_sha256") != fingerprint(policy):
-        raise CaptureError("capture_config_changed")
     run_id = UUID(data["capture_run_id"])
 
     def update(**values):
@@ -38,6 +36,7 @@ def run_stage(context, settings, handler):
         context.heartbeat()
         with Session(context.engine) as db:
             current = db.get(CaptureRun, run_id)
+            execution_actor(db, current)
             if current.stop_requested:
                 raise StopCapture
             current.heartbeat_at = now()
@@ -47,6 +46,15 @@ def run_stage(context, settings, handler):
         run = db.get(CaptureRun, run_id)
         if not run or run.job_id != context.job_id:
             raise CaptureError("capture_job_mismatch")
+        try:
+            execution_actor(db, run)
+            if data.get("policy_sha256") != fingerprint(policy):
+                raise CaptureError("capture_config_changed")
+        except CaptureError as exc:
+            update(
+                error_code=exc.code, state=retained_state(run, "failed"), active=False
+            )
+            raise
         if handler == "capture.import":
             if run.state == "stopped" and not run.manifest:
                 return {"stopped_without_media": True}
@@ -57,7 +65,13 @@ def run_stage(context, settings, handler):
     try:
         with exclusive(path / "record.lock"):
             if (path / "manifest.json").is_file():
-                manifest = json.loads((path / "manifest.json").read_text())
+                manifest = load_manifest(path / "manifest.json")
+                if (
+                    manifest["capture_run_id"] != str(run_id)
+                    or manifest["platform"] != platform
+                    or manifest["source_ref"] != reference
+                ):
+                    raise CaptureError("invalid_manifest")
                 update(manifest=manifest, state="recorded", active=False)
                 return {"capture_run_id": str(run_id), "closed": True}
             if (path / "started.json").exists():

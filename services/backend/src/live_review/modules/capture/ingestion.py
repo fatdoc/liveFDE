@@ -2,7 +2,6 @@
 
 import asyncio
 import hashlib
-import json
 import shutil
 from types import SimpleNamespace
 from uuid import UUID
@@ -11,7 +10,8 @@ from live_review.core.errors import ApiError
 from live_review.integrations.capture.contracts import CaptureError
 from live_review.integrations.capture.policy import fingerprint
 from live_review.integrations.capture.recording import inspect_media
-from live_review.modules.capture.files import directory, exclusive
+from live_review.modules.capture.authorization import execution_actor
+from live_review.modules.capture.files import directory, exclusive, load_manifest
 from live_review.modules.jobs.models import Job
 from live_review.modules.materials.association import associate_material
 from live_review.modules.materials.schemas import LinkInput, UploadInput
@@ -20,6 +20,10 @@ from live_review.modules.materials.transfer import finalize, receive
 
 
 def import_recording(db, admin, run, settings, policy, tick=lambda: None):
+    actor = execution_actor(db, run)
+    if admin is None or admin.id != actor.id or admin.workspace_id != actor.workspace_id:
+        raise CaptureError("actor_not_available")
+    admin = actor
     job = db.get(Job, run.job_id)
     if job.input_data.get("policy_sha256") != fingerprint(policy):
         raise CaptureError("capture_config_changed")
@@ -28,7 +32,7 @@ def import_recording(db, admin, run, settings, policy, tick=lambda: None):
         manifest_path = path / "manifest.json"
         if not manifest_path.is_file() or manifest_path.is_symlink():
             raise CaptureError("capture_not_closed")
-        manifest = json.loads(manifest_path.read_text())
+        manifest = load_manifest(manifest_path)
         if (
             manifest.get("closed") is not True
             or manifest.get("capture_run_id") != str(run.id)
@@ -45,6 +49,7 @@ def import_recording(db, admin, run, settings, policy, tick=lambda: None):
         if digest != manifest["sha256"] or source.stat().st_size != manifest["size_bytes"]:
             raise CaptureError("capture_hash_mismatch")
         inspect_media(source, policy.ffprobe)
+        execution_actor(db, run)
         tick()
         if (
             not run.material_id
@@ -67,14 +72,17 @@ def import_recording(db, admin, run, settings, policy, tick=lambda: None):
             async def chunks():
                 with source.open("rb") as stream:
                     while chunk := stream.read(1024 * 1024):
+                        execution_actor(db, run)
                         tick()
                         yield chunk
 
             request.headers = {"content-length": str(source.stat().st_size)}
             request.stream = chunks
             asyncio.run(receive(request, db, admin, upload_id))
+        execution_actor(db, run)
         tick()
         result = finalize(request, db, admin, upload_id)
+        execution_actor(db, run)
         tick()
         associate_material(
             db, admin, run.session_id, LinkInput(material_id=result["material_id"], role="primary")
@@ -91,12 +99,18 @@ def import_recording(db, admin, run, settings, policy, tick=lambda: None):
         }
 
 
+def retained_state(run, fallback):
+    if run.material_id is not None:
+        return "imported"
+    return "recorded" if run.manifest is not None else fallback
+
+
 def safe_import(db, admin, run, settings, policy, tick=lambda: None):
     try:
         return import_recording(db, admin, run, settings, policy, tick)
-    except ApiError as exc:
+    except (ApiError, CaptureError) as exc:
         db.rollback()
         run.error_code = exc.code
-        run.state = "recorded"
+        run.state = retained_state(run, run.state)
         db.commit()
-        raise CaptureError("material_import_pending") from None
+        raise CaptureError(exc.code) from None

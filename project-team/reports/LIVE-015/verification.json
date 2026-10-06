@@ -1,0 +1,48 @@
+{
+  "implementation_head": "containing_commit (git rev-parse HEAD after checkout)",
+  "review_status": "pending_independent_review",
+  "capture_tests": {
+    "passed": 39,
+    "failed": 0,
+    "skipped": 0,
+    "evidence": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-015/evidence/live015_suite_f7765c45af814ec490788b81a3239ea7",
+    "note": "Includes final API and worker retry imported-state preservation"
+  },
+  "backend_regression": {
+    "passed": 351,
+    "failed": 0,
+    "skipped": 0,
+    "evidence": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-015/evidence/live015_suite_1f23603199d843edbb1eb4e01f2889c0",
+    "note": "Full regression before final imported-state follow-up; final follow-up included in 39 capture tests"
+  },
+  "main_original_guard_tests": 36,
+  "capture_environment_and_scope_tests": 8,
+  "real_phone_recordings": 0,
+  "real_platform_recordings": 0,
+  "real_asr_calls": 0,
+  "upstream_helper_smoke": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-015/evidence/helper-smoke.json",
+  "cli_stop": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-015/evidence/cli-stop.json",
+  "media_probe": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-015/evidence/recorded-media-probe.json",
+  "api": "http://127.0.0.1:8197",
+  "pg_port": 15490,
+  "finder_port": 8198,
+  "migration_head": "0006_capture",
+  "implementation_base": "a1702c0a7bbcc93699c79fdd9a09d45351fb57ac",
+  "api_state": "stopped_during_review",
+  "synthetic_hls_media": [
+    {
+      "path": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-015/evidence/live015_suite_f7765c45af814ec490788b81a3239ea7/tmp/test_actual_hls_ts_relay_recor0/recorded-hls/recording.mp4",
+      "kind": "normal_hls",
+      "audio_video": true,
+      "full_decode_passed": true,
+      "real_platform": false
+    },
+    {
+      "path": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-015/evidence/live015_suite_f7765c45af814ec490788b81a3239ea7/tmp/test_actual_hls_ts_relay_recor1/recorded-hls/recording.mp4",
+      "kind": "aes128_hls",
+      "audio_video": true,
+      "full_decode_passed": true,
+      "real_platform": false
+    }
+  ]
+}

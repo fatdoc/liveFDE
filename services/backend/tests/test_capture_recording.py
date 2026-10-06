@@ -114,12 +114,25 @@ def test_interruption_preserves_closed_partial(tmp_path, av_file, monkeypatch, m
     # Controlled process fault with a real AV file; separate from actual FFmpeg test above.
     script = tmp_path / "fault-process"
     script.write_text(
-        f"#!{sys.executable}\nimport sys,shutil,time,os,signal\n"
-        + f"shutil.copyfile({str(av_file)!r}, sys.argv[-1])\n"
-        + ("with open(sys.argv[-1], 'ab') as f: f.truncate(1200000)\n" if mode == "size" else "")
+        f"#!{sys.executable}\nimport time,os,signal\n"
         + ("os.kill(os.getpid(), signal.SIGKILL)\n" if mode == "crash" else "time.sleep(20)\n")
     )
     script.chmod(0o700)
+    original_popen = subprocess.Popen
+
+    def ready_process(command, **kwargs):
+        if command[0] == str(script):
+            # Synchronize the synthetic file before returning the fake launch. This
+            # tests stop/finalize semantics, not whether Python cold-starts in 1s.
+            import shutil
+
+            shutil.copyfile(av_file, command[-1])
+            if mode == "size":
+                with open(command[-1], "ab") as stream:
+                    stream.truncate(1200000)
+        return original_popen(command, **kwargs)
+
+    monkeypatch.setattr(recording.subprocess, "Popen", ready_process)
     monkeypatch.setattr(relay, "destination", permit_fixture)
     count = [0]
     real_disk = recording.shutil.disk_usage
@@ -207,3 +220,116 @@ def test_address_expired_no_closed_media(tmp_path, monkeypatch):
         server.shutdown()
         server.server_close()
         thread.join()
+
+
+@pytest.mark.parametrize(
+    "tag,attributes",
+    [
+        ("EXT-X-KEY", "METHOD=AES-128,"),
+        ("EXT-X-SESSION-KEY", "METHOD=AES-128,"),
+        ("EXT-X-MAP", ""),
+        ("EXT-X-MEDIA", 'TYPE=AUDIO,GROUP-ID="a",NAME="a",'),
+        ("EXT-X-I-FRAME-STREAM-INF", "BANDWIDTH=1000,"),
+        ("EXT-X-SESSION-DATA", 'DATA-ID="test",'),
+        ("EXT-X-PART", "DURATION=1,"),
+        ("EXT-X-PRELOAD-HINT", "TYPE=PART,"),
+        ("EXT-X-RENDITION-REPORT", ""),
+    ],
+)
+def test_hls_uri_attributes_strictly_parsed_without_network(tag, attributes):
+    from live_review.integrations.capture.hls import rewrite
+
+    calls = []
+
+    def registered(url, kind):
+        calls.append((url, kind))
+        return "http://127.0.0.1/opaque." + ("m3u8" if kind == "playlist" else "ts")
+
+    body = f'#EXTM3U\n#{tag}:{attributes}URI="https://cdn.example.test/asset?opaque=1"\n'
+    rendered = rewrite(body.encode(), "https://cdn.example.test/index.m3u8", registered)
+    assert len(calls) == 1 and b"opaque=1" not in rendered
+    calls.clear()
+    for value in ("https://cdn.example.test/asset", '"valid",URI="duplicate"', '"unterminated'):
+        with pytest.raises(CaptureError):
+            rewrite(
+                f"#EXTM3U\n#{tag}:{attributes}URI={value}\n".encode(),
+                "https://cdn.example.test/index.m3u8",
+                registered,
+            )
+        assert not calls  # Reject before registering any malformed URI, no requests involved.
+
+
+def test_hls_unknown_extensions_and_attribute_syntax_fail_closed():
+    from live_review.integrations.capture.hls import rewrite
+
+    for line in (
+        '#EXT-X-DEFINE:NAME="x",VALUE="value"',
+        '#EXT-X-MAP:URI="file",UNKNOWN="x"',
+        '#EXT-X-MAP:URI="file",',
+        '#EXT-X-MAP:URI="file"garbage',
+        '#EXT-X-FUTURE:URI="file"',
+    ):
+        with pytest.raises(CaptureError):
+            rewrite(
+                ("#EXTM3U\n" + line + "\n").encode(),
+                "https://cdn.example.test/a",
+                lambda url, kind: "http://127.0.0.1/opaque.ts",
+            )
+
+
+@pytest.mark.parametrize("encrypted", [False, True])
+def test_actual_hls_ts_relay_records_audio_video(tmp_path, av_file, monkeypatch, encrypted):
+    playlist = tmp_path / "index.m3u8"
+    key_args = []
+    if encrypted:
+        key = tmp_path / "synthetic.key"
+        key.write_bytes(b"0123456789abcdef")
+        key_info = tmp_path / "key-info.txt"
+        key_info.write_text("synthetic.key\n" + str(key) + "\n")
+        key_args = ["-hls_key_info_file", str(key_info)]
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-v",
+            "error",
+            "-i",
+            str(av_file),
+            "-c",
+            "copy",
+            "-f",
+            "hls",
+            "-hls_time",
+            "1",
+            "-hls_list_size",
+            "0",
+            *key_args,
+            str(playlist),
+        ],
+        capture_output=True,
+        check=True,
+        timeout=15,
+    )
+    monkeypatch.setattr(relay, "destination", permit_fixture)
+    target = tmp_path / "recorded-hls"
+    target.mkdir()
+    with http_source(playlist) as source:
+        manifest = recording.record(
+            Source(True, source),
+            target,
+            CapturePolicy(min_free_bytes=1048576, max_seconds=15),
+            lambda: None,
+            lambda _: None,
+            "wechat",
+            uuid4(),
+            "phone_cast",
+        )
+    assert {"audio", "video"} <= set(manifest["media_types"])
+    assert 1500 <= manifest["duration_ms"] <= 3000
+    assert manifest["end_reason"] == "source_eof_unconfirmed" and not manifest["complete"]
+    decoded = subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", str(target / "recording.mp4"), "-f", "null", "-"],
+        capture_output=True,
+        check=False,
+        timeout=15,
+    )
+    assert decoded.returncode == 0

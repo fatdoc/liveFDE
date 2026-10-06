@@ -15,6 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urljoin, urlsplit
 
 from live_review.integrations.capture.contracts import CaptureError
+from live_review.integrations.capture.hls import rewrite
 
 
 def destination(url, domains):
@@ -56,20 +57,28 @@ class Relay:
             raise
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 
-    def register(self, url):
+    def register(self, url, kind=None):
         # Validate before publishing; fetch revalidates and pins the actual connection.
         destination(url, self.domains)
         with self.lock:
-            if url in self.reverse:
-                return self.reverse[url]
+            identity = (url, kind)
+            if identity in self.reverse:
+                return self.reverse[identity]
             if len(self.urls) > 100000:
                 raise CaptureError("playlist_limit")
             token = secrets.token_hex(24)
-            suffix = ".m3u8" if ".m3u8" in urlsplit(url).path else ".media"
+            suffix = urlsplit(url).path.rsplit(".", 1)[-1].lower()
+            suffix = (
+                "." + suffix
+                if suffix
+                in {"m3u8", "ts", "m4s", "mp4", "m4a", "aac", "mp3", "ac3", "ec3", "vtt", "flv"}
+                else ".ts"
+            )
+            suffix = {"playlist": ".m3u8", "key": ".key", "map": ".mp4"}.get(kind, suffix)
             path = "/" + token + suffix
             self.urls[path] = url
             public = f"http://127.0.0.1:{self.server.server_port}{path}"
-            self.reverse[url] = public
+            self.reverse[identity] = public
             return public
 
     def fetch(self, url, range_header):
@@ -100,20 +109,7 @@ class Relay:
         raise CaptureError("source_redirect_limit")
 
     def playlist(self, body, base):
-        if len(body) > 1048576:
-            raise CaptureError("playlist_limit")
-        lines = []
-        for line in body.decode("utf-8-sig").splitlines():
-            if line and not line.startswith("#"):
-                line = self.register(urljoin(base, line.strip()))
-            elif line.startswith("#"):
-                line = re.sub(
-                    r'URI="([^"\r\n]+)"',
-                    lambda m: 'URI="' + self.register(urljoin(base, m[1])) + '"',
-                    line,
-                )
-            lines.append(line)
-        return ("\n".join(lines) + "\n").encode()
+        return rewrite(body, base, self.register)
 
     def handler(self):
         relay = self

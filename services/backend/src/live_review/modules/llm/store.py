@@ -120,18 +120,18 @@ class Store:
         with self.files.lock():
             state = self._read()
             self.require_revision(state.value, revision)
+            # Caller owns check.lock: checking here is an abandoned intent, regardless
+            # of which historical request ID is being replayed. Cache hits never own state.
+            if state.value.status == "checking":
+                state.value.status, state.value.last_error = "unknown", "llm_result_unknown"
+                self._write(state)
             key = str(request_id)
             if key in state.requests:
                 record = state.requests[key]
                 if record.revision != revision:
                     raise ApiError(409, "llm_request_reused", "该测试编号已使用，不能再次发送")
-                if state.value.status == "checking":
-                    state.value = record.result
-                    self._write(state)
                 return record.result, None
-            if state.value.status in {"checking", "unknown"}:
-                state.value.status, state.value.last_error = "unknown", "llm_result_unknown"
-                self._write(state)
+            if state.value.status == "unknown":
                 raise ApiError(409, "llm_result_unknown", "先前测试结果未知，不能再次发送")
             if not state.value.configured:
                 raise ApiError(422, "llm_not_configured", "请先保存接口与密钥")

@@ -328,3 +328,22 @@ def test_no_env_key_fallback_and_unknown_error_no_secret_or_log(api, monkeypatch
     assert SECRET not in result.text and "private raw body" not in result.text
     assert not capsys.readouterr().out
     assert calls == []
+
+
+def test_old_success_cache_cannot_clear_newer_abandoned_intent(api):
+    client, settings, headers, workspace, calls = api
+    revision = save(client, headers).json()["revision"]
+    request_a, request_b = uuid4(), uuid4()
+    first = check(client, headers, revision, request_a)
+    assert first.json()["status"] == "verified" and len(calls) == 1
+    store = Store(settings, workspace)
+    store.begin(revision, request_b)  # Simulated exit after B's durable intent.
+    assert store._read().value.status == "checking"
+    # Deliberately replay A without GET recovery first: this was the unsafe path.
+    cached = check(client, headers, revision, request_a)
+    assert cached.json()["status"] == "verified"
+    assert store._read().value.status == "unknown"
+    assert store._read().value.last_error == "llm_result_unknown"
+    assert check(client, headers, revision).status_code == 409
+    assert check(client, headers, revision, request_b).json()["status"] == "unknown"
+    assert store._read().value.status == "unknown" and len(calls) == 1

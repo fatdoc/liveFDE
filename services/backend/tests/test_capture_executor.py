@@ -1,5 +1,6 @@
 """Native dispatch tests use isolated PG and local synthetic media, no platform calls."""
 
+import base64
 import json
 import threading
 import time
@@ -130,6 +131,23 @@ def test_run_list_restores_pages_and_workspace_isolation(capture_env):
         params={"session_id": str(sessions[0].id), "cursor": "invalid"},
     )
     assert invalid.status_code == 422 and invalid.json()["code"] == "invalid_cursor"
+    valid = {"session_id": str(sessions[0].id), "created_at": now().isoformat(), "id": ids[0]}
+    for payload in (
+        [],
+        None,
+        {},
+        valid | {"id": 123},
+        valid | {"id": {}},
+        valid | {"created_at": 123},
+        valid | {"session_id": None},
+        valid | {"created_at": "2026-10-06T00:00:00"},
+        valid | {"session_id": str(sessions[1].id)},
+    ):
+        cursor = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
+        malformed = client.get(
+            "/api/v1/capture/runs", params={"session_id": str(sessions[0].id), "cursor": cursor}
+        )
+        assert malformed.status_code == 422 and malformed.json()["code"] == "invalid_cursor"
     assert client.get(endpoint.replace("limit=2", "limit=101")).status_code == 422
     client.post(
         "/api/v1/auth/login",

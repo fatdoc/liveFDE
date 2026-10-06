@@ -101,7 +101,7 @@ SCOPES = {
         "scripts/checks/repository.py",
         "services/backend/src/live_review/integrations/capture/douyin_bridge.py",
         "services/backend/tests/test_capture_bridge.py",
-        "docs/capture.md", "project-team/tasks/LIVE-026.md",
+        "docs/capture.md", "project-team/tasks/LIVE-026.md", "project-team/STATUS.md",
         "project-team/reports/LIVE-026/",
     ],
     "LIVE-025": [

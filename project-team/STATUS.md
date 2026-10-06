@@ -19,11 +19,16 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-015 | CAP-01 | in_progress | 基础代码已集成且默认关闭；e78014b独立352项通过；真实抖音及出站隔离复核待验 |
 | LIVE-016 | CAP-01 | in_progress | 本机DLNA接入基础已集成，接收端停止；真实手机/视频号待验 |
 | LIVE-017 | CAP-01 | in_progress | 导入/去重/场次关联及手动ASR入口经合成媒体验证；真实平台到ASR闭环待验，非done |
+| LIVE-018 | PM/ARC | done | PR1保留双方历史完成远端同步，0cbd317；开发分支逐ref同步 |
+| LIVE-019 | PM/ARC | done | PR9集成a680ff7；main CI37469592933成功，353后端/39工程/4站点零skip |
+| LIVE-020 | CAP-01 | in_progress | 浏览器采集原生执行、列表/就绪与防御复核 |
+| LIVE-021 | FE-01 | in_progress | 现有React接真实场次、采集/材料与手动转写入口 |
+| LIVE-022 | ARC/QA | in_progress | 本轮原生环境、契约、浏览器集成与独立验收 |
 
 待决策：评分标准；后续多场景标注样本、真实云配置与预算。已授权的本轮公开本地样本实测完成，不等于新增云调用授权。
 版本/端口/DB 隔离由 LIVE-002 探针登记；不抢占已有预览。
 
-交付限制：已配置origin；远程CI结果以GitHub实际运行记录为准，分支保护未配置；RabbitMQ容器模式尚未实跑（原生独立4.2.3已验）。发布前须补Compose全栈验证，见LIVE-002/follow-up.md。8188仅烟测，结束关闭；Demo5188保留。
+交付限制：LIVE-019已在GitHub隔离runner通过PG/RabbitMQ容器冒烟、恢复与完整CI，本机仍原生优先且未操作本机Docker；分支保护未配置，生产全栈部署仍待验。8188仅烟测，结束关闭；Demo5188保留。
 
 LIVE-004环境：PG15440保留；8194仅烟测已退出。原5188 Demo仍未接后端。原LIVE-002 PG15432保留，未用于本轮业务迁移。各QA迁移基线分库，未清空/降级已有库。
 

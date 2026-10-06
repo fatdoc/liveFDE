@@ -73,7 +73,42 @@ CAPTURE_SCOPE = [
     "project-team/reports/LIVE-016/",
     "project-team/reports/LIVE-017/",
 ]
+CAPTURE_UI_BACKEND_SCOPE = [
+    "services/backend/src/live_review/integrations/capture/",
+    "services/backend/src/live_review/modules/capture/",
+    "services/backend/src/live_review/workers/capture_jobs.py",
+    "services/backend/src/live_review/workers/capture_helper.py",
+    "services/backend/src/live_review/workers/capture_operator.py",
+    "services/backend/src/live_review/workers/capture_executor.py",
+    "services/backend/src/live_review/workers/handlers.py",
+    "services/backend/src/live_review/workers/dispatcher.py",
+    "services/backend/src/live_review/modules/jobs/execution.py",
+    "services/backend/tests/test_capture_api.py",
+    "services/backend/tests/test_capture_import.py",
+    "services/backend/tests/test_capture_providers.py",
+    "services/backend/tests/test_capture_recording.py",
+    "services/backend/tests/test_capture_executor.py",
+    "services/backend/tests/capture_fixture.py",
+    "services/backend/tests/capture/",
+    "docs/capture.md", "project-team/reports/LIVE-020/",
+]
+CAPTURE_UI_FRONTEND_SCOPE = [
+    "frontend/web/src/", "frontend/web/tests/", "frontend/web/vite.config.mjs",
+    "project-team/reports/LIVE-021/",
+]
 SCOPES = {
+    "LIVE-020": CAPTURE_UI_BACKEND_SCOPE,
+    "LIVE-021": CAPTURE_UI_FRONTEND_SCOPE,
+    # ARC performs reviewed serial integration of separately owned implementations.
+    "LIVE-022": CAPTURE_UI_BACKEND_SCOPE + CAPTURE_UI_FRONTEND_SCOPE + [
+        "scripts/checks/repository.py", "scripts/checks/live020_environment.py",
+        "scripts/checks/live020_acceptance.py", "scripts/checks/live020_smoke.py",
+        "scripts/checks/test_live020_environment.py", "docs/operations/live020.md",
+        "docs/contracts/", "docs/README.md", "project-team/STATUS.md",
+        "project-team/access/RESOURCE-LOCKS.md", "project-team/windows.md",
+        "project-team/tasks/LIVE-020.md", "project-team/tasks/LIVE-021.md",
+        "project-team/tasks/LIVE-022.md", "project-team/reports/LIVE-022/",
+    ],
     "LIVE-019": [
         "services/backend/tests/test_local_asr_worker.py",
         ".github/workflows/checks.yml",

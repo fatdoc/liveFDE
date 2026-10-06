@@ -309,3 +309,47 @@ def test_dns_receives_total_deadline_and_failure_does_not_send(configured, monke
     with pytest.raises(impl.CheckFailure) as error:
         impl.check_connection(*configured)
     assert error.value.code == "llm_timeout" and not error.value.unknown
+
+
+@pytest.mark.parametrize("framing", ["content_length", "chunked", "chunked_trailer"])
+def test_truncated_framing_is_unknown_even_with_valid_json(configured, monkeypatch, framing):
+    body = json.dumps(
+        {"choices": [{"message": {"content": "OK"}}], "usage": {"total_tokens": 5}}
+    ).encode()
+    if framing == "content_length":
+        response = (
+            b"HTTP/1.1 200 OK\r\nContent-Length: "
+            + str(len(body) + 100).encode()
+            + b"\r\n\r\n"
+            + body
+        )
+    else:
+        # Complete JSON chunk but missing the required terminating zero-length chunk.
+        response = (
+            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
+            + f"{len(body):x}\r\n".encode()
+            + body
+            + b"\r\n"
+        )
+        if framing == "chunked_trailer":
+            response += b"0\r\n"  # Missing final trailer CRLF.
+    requests, _, thread = wire(monkeypatch, response)
+    with pytest.raises(impl.CheckFailure) as error:
+        impl.check_connection(*configured)
+    thread.join(2)
+    assert error.value.code == "llm_response_invalid" and error.value.unknown
+    assert len(requests) == 1
+
+
+def test_complete_chunked_framing_remains_valid(configured, monkeypatch):
+    body = b'{"choices":[{"message":{"content":"OK"}}]}'
+    response = (
+        b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
+        + f"{len(body):x}\r\n".encode()
+        + body
+        + b"\r\n0\r\n\r\n"
+    )
+    requests, _, thread = wire(monkeypatch, response)
+    assert impl.check_connection(*configured) is None
+    thread.join(2)
+    assert len(requests) == 1

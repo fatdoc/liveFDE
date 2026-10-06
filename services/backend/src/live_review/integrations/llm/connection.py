@@ -39,6 +39,18 @@ class CheckFailure(Exception):
         super().__init__(self.code)
 
 
+class CompleteResponse(http.client.HTTPResponse):
+    def _read_and_discard_trailer(self):
+        # stdlib accepts EOF instead of the trailer terminator; require complete framing.
+        for _ in range(100):
+            line = self.fp.readline(65537)
+            if not line or len(line) > 65536:
+                raise http.client.IncompleteRead(b"")
+            if line == b"\r\n":
+                return
+        raise http.client.IncompleteRead(b"")
+
+
 def validate_target(settings, environment, base_url):
     try:
         if endpoint(base_url) != base_url:
@@ -162,6 +174,7 @@ def check_connection(settings, loaded):
         connection = http.client.HTTPConnection(
             target.hostname, port=target.port or (443 if target.scheme == "https" else 80)
         )
+        connection.response_class = CompleteResponse
         connection.sock = transport  # No second resolution; Host and TLS SNI remain original host.
         payload = json.dumps(
             {
@@ -210,10 +223,15 @@ def check_connection(settings, loaded):
             content.extend(chunk)
             if len(content) > MAX_BODY:
                 raise CheckFailure("llm_response_too_large", unknown=True)
+        # read1() may return EOF with outstanding Content-Length instead of raising.
+        if response.length not in {None, 0}:
+            raise CheckFailure("llm_response_invalid", unknown=True)
         remaining()
         return parse_usage(content)
     except CheckFailure:
         raise
+    except http.client.IncompleteRead:
+        raise CheckFailure("llm_response_invalid", unknown=True) from None
     except TimeoutError:
         raise CheckFailure("llm_timeout", unknown=sent) from None
     except Exception:

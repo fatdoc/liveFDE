@@ -1,7 +1,8 @@
 import shutil
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Query, Request
 
 from live_review.core.auth import CurrentAdmin, Database, MutationAdmin
 from live_review.core.errors import ApiError
@@ -9,6 +10,7 @@ from live_review.integrations.capture.contracts import CaptureError
 from live_review.integrations.capture.policy import load_policy, require_enabled
 from live_review.integrations.capture.providers import CaptureRegistry
 from live_review.modules.capture import service
+from live_review.modules.capture.executor_health import execution_health
 from live_review.modules.capture.ingestion import safe_import
 from live_review.modules.capture.schemas import ProbeInput, StartInput
 from live_review.modules.identity.models import Admin
@@ -32,6 +34,7 @@ def health(request: Request, admin: CurrentAdmin):
         policy = load_policy(request.app.state.settings)
         return {
             "enabled": policy.enabled,
+            "execution": execution_health(request.app.state.settings, policy),
             "automatic_asr": False,
             "ffmpeg_ready": bool(shutil.which(policy.ffmpeg)),
             "ffprobe_ready": bool(shutil.which(policy.ffprobe)),
@@ -65,10 +68,28 @@ def probe(data: ProbeInput, request: Request, admin: MutationAdmin):
 def start(data: StartInput, request: Request, admin: MutationAdmin, db: Database):
     try:
         policy = policy_for(request)
-        run = service.start(db, admin, data, request.headers.get("Idempotency-Key"), policy)
+        run = service.start(
+            db,
+            admin,
+            data,
+            request.headers.get("Idempotency-Key"),
+            policy,
+            settings=request.app.state.settings,
+        )
         return service.view(db, run)
     except CaptureError as exc:
         raise translate(exc) from None
+
+
+@router.get("/runs")
+def list_runs(
+    session_id: UUID,
+    admin: CurrentAdmin,
+    db: Database,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    cursor: Annotated[str | None, Query(max_length=512)] = None,
+):
+    return service.list_runs(db, admin, session_id, limit, cursor)
 
 
 @router.get("/runs/{run_id}")

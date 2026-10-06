@@ -32,3 +32,8 @@ LIVE-005相对旧草案增加typed attempt_history：重试前的attempt、安�
 006配置/媒体/任务入口、真实本地与模拟协议的证据边界见 [LIVE-006 验收入口](../ai/live006-acceptance.md)。YAML公开快照固定在任务输入，密钥仅执行内存解析；配置漂移拒绝重试，预算美元值是授权声明，未实现厂商精确计费。评分、长期画像与报告仍未实现。
 
 LIVE-020增加GET /capture/runs按session_id与created_at/id游标分页（limit1..100），恢复浏览器任务列表；health增加execution就绪信息。显式native模式由独立进程只消费capture_v1；默认operator/disabled不变。LIVE-022只在隔离本机环境验收，真实平台与完整出站隔离仍待验证。
+
+
+## LIVE-028 大模型设置
+
+新增管理员workspace设置GET/PUT/DELETE `/api/v1/llm/settings` 与POST `/check`：密钥只写、修订号、独立最小连接测试、usage/安全错误状态。复用Model Loader/Registry生成workspace配置视图；不改全局ASR配置，LLM分析消费者仍未实现。普通HTTPS策略保持，development特定HTTP端点由server精确授权。实现与实际验收分别见 `../llm-settings.md` 和 `../../project-team/reports/LIVE-028/delivery.md`。

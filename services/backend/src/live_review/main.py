@@ -12,6 +12,7 @@ from live_review.modules.asr.stream import router as asr_stream_router
 from live_review.modules.capture.router import router as capture_router
 from live_review.modules.identity.router import router as identity_router
 from live_review.modules.jobs.router import router as jobs_router
+from live_review.modules.llm.router import router as llm_router
 from live_review.modules.materials.router import router as materials_router
 from live_review.modules.sessions.router import router as sessions_router
 from live_review.modules.streamers.router import router as streamers_router
@@ -33,6 +34,7 @@ app.include_router(capture_router)
 app.include_router(asr_router)
 app.include_router(asr_stream_router)
 app.include_router(jobs_router)
+app.include_router(llm_router)
 app.include_router(streamers_router)
 app.include_router(sessions_router)
 app.include_router(materials_router, prefix="/api/v1")

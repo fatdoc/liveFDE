@@ -45,23 +45,31 @@ def error_payload(error):
 def _child(connection, parent_pid, settings, job_id, token, stage_id, handler_name):
     os.setsid()
 
+    monitor_stopped = threading.Event()
+
     # The private pipe is held only by this worker and its child. EOF or missed
     # heartbeats terminate the child even if the worker is SIGKILLed or paused.
     def watch_parent():
         last = time.monotonic()
-        while True:
+        while not monitor_stopped.is_set():
             try:
                 if connection.poll(0.05):
                     if connection.recv() == "alive":
                         last = time.monotonic()
             except (EOFError, OSError):
+                if monitor_stopped.is_set():
+                    return
                 os.killpg(os.getpid(), signal.SIGKILL)
+            if monitor_stopped.is_set():
+                return
             if os.getppid() != parent_pid or time.monotonic() - last > settings.job_lease_seconds:
                 os.killpg(os.getpid(), signal.SIGKILL)
 
-    threading.Thread(target=watch_parent, daemon=True).start()
-    engine = build_engine(settings)
+    monitor = threading.Thread(target=watch_parent, daemon=True)
+    monitor.start()
+    engine = None
     try:
+        engine = build_engine(settings)
         context = Context(engine, job_id, token, stage_id, settings.job_lease_seconds)
         artifact = resolve(handler_name, settings)(context)
         connection.send(("ok", artifact))
@@ -72,8 +80,15 @@ def _child(connection, parent_pid, settings, job_id, token, stage_id, handler_na
         print(f"handler_error code={diagnostic or category}", flush=True)
         connection.send((category, diagnostic))
     finally:
-        engine.dispose()
-        connection.close()
+        try:
+            if engine is not None:
+                engine.dispose()
+        finally:
+            # The handler/engine have stopped. Reap the guardian before closing its pipe,
+            # so our own close cannot be mistaken for loss of the parent process.
+            monitor_stopped.set()
+            monitor.join()
+            connection.close()
 
 
 def execute_handler(context, settings, handler_name):

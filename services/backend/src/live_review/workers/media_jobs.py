@@ -7,17 +7,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from live_review.core.provider_config import (
-    load_config,
-    resolve_execution,
-    restore_snapshot,
-    snapshot,
-)
-from live_review.integrations.asr import (
-    OfflineFixtureProvider,
-    OpenAICompatibleASRProvider,
-    transcribe,
-)
+from live_review.integrations.asr import create_asr_adapter, transcribe
 from live_review.integrations.media import Extraction, MediaError, extract_audio
 from live_review.integrations.storage.local import LocalStorage
 from live_review.modules.identity.models import Admin
@@ -27,6 +17,11 @@ from live_review.modules.jobs.service import create_job
 from live_review.modules.materials.models import Blob, Material
 from live_review.workers.media_artifacts import controlled, read_json, write_json
 from live_review.workers.media_calls import RecordedASR
+from live_review.workers.media_configuration import (
+    execution_environment,
+    prepare_configuration,
+    restore_configuration,
+)
 
 
 def material_source(db, workspace_id, material_id, settings):
@@ -56,16 +51,23 @@ def submit(
     workspace_id,
     actor_id,
     material_id,
-    config_path: Path,
+    config_path: Path | None = None,
+    config_dir: Path | None = None,
+    model_id: str | None = None,
+    config_env: str | None = None,
+    local_path: Path | None = None,
+    dotenv_path: Path | None = None,
     allow_network=False,
     fixture_payload=None,
 ):
-    config = load_config(config_path, environment=settings.environment)
-    execution = resolve_execution(
-        snapshot(config),
-        "asr",
-        config,
-        environment=settings.environment,
+    captured, execution, configuration = prepare_configuration(
+        settings,
+        config_path=config_path,
+        config_dir=config_dir,
+        model_id=model_id,
+        config_env=config_env,
+        local_path=local_path,
+        dotenv_path=dotenv_path,
         allow_network=allow_network,
     )
     actor = db.scalar(
@@ -76,10 +78,14 @@ def submit(
     if actor is None:
         raise MediaError("actor_not_available")
     _, blob = material_source(db, workspace_id, material_id, settings)
-    if execution.synthetic:
-        OfflineFixtureProvider(fixture_payload, enabled=True, environment=settings.environment)
-    elif fixture_payload is not None:
-        raise MediaError("fixture_with_real_provider")
+    payload = {"provider_snapshot": captured.model_dump(mode="json"), **configuration}
+    create_asr_adapter(
+        execution,
+        media=captured.content.media,
+        fixture_payload=fixture_payload,
+        environment=execution_environment(payload, settings),
+        allow_network=allow_network,
+    )
     return create_job(
         db,
         workspace_id,
@@ -89,12 +95,11 @@ def submit(
             {"name": "asr", "handler": "media.asr"},
         ],
         {
-            "kind": "media_transcription_v1",
+            "kind": f"media_transcription_v{captured.snapshot_version}",
             "material_id": str(material_id),
             "source_sha256": blob.sha256,
             "source_size_bytes": blob.size_bytes,
-            "provider_snapshot": snapshot(config).model_dump(mode="json"),
-            "provider_config_path": str(config_path),
+            **payload,
             "allow_network": allow_network is True,
             "fixture_payload": fixture_payload,
             "storage_fingerprint": hashlib.sha256(str(settings.storage_root).encode()).hexdigest(),
@@ -104,15 +109,7 @@ def submit(
 
 def load_context(context, settings):
     data = context.input_data()
-    captured = restore_snapshot(data["provider_snapshot"])
-    current = load_config(Path(data["provider_config_path"]), environment=settings.environment)
-    execution = resolve_execution(
-        captured,
-        "asr",
-        current,
-        environment=settings.environment,
-        allow_network=data.get("allow_network") is True,
-    )
+    captured, execution = restore_configuration(data, settings)
     if (
         data["storage_fingerprint"]
         != hashlib.sha256(str(settings.storage_root).encode()).hexdigest()
@@ -173,21 +170,12 @@ def extraction_handler(context, settings):
 
 
 def make_provider(execution, captured, data, settings):
-    if execution.synthetic:
-        return OfflineFixtureProvider(
-            data["fixture_payload"], enabled=True, environment=settings.environment
-        )
-    route = execution.route
-    return OpenAICompatibleASRProvider(
-        provider=route.provider,
-        model=route.model,
-        base_url=route.base_url,
-        api_key=execution.api_key,
-        timeout_seconds=route.timeout_seconds,
-        max_requests=route.max_requests,
-        max_audio_duration_seconds=captured.content.media.max_duration_seconds,
+    return create_asr_adapter(
+        execution,
+        media=captured.content.media,
+        fixture_payload=data.get("fixture_payload"),
+        environment=execution_environment(data, settings),
         allow_network=data.get("allow_network") is True,
-        environment=settings.environment,
     )
 
 

@@ -24,7 +24,13 @@ def main(argv=None):
     commands = parser.add_subparsers(dest="command", required=True)
     create = commands.add_parser("submit")
     create.add_argument("--material-id", type=UUID, required=True)
-    create.add_argument("--config", type=Path, required=True)
+    config_source = create.add_mutually_exclusive_group(required=True)
+    config_source.add_argument("--config", type=Path, help="Explicit legacy v1 single YAML")
+    config_source.add_argument("--config-dir", type=Path, help="Layered v2 model registry")
+    create.add_argument("--model-id", help="Registry model or alias; default asr.default")
+    create.add_argument("--config-env", choices=["development", "test", "staging", "production"])
+    create.add_argument("--local-config", type=Path)
+    create.add_argument("--dotenv", type=Path)
     create.add_argument("--fixture", type=Path)
     create.add_argument(
         "--allow-network",
@@ -67,6 +73,11 @@ def main(argv=None):
                     actor_id=args.admin_id,
                     material_id=args.material_id,
                     config_path=args.config,
+                    config_dir=args.config_dir,
+                    model_id=args.model_id,
+                    config_env=args.config_env,
+                    local_path=args.local_config,
+                    dotenv_path=args.dotenv,
                     allow_network=args.allow_network,
                     fixture_payload=payload,
                 )

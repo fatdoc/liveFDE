@@ -23,6 +23,7 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-019 | PM/ARC | done | PR9集成a680ff7；main CI37469592933成功，353后端/39工程/4站点零skip |
 | LIVE-020 | CAP-01 | integrated_limited | PR11/main4dcab61；执行器/列表/就绪及独立361通过，真实平台及出站隔离待验 |
 | LIVE-021 | FE-01 | integrated_limited | PR12/mainf0a6ee6；真实页面接线与手动本地转写通过，真实来源尚未开放 |
+| LIVE-023 | ARC/QA | in_progress | 抖音就绪与实际阻塞修复；不假启用空域策略 |
 | LIVE-022 | ARC/QA | in_review | 隔离本机361独立通过；浏览器/原生receiver/串行本地ASR已验，首次ASR停止异常保留跟进 |
 
 待决策：评分标准；后续多场景标注样本、真实云配置与预算。已授权的本轮公开本地样本实测完成，不等于新增云调用授权。

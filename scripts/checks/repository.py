@@ -97,6 +97,21 @@ CAPTURE_UI_FRONTEND_SCOPE = [
     "project-team/reports/LIVE-021/",
 ]
 SCOPES = {
+    "LIVE-023": [
+        "scripts/checks/repository.py",
+        "services/backend/src/live_review/modules/capture/",
+        "services/backend/src/live_review/integrations/capture/providers.py",
+        "services/backend/tests/test_capture_readiness.py",
+        "services/backend/tests/test_capture_executor.py",
+        "frontend/web/src/features/capture/",
+        "frontend/web/tests/capture-browser-contract.js",
+        "project-team/tasks/LIVE-023.md",
+        "project-team/STATUS.md",
+        "project-team/access/RESOURCE-LOCKS.md",
+        "project-team/reports/LIVE-023/",
+        "docs/capture.md",
+        "docs/contracts/",
+    ],
     "LIVE-020": CAPTURE_UI_BACKEND_SCOPE,
     "LIVE-021": CAPTURE_UI_FRONTEND_SCOPE,
     # ARC performs reviewed serial integration of separately owned implementations.

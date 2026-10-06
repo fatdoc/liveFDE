@@ -1,0 +1,14 @@
+docs/capture.md
+project-team/reports/LIVE-020/change.md
+project-team/reports/LIVE-020/design.md
+project-team/reports/LIVE-020/files.txt
+project-team/reports/LIVE-020/verification.json
+services/backend/src/live_review/integrations/capture/policy.py
+services/backend/src/live_review/modules/capture/executor_health.py
+services/backend/src/live_review/modules/capture/router.py
+services/backend/src/live_review/modules/capture/service.py
+services/backend/src/live_review/modules/jobs/execution.py
+services/backend/src/live_review/workers/capture_executor.py
+services/backend/src/live_review/workers/dispatcher.py
+services/backend/tests/test_capture_executor.py
+services/backend/tests/test_capture_recording.py

@@ -39,11 +39,11 @@ def select_stream(selected, policy):
             if (
                 parts.scheme not in {"http", "https"}
                 or not host
-                or parts.username
-                or parts.password
+                or parts.username is not None
+                or parts.password is not None
                 or parts.fragment
                 or parts.port not in {None, 80, 443}
-                or any(ord(c) < 33 for c in value)
+                or any(ord(c) < 33 or ord(c) == 127 for c in value)
             ):
                 errors.append("unsafe_stream_url")
                 continue
@@ -81,8 +81,8 @@ async def resolve(data):
                 parts.scheme != "https"
                 or parts.hostname != "live.douyin.com"
                 or parts.port not in {None, 443}
-                or parts.username
-                or parts.password
+                or parts.username is not None
+                or parts.password is not None
             ):
                 raise ParserFailure("source_protocol_error")
             # Upstream has a built-in Cookie when cookies is falsy: remove it at final send.

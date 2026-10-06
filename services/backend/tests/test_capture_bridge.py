@@ -251,3 +251,11 @@ def test_stream_selection_fails_without_rewriting_or_secret_errors(selected, pol
         bridge.select_stream(selected, policy)
     assert caught.value.code == code
     assert str(caught.value) == code
+
+
+@pytest.mark.parametrize(
+    "invalid", ["https://@pull.example.com/live.flv", "https://pull.example.com/\x7flive.flv"]
+)
+def test_invalid_first_candidate_does_not_hide_valid_fallback(invalid):
+    valid = "https://pull.example.com/live.m3u8"
+    assert bridge.select_stream({"flv_url": invalid, "record_url": valid}, {}) == valid

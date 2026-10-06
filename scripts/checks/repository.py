@@ -98,6 +98,12 @@ CAPTURE_UI_FRONTEND_SCOPE = [
 ]
 SCOPES = {
     "LIVE-027": [
+        "services/backend/src/live_review/workers/handler_process.py",
+        "services/backend/src/live_review/workers/job_runner.py",
+        "services/backend/src/live_review/integrations/asr_gateway/local_worker/protocol.py",
+        "services/backend/src/live_review/integrations/asr_gateway/local_worker/server.py",
+        "services/backend/tests/test_asr_error_reporting.py",
+        "services/backend/tests/test_local_asr_worker.py",
         "scripts/checks/repository.py", "project-team/tasks/LIVE-027.md",
         "project-team/reports/LIVE-027/", "project-team/STATUS.md",
         "frontend/web/src/features/sessions/MaterialTranscription.tsx",

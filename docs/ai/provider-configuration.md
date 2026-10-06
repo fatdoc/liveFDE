@@ -1,5 +1,7 @@
 # 模型能力 YAML 配置与任务快照
 
+> 本文保留 LIVE-006 的 v1 单文件配置/历史验收说明。LIVE-006B 新增分层 v2 与安全 dotenv 解析，见 [配置迁移指南](configuration-refactor.md)。旧 --config 仍不自动读取 dotenv；新 --config-dir 才使用分层加载，两种入口不可混用。
+
 ## 先填写这几项
 
 默认模板是 `app/infra/providers.example.yaml`，已逐项加中文说明。它现在包含一套完整但**未启用**的 ASR 配置；`your_vendor`、`your-audio-model`、`https://example.invalid/v1` 都是占位内容，不是已选好的服务。

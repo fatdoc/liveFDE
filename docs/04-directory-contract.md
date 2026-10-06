@@ -20,6 +20,7 @@ Git 根 app/；外层 docs 是 app/docs 符号链接。LIVE-001 已将前端迁�
 │   │   │   └── workers/           Celery、dispatcher、任务薄封装
 │   │   ├── migrations/versions/   唯一 Alembic 位置
 │   │   └── tests/                 unit、integration、fixtures
+│   ├── config/                    LIVE-006B共享模型YAML/环境覆盖/本机覆盖示例
 │   ├── infra/                     Compose、Dockerfile、代理、env 示例
 │   ├── scripts/                   dev、checks、release 按需
 │   ├── docs/                      规范、ADR、契约、操作指南
@@ -66,3 +67,5 @@ LIVE-002 实现顶级目录白名单、运行产物/未知路径检查、rename 
 自动检查只管可机械判断部分，不能代替职责 Review。LIVE-002已提供本地结构门禁和CI配置；未配置remote，未在远程执行。
 
 用户明确所有项目模块均留在本工作区。worktree 统一使用工作区 .worktrees/<task-id>-<role>/，不用工作区外的默认路径；首次提交后再按任务创建。全局包缓存/Codex 元数据不要求搬迁。
+
+LIVE-006B新增config/由CFG持有共享基础、环境覆盖和local示例；真实local覆盖与.env必须gitignore，运行输出仍在runtime。配置加载/注册表位于既有core，不另建服务；Agent/RAG没有业务消费者时仅写接入说明，不建空模块。

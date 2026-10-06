@@ -53,3 +53,11 @@ LIVE-005收尾：业务与统筹集成8a34b5f独立QA/PM验收通过；BE/ENG/QA
 006回归隔离：同一专用PG15460内每次建立live006_suite_<UUID>独立数据库（owner live006），核验current_database/current_user、连接不含query；应用/worker沿用数据库名。原live006烟测与失败试验schema保留，不DROP或修改已有数据。目标名随每次target.json/JUnit登记。先前search_path方案被core.statement_timeout连接options覆盖已弃用，失败证据保留。
 
 LIVE-006收尾：代码649eb07独立QA与PM最终验收通过；CFG/MEDIA/JOBS/QA均已交还写锁和15460数据库使用权，3个本轮worktree只读保留，PG15460及所有本轮实物/回归库保留。无本轮worker/FFmpeg常驻；ARC完成纯文档收尾提交后释放main index独占。下一轮需重新登记资源，不自动启动007或真实模型调用。
+
+## LIVE-006B（base74df3b1）
+
+CFG /root/be_live004a 独占 .worktrees/live-006b-config 的core/model_config、model_registry、config/共享YAML、.env.example及所属测试/文档。BE /root/eng_live002 独占 .worktrees/live-006b-jobs 的media_configuration/media_jobs/media_operator与ASR factory及所属测试/文档。主checkout仅ARC串行门禁/.gitignore/目录/报告/集成；QA独立只读指定SHA。运行产物runtime/live-006b，不读取真实秘密，不复用旧006业务库。独立测试库/进程资源稍后登记明确目标；当前作者仅合成文件/unit测试。
+
+006B运行资源：新PG15470 / compose live-fde-006b / runtime/live-006b，role/database live006b。回归每次创建live006b_suite_<UUID>独立库，禁止动15460/006旧记录；ARC与QA/BE串行交接数据库使用。环境脚本基于已审006 guard复用独立目标，私有env随机生成600，不读取旧模型秘密。
+
+006B作者已交还live006b数据库使用权；QA新建live006b_qa_a29eec20dd6d4541b6015701137d2918独立库，32项验收通过后亦交还。ARC主集成仅新建live006b_suite_<UUID>库，实际库名随runtime/live-006b/integration各target.json登记。所有旧库与证据保留。

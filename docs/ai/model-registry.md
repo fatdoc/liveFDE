@@ -6,6 +6,8 @@
 
 由低到高：内置未配置默认 → config/models.yaml → config/environments/<受信任环境>.yaml → 开发config/local.yaml → 白名单环境变量。字典递归合并；列表整体替换；null是明确值而非删除指令，类型不允许null就报错。输入字典不被修改。每层先做secret字段和YAML安全检查，低层明文密钥不能靠高层覆盖来洗掉。
 
+团队通用profile（model、protocol、key_env引用等）应放config/models.yaml；本机local.yaml主要覆盖IP、device、model_path等差异。个人试配可以先完整放local，确定后再将非敏感公共定义提升到models.yaml。development/test/staging/production四个环境模板均已提供，空覆盖{}表示继承基础配置，仓库基础默认全部disabled。
+
 开发者可复制config/local.example.yaml为config/local.yaml；完整多模型说明在config/profiles.example.yaml，示例文件不会自动加载。它展示兼容ASR、本地Ollama LLM、HuggingFace embedding/reranker、YOLO检测的非激活profile；名称均为占位，不代表已选模型。
 
 环境映射：dev/development→development；test→test；staging→staging；prod/production→production。环境由服务端选择，YAML不得定义environment覆盖。production/staging既不自动读开发local也不自动读.env，显式local也拒绝；仅可显式指定绝对、无符号链接、普通文件、600权限的私有dotenv。开发隐式.env位于config目录的父目录，即默认app/.env；dev/test同样要求600。

@@ -1,0 +1,4 @@
+# 测试环境覆盖：继承models.yaml，仓库默认所有模型disabled。
+# 合成fixture须在测试专用目录显式配置，不能冒充真实ASR。
+# 允许测试目录local.yaml及父目录600权限.env；系统环境优先。
+{}

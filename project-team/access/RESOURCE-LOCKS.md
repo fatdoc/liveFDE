@@ -90,3 +90,5 @@ base a680ff7；CAP独占.worktrees/LIVE-020-capture的capture模块、workers/ca
 2026-10-06本轮实际：PG15500/API8199/UI5199与独立ASR socket已启动；CAP/FE固定代码已Review合PR11/12，作者写锁交回。receiver8200与capture executor在生命周期验收后退出，策略disabled。ASR权重复用旧006C只读内容，既有inference锁机制正常共享；不重下/删除模型。旧服务数据未迁移。ARC仍持022文档/环境收尾与PR集成锁。
 
 LIVE-023：ARC在独立副本持就绪后端/前端及台账，QA只读复核；PM将runtime20配置及executor串行控制交给ARC，尚未改配置，变更前核任务并drain。
+
+LIVE-023交接：214b8ed审查通过后runtime20已换API25919/executor25920/UI25921，同副本与策略指纹；独立70通过。仅抖音HTTPS/douyincdn.com/60秒50MB开放试录，视频号未开放、无真实源录制。ARC持runtime串行操作锁直至PM交接确认；原备份与数据保留，详见reports/LIVE-023/delivery.md。

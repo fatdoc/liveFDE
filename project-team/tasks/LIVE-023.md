@@ -7,3 +7,5 @@
 本轮复用runtime/live-020，ARC串行接手PM启动的executor17106；变更前查active/queued/outbox并正常drain，旧环境不动。依赖可只读复用015已固定版本。有限真实试录必须有明确非作者就绪结论；静态审查不冒充动态出站隔离验收。用户不配置环境，尚无具体直播样本。
 
 ARC范围补充：ENG-02在同一工作副本仅编辑capture relay/recording/policy/resolver和test_capture_resolution.py，交ARC统一提交；DNS受监督超时/停止与HTTPS限制属于本轮确定阻塞修复。root负责其他路径；QA-02固定SHA独立复核。首轮runtime仅douyin、HTTPS、窄域、60秒/50MB，未获真实源不声称平台通过。
+
+固定实现214b8ed已独立70通过；实际运行已完成同版本切换与浏览器就绪验证。PR14 CI/合并收尾进行中。具体真实源尚待PM收集，不把配置就绪当作平台成功。见reports/LIVE-023/。

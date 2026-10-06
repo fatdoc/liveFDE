@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 from pydantic import Field, field_validator, model_validator
 
 from live_review.core.model_config.asr_routes import LocalASRRoute, TencentASRRoute
+from live_review.core.model_config.llm_routes import LLMDebugRoute
 from live_review.core.provider_config import FrozenModel, MediaConfig, ProviderRoute
 
 Capability = Literal["asr", "llm", "vision", "embedding", "reranker", "detection"]
@@ -92,11 +93,13 @@ class DeclaredRoute(FrozenModel):
 class ModelDescriptor(FrozenModel):
     name: str = Field(pattern=r"^[a-z][a-z0-9_.-]{0,63}$")
     capability: Capability
-    route: ProviderRoute | DeclaredRoute | LocalASRRoute | TencentASRRoute
+    route: ProviderRoute | DeclaredRoute | LocalASRRoute | TencentASRRoute | LLMDebugRoute
     parameters: ModelParameters = Field(default_factory=ModelParameters)
 
     @model_validator(mode="after")
     def protocol_matches_capability(self):
+        if isinstance(self.route, LLMDebugRoute) and self.capability != "llm":
+            raise ValueError("debug_route_requires_llm")
         if isinstance(self.route, (LocalASRRoute, TencentASRRoute)) and self.capability != "asr":
             raise ValueError("gateway_route_requires_asr")
         if isinstance(self.route, DeclaredRoute):
@@ -158,6 +161,10 @@ class PublicModelConfig(FrozenModel):
             model.route.protocol == "offline_fixture" for model in self.models
         ):
             raise ValueError("synthetic_forbidden")
+        if self.environment not in {"development", "test"} and any(
+            isinstance(model.route, LLMDebugRoute) for model in self.models
+        ):
+            raise ValueError("llm_debug_forbidden")
         return self
 
 

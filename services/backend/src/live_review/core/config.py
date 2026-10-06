@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     model_config_environment: str | None = None
     model_dotenv_path: Path | None = None
     asr_background_runner: bool = False
+    llm_debug_http_endpoints: list[str] = Field(default_factory=list)
 
     environment: str = "development"
     trusted_origins: list[str] = ["http://127.0.0.1:5188", "http://localhost:5188"]

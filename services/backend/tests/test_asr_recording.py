@@ -76,3 +76,25 @@ def test_expired_shared_worker_file_requires_stop_verification(jobs):
         assert job.status == "failed" and job.error["code"] == "execution_stop_unconfirmed"
         assert not view(db, job)["can_retry"]
         assert len(db.scalars(select(Outbox).where(Outbox.job_id == uid)).all()) == count
+
+
+@pytest.mark.parametrize("confirmed", [True, False])
+def test_handler_failure_checks_external_stop_before_terminal(jobs, monkeypatch, confirmed):
+    from live_review.workers import asr_stop
+    from live_review.workers.job_runner import run_job
+
+    client, _, _, make, engine, settings = jobs
+    calls = []
+
+    def confirm():
+        calls.append("confirmation")
+        if not confirmed:
+            raise ASRError("worker_stop_unconfirmed", unknown=True)
+
+    monkeypatch.setattr(asr_stop, "stop_guard", lambda *args: confirm)
+    uid = make(["fixture.fail_once"])
+    run_job(engine, settings, uid, 1)
+    state = client.get(f"/api/v1/jobs/{uid}").json()
+    assert state["status"] == "failed" and calls == ["confirmation"]
+    assert state["error"]["code"] == ("stage_failed" if confirmed else "execution_stop_unconfirmed")
+    assert state["can_retry"] is confirmed

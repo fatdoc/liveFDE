@@ -11,6 +11,9 @@ FALLBACK_ERRORS = frozenset(
         "local_inference_failed",
         "local_device_out_of_memory",
         "local_timeout",
+        "worker_unavailable",
+        "worker_busy",
+        "worker_timeout",
     }
 )
 

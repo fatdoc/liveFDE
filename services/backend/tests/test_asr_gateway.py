@@ -94,7 +94,10 @@ def test_unified_result_sources_and_unknown_identity():
         ASRSegment(id="0", text="x", speaker_name="guessed person")
 
 
-def test_fallback_requires_grant_and_unknown_never_replays(monkeypatch):
+@pytest.mark.parametrize(
+    "operational_code", ["local_model_busy", "worker_unavailable", "worker_busy", "worker_timeout"]
+)
+def test_fallback_requires_grant_and_unknown_never_replays(monkeypatch, operational_code):
     from live_review.integrations.asr_gateway import service
 
     calls = []
@@ -102,7 +105,7 @@ def test_fallback_requires_grant_and_unknown_never_replays(monkeypatch):
     class Local:
         async def transcribe_file(self, path, request):
             calls.append(("local", request.allow_network))
-            raise ASRError("local_model_busy")
+            raise ASRError(operational_code)
 
     class Recorder:
         async def file(self, provider, path, request):
@@ -140,6 +143,8 @@ def test_fallback_requires_grant_and_unknown_never_replays(monkeypatch):
         "local_audio_requires_16k_mono",
         "audio_duration_exceeded",
         "local_mps_unsupported",
+        "worker_stop_unconfirmed",
+        "local_asr_empty_for_speech",
     ],
 )
 def test_request_and_configuration_errors_never_cloud_fallback(monkeypatch, code):

@@ -12,16 +12,16 @@ class LocalASRRoute(FrozenModel):
     protocol: Literal["local_funasr"]
     enabled: bool = False
     provider: Literal["local"] = "local"
-    model: str = "Fun-ASR-Nano-2512"
+    model: Literal["Fun-ASR-Nano-2512"] = "Fun-ASR-Nano-2512"
     key_env: None = None
     model_root: str
     worker_socket: str | None = None
     cache_idle_seconds: int = Field(default=60, ge=1, le=3600)
     device: Literal["cpu", "cuda", "mps", "auto"] = "cpu"
-    vad_model: str = "fsmn-vad"
-    speaker_model: str = "campplus"
-    emotion_model: str = "emotion2vec_plus_base"
-    punctuation_model: str | None = None
+    vad_model: Literal["fsmn-vad"] = "fsmn-vad"
+    speaker_model: Literal["campplus"] = "campplus"
+    emotion_model: Literal["emotion2vec_plus_base"] = "emotion2vec_plus_base"
+    punctuation_model: Literal["ct-punc"] | None = None
     vad_max_segment_ms: int = Field(default=15000, ge=1000, le=30000)
     stream_window_ms: int = Field(default=5000, ge=1000, le=15000)
     speaker_similarity_threshold: float = Field(default=0.65, gt=0, le=1)

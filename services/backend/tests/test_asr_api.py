@@ -4,16 +4,32 @@ from datetime import timedelta
 from pathlib import Path
 from uuid import UUID
 
+import pytest
 from fastapi.testclient import TestClient
 from materials_fixture import ORIGIN, PASSWORD, upload, wav_bytes
 from materials_fixture import materials as materials
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from live_review.main import app
 from live_review.modules.jobs.execution import claim, recover_expired
-from live_review.modules.jobs.models import Job, Outbox
+from live_review.modules.jobs.models import CallIntent, Job, JobStage, Outbox, RetryKey
 from live_review.modules.jobs.service import now, stages_for
+
+
+@pytest.fixture(autouse=True)
+def cleanup_gateway_records(materials):
+    # Dispatcher tests must not consume an outbox left by another test's workspace.
+    _, _, admin, _, stranger = materials
+    yield
+    with Session(app.state.engine) as db:
+        ids = select(Job.id).where(
+            Job.workspace_id.in_([admin.workspace_id, stranger.workspace_id])
+        )
+        for model in (CallIntent, RetryKey, Outbox, JobStage):
+            db.execute(delete(model).where(model.job_id.in_(ids)))
+        db.execute(delete(Job).where(Job.id.in_(ids)))
+        db.commit()
 
 
 def configured(tmp_path, monkeypatch):

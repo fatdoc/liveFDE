@@ -81,6 +81,165 @@
         }
       }
     },
+    "/api/v1/asr/settings": {
+      "get": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Get Settings",
+        "operationId": "get_settings_api_v1_asr_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOutput"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Put Settings",
+        "operationId": "put_settings_api_v1_asr_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/asr/health": {
+      "get": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_v1_asr_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/asr/transcriptions": {
+      "post": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Transcribe",
+        "operationId": "transcribe_api_v1_asr_transcriptions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranscriptionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/asr/transcriptions/{job_id}": {
+      "get": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Result",
+        "operationId": "result_api_v1_asr_transcriptions__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/jobs/{job_id}": {
       "get": {
         "tags": [
@@ -1898,6 +2057,112 @@
         ],
         "title": "SessionView"
       },
+      "SettingsInput": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "local",
+              "tencent"
+            ],
+            "title": "Provider",
+            "default": "local"
+          },
+          "privacy": {
+            "type": "string",
+            "enum": [
+              "local_only",
+              "cloud_allowed"
+            ],
+            "title": "Privacy",
+            "default": "local_only"
+          },
+          "allow_cloud_fallback": {
+            "type": "boolean",
+            "title": "Allow Cloud Fallback",
+            "default": false
+          },
+          "speaker": {
+            "type": "boolean",
+            "title": "Speaker",
+            "default": false
+          },
+          "emotion": {
+            "type": "boolean",
+            "title": "Emotion",
+            "default": false
+          },
+          "punctuation": {
+            "type": "boolean",
+            "title": "Punctuation",
+            "default": true
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "SettingsInput"
+      },
+      "SettingsOutput": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "local",
+              "tencent"
+            ],
+            "title": "Provider",
+            "default": "local"
+          },
+          "privacy": {
+            "type": "string",
+            "enum": [
+              "local_only",
+              "cloud_allowed"
+            ],
+            "title": "Privacy",
+            "default": "local_only"
+          },
+          "allow_cloud_fallback": {
+            "type": "boolean",
+            "title": "Allow Cloud Fallback",
+            "default": false
+          },
+          "speaker": {
+            "type": "boolean",
+            "title": "Speaker",
+            "default": false
+          },
+          "emotion": {
+            "type": "boolean",
+            "title": "Emotion",
+            "default": false
+          },
+          "punctuation": {
+            "type": "boolean",
+            "title": "Punctuation",
+            "default": true
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision"
+        ],
+        "title": "SettingsOutput"
+      },
       "StepOutput": {
         "properties": {
           "stage": {
@@ -2055,6 +2320,58 @@
         ],
         "title": "StreamerView"
       },
+      "TranscriptionInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "allow_network": {
+            "type": "boolean",
+            "title": "Allow Network",
+            "default": false
+          },
+          "max_requests": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Requests"
+          },
+          "max_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Cost Usd"
+          },
+          "material_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Material Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "material_id"
+        ],
+        "title": "TranscriptionInput"
+      },
       "UploadInput": {
         "properties": {
           "filename": {
@@ -2075,6 +2392,8 @@
               "audio/wav",
               "audio/x-wav",
               "audio/mpeg",
+              "audio/mp4",
+              "audio/aac",
               "text/plain",
               "application/pdf"
             ],

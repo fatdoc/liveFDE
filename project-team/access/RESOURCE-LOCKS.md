@@ -86,3 +86,5 @@ LIVE-006B收尾：CFG/JOBS开发写入结束，clean worktree只读保留。QA�
 base a680ff7；CAP独占.worktrees/LIVE-020-capture的capture模块、workers/capture_executor等和限定jobs/execution.py与workers/dispatcher.py过滤接缝；FE子代理/root/eng_live001独占.worktrees/LIVE-021-frontend的前端src/必要测试及Vite代理。ARC只在.worktrees/LIVE-022-integration持有scope、live020环境/验收脚本、任务/契约/报告与最终串行集成，不并写作者源码。精确路径见对应任务卡和repository.py。main暂不改动，PR合并再同步。
 
 拟新原生PG15500、API8199、UI5199，runtime/live-020；启动前检查端口/目录/DB身份，不能迁移旧库。旧5196/8196/15480及capture015资源保留；本机不使用Docker。实际媒体/模型/私有配置都不入Git，用户暂不操作手机。真实来源试录需最终就绪审查，普通合成联调不冒充平台验收。
+
+2026-10-06本轮实际：PG15500/API8199/UI5199与独立ASR socket已启动；CAP/FE固定代码已Review合PR11/12，作者写锁交回。receiver8200与capture executor在生命周期验收后退出，策略disabled。ASR权重复用旧006C只读内容，既有inference锁机制正常共享；不重下/删除模型。旧服务数据未迁移。ARC仍持022文档/环境收尾与PR集成锁。

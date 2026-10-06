@@ -28,7 +28,7 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-025 | ARC/BE/FE/QA | integrated_limited | PR16合并8a76d7b；设置页真实Edge与workspace隔离验收通过；真实HTTP源适配后续LIVE-026 |
 | LIVE-026 | ARC/QA | verified_limited | 79586de独立111通过；一次约60秒真实抖音录制→导入→Edge播放通过；限定片段，非全平台/整场验收；合并记录runtime/live-026/closure.json |
 | LIVE-027 | ARC/BE/FE/QA | engineering_approved | 功能6862d41独立49后端/3时间戳/8组浏览器通过；真实ASR974e38db失败无结果且未重试，真实识别/定位/听核未验；PR18最终CI/集成runtime/live-027/closure.json，未部署 |
-| LIVE-028 | ARC/BE/FE/QA | in_progress | 大模型配置页与workspace私密设置/一次最小连接测试；最终部署5199含027，不额外ASR；见tasks/LIVE-028.md |
+| LIVE-028 | ARC/BE/FE/QA | engineering_approved | 功能38d4a98独立QA通过且P1/P2已修；PR19最终CI/部署/单次真实连接结论见runtime/live-028/closure.json，包含027但不新增ASR |
 | LIVE-022 | ARC/QA | in_review | 隔离本机361独立通过；浏览器/原生receiver/串行本地ASR已验，首次ASR停止异常保留跟进 |
 
 待决策：评分标准；后续多场景标注样本、真实云配置与预算。已授权的本轮公开本地样本实测完成，不等于新增云调用授权。

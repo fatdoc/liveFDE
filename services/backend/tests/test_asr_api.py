@@ -132,6 +132,13 @@ def test_failed_material_can_have_only_one_authorized_successor(materials, tmp_p
     assert created.json()["id"] != first["id"]
     restored = client.get(f"/api/v1/asr/transcriptions/{first['id']}").json()
     assert restored["successor_job_id"] == created.json()["id"]
+    assert restored["job"]["can_retry"] is False
+    old_retry = client.post(
+        f"/api/v1/jobs/{first['id']}/retry",
+        headers=headers | {"Idempotency-Key": "synthetic-old-retry"},
+        json={"expected_revision": 1, "from_stage": "asr"},
+    )
+    assert old_retry.status_code == 409
     duplicate = client.post("/api/v1/asr/transcriptions", headers=headers, json=successor)
     assert duplicate.status_code == 409 and duplicate.json()["code"] == "asr_successor_exists"
     assert duplicate.json()["details"]["job_id"] == created.json()["id"]

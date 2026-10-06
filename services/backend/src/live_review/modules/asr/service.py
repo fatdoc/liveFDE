@@ -115,8 +115,6 @@ def submit(db, admin, settings, data):
             raise ApiError(409, "asr_previous_material_mismatch", "原任务不属于当前材料")
         if previous.revision != data.expected_previous_revision:
             raise ApiError(409, "revision_conflict", "原任务状态已改变，请刷新")
-        if not view(db, previous)["can_retry"]:
-            raise ApiError(409, "retry_not_allowed", "原任务未确认失败或结果未知，不能重新转写")
         successor = db.scalar(
             select(Job.id).where(
                 Job.workspace_id == admin.workspace_id,
@@ -130,6 +128,8 @@ def submit(db, admin, settings, data):
                 "该失败任务已有后续转写，请查询新任务",
                 {"job_id": str(successor)},
             )
+        if not view(db, previous)["can_retry"]:
+            raise ApiError(409, "retry_not_allowed", "原任务未确认失败或结果未知，不能重新转写")
     related = db.scalars(
         select(Job).where(
             Job.workspace_id == admin.workspace_id,

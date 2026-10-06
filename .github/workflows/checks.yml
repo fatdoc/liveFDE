@@ -25,10 +25,11 @@ jobs:
       - run: npm ci && npm run build && npm run test:sites
         working-directory: frontend/web
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - run: python3 scripts/checks/init_environment.py
+      - id: environment
+        run: python3 scripts/checks/init_environment.py
       - run: uv run --project services/backend python scripts/checks/runtime_smoke.py --env-file ../runtime/live-002/private.env
       - run: uv run --project services/backend python scripts/checks/backend_integration_tests.py --env-file ../runtime/live-002/private.env
-      - if: always()
+      - if: always() && steps.environment.outcome == 'success'
         run: docker compose --env-file ../runtime/live-002/private.env -f infra/compose.yaml down
       - if: hashFiles('docs/contracts/check_examples.py') != ''
         run: uv run --project services/backend --with jsonschema==4.26.0 python docs/contracts/check_examples.py

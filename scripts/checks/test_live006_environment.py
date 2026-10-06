@@ -11,6 +11,13 @@ import live006_smoke as smoke
 
 
 class EnvironmentTests(unittest.TestCase):
+    def setUp(self):
+        # Exercise the guards with a registered checkout on every host.
+        # Only the test fixture changes; real resource scripts stay restricted.
+        checkout = patch.object(env, "ROOT", env.WORKSPACE / "app")
+        checkout.start()
+        self.addCleanup(checkout.stop)
+
     def test_overrides_rejected_before_docker(self):
         for key in (
             "DOCKER_HOST",
@@ -110,6 +117,13 @@ class EnvironmentTests(unittest.TestCase):
 
 
 class SmokeEnvironmentTests(unittest.TestCase):
+    def setUp(self):
+        # Exercise the guards with a registered checkout on every host.
+        # Only the test fixture changes; real resource scripts stay restricted.
+        checkout = patch.object(smoke, "ROOT", smoke.WORKSPACE / "app")
+        checkout.start()
+        self.addCleanup(checkout.stop)
+
     def test_inherited_config_and_extra_private_fields_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             runtime = Path(directory).resolve()

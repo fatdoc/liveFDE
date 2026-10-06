@@ -74,6 +74,13 @@ CAPTURE_SCOPE = [
     "project-team/reports/LIVE-017/",
 ]
 SCOPES = {
+    "LIVE-019": [
+        ".github/workflows/checks.yml",
+        "scripts/checks/",
+        "docs/operations/github-ci.md",
+        "project-team/tasks/LIVE-019.md",
+        "project-team/reports/LIVE-019/",
+    ],
     # One-time import of the existing product history into the user-owned remote.
     "LIVE-018": sorted(FILES | {root + "/" for root in ROOTS}),
     "LIVE-015": CAPTURE_SCOPE,

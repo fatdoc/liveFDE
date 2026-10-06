@@ -11,3 +11,7 @@ ARC工作副本 .worktrees/LIVE-029-integration，负责ASR providers契约/必�
 StartInput增加可选duration_seconds/max_bytes；每run冻结recording_limits，health公布预设30m/1h/2h/4h、默认2h/8GiB、服务端max4h/16GiB、可用磁盘限制、普通上传上限。单fragmented MP4，无跨文件恢复承诺；原run未快照显示null。停止阈值允许有界封装尾部余量，最终导入上限绑定run批准快照，不能放宽普通上传512MiB。磁盘按源/上传/最终副本峰值三份及2GiB保留核算，同盘与不同盘分别检查；录制循环和收尾/导入hash、copy、ffprobe覆盖心跳、取消、upload lease。不通过增加lease掩盖阻塞。
 
 验收以runtime/live-029/pm-acceptance.md和qa-plan.md为基础：定向原生PG独立UUID库、合成媒体超过60秒、停止/磁盘/边界/取消与限额快照、权限和隐私、真实5199页面展开/配置/刷新。不新做真实平台长录或云测试，不称2h真实稳定性通过。独立Review绑定最终head，适用CI通过再空闲部署；保全旧ASR失败/原片与秘密配置。腾讯未配置需明确提示，长云分片及断点恢复为后续范围。
+
+增量契约：POST /asr/transcriptions支持成对previous_job_id/expected_previous_revision；材料行与旧任务加锁，旧任务必须同workspace/material、failed且can_retry，无未知调用或停止未确认。同一旧job至多一个后继，保留旧失败，重复409附details.job_id；GET转写结果额外successor_job_id用于恢复后继查询。省略前序也不能绕过同材料进行中/未知任务。FE仅后端确认可重试时显示显式按所选服务重新转写，不自动重试。
+
+必要底层范围补充 integrations/storage/local.py（可选内部tick，普通调用不变）、capture_limits测试；materials validation/transfer与capture专属导入边界保持后端可信限额。ASR长音频结果帧与整文件内存尚未改造，不宣称4h本地转写已验。

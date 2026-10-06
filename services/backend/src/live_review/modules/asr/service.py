@@ -2,7 +2,7 @@
 
 import hashlib
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
 from live_review.core.errors import ApiError
@@ -10,7 +10,9 @@ from live_review.integrations.asr_gateway.factory import MODEL_IDS, registry_for
 from live_review.modules.asr.models import ASRSettings
 from live_review.modules.asr.policy import load_policy, policy_snapshot
 from live_review.modules.asr.schemas import SettingsOutput
-from live_review.modules.jobs.service import create_job
+from live_review.modules.jobs.models import Job
+from live_review.modules.jobs.service import create_job, owned, unknown_calls, view
+from live_review.modules.materials.models import Material
 from live_review.workers.media_jobs import material_source
 
 
@@ -97,6 +99,56 @@ def prepare(db, admin, settings, data):
 
 
 def submit(db, admin, settings, data):
+    # Serialize submissions for this material, including first submissions from another tab.
+    material = db.scalar(
+        select(Material)
+        .where(Material.id == data.material_id, Material.workspace_id == admin.workspace_id)
+        .with_for_update()
+    )
+    if material is None:
+        raise ApiError(422, "material_not_available", "材料不存在")
+    if data.previous_job_id is not None:
+        previous = owned(db, data.previous_job_id, admin, lock=True)
+        if previous.input_data.get("kind") != "asr_gateway_v1" or previous.input_data.get(
+            "material_id"
+        ) != str(data.material_id):
+            raise ApiError(409, "asr_previous_material_mismatch", "原任务不属于当前材料")
+        if previous.revision != data.expected_previous_revision:
+            raise ApiError(409, "revision_conflict", "原任务状态已改变，请刷新")
+        if not view(db, previous)["can_retry"]:
+            raise ApiError(409, "retry_not_allowed", "原任务未确认失败或结果未知，不能重新转写")
+        successor = db.scalar(
+            select(Job.id).where(
+                Job.workspace_id == admin.workspace_id,
+                Job.input_data["previous_job_id"].astext == str(previous.id),
+            )
+        )
+        if successor:
+            raise ApiError(
+                409,
+                "asr_successor_exists",
+                "该失败任务已有后续转写，请查询新任务",
+                {"job_id": str(successor)},
+            )
+    related = db.scalars(
+        select(Job).where(
+            Job.workspace_id == admin.workspace_id,
+            Job.input_data["material_id"].astext == str(data.material_id),
+            Job.input_data["kind"].astext == "asr_gateway_v1",
+        )
+    ).all()
+    for old in related:
+        if (
+            old.status in {"queued", "running", "cancel_requested"}
+            or unknown_calls(db, old.id)
+            or (old.error or {}).get("code") == "execution_stop_unconfirmed"
+        ):
+            raise ApiError(
+                409,
+                "asr_material_task_unresolved",
+                "当前材料有进行中或结果未确认的转写，请先查询原任务",
+                {"job_id": str(old.id)},
+            )
     _, payload = prepare(db, admin, settings, data)
     _, blob = material_source(db, admin.workspace_id, data.material_id, settings)
     payload.update(
@@ -104,6 +156,8 @@ def submit(db, admin, settings, data):
         source_sha256=blob.sha256,
         source_size_bytes=blob.size_bytes,
     )
+    if data.previous_job_id is not None:
+        payload["previous_job_id"] = str(data.previous_job_id)
     return create_job(
         db, admin.workspace_id, admin.id, [{"name": "asr", "handler": "asr.gateway"}], payload
     )

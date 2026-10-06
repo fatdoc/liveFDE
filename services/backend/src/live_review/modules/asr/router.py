@@ -11,14 +11,20 @@ from live_review.core.provider_config import ProviderConfigError
 from live_review.integrations.asr_gateway.contracts import ASRError, ASRResult
 from live_review.integrations.asr_gateway.factory import create_provider, registry_for
 from live_review.integrations.media import MediaError
+from live_review.modules.asr.providers import provider_options
 from live_review.modules.asr.schemas import SettingsInput, SettingsOutput, TranscriptionInput
 from live_review.modules.asr.service import save_settings, settings_view, submit
-from live_review.modules.jobs.models import JobStage
+from live_review.modules.jobs.models import Job, JobStage
 from live_review.modules.jobs.service import owned, view
 from live_review.workers.job_runner import run_job
 from live_review.workers.media_artifacts import read_json
 
 router = APIRouter(prefix="/api/v1/asr", tags=["asr"])
+
+
+@router.get("/providers")
+def providers(request: Request, admin: CurrentAdmin):
+    return provider_options(request.app.state.settings)
 
 
 @router.get("/settings", response_model=SettingsOutput)
@@ -82,4 +88,14 @@ def result(job_id: UUID, request: Request, admin: CurrentAdmin, db: Database):
         output = ASRResult.model_validate(
             read_json(request.app.state.settings.storage_root, stage.artifact)
         )
-    return {"job": view(db, job), "result": output}
+    successor = db.scalar(
+        select(Job.id).where(
+            Job.workspace_id == admin.workspace_id,
+            Job.input_data["previous_job_id"].astext == str(job.id),
+        )
+    )
+    return {
+        "job": view(db, job),
+        "result": output,
+        "successor_job_id": str(successor) if successor else None,
+    }

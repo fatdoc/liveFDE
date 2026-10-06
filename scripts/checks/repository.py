@@ -98,6 +98,8 @@ CAPTURE_UI_FRONTEND_SCOPE = [
 ]
 SCOPES = {
     "LIVE-029": [
+        "services/backend/src/live_review/integrations/storage/local.py",
+        "services/backend/tests/test_capture_limits.py",
         "scripts/checks/repository.py", "project-team/tasks/LIVE-029.md",
         "project-team/reports/LIVE-029/", "project-team/STATUS.md",
         "docs/capture.md", "docs/asr.md", "docs/contracts/openapi.json",

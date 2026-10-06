@@ -505,6 +505,25 @@
         }
       }
     },
+    "/api/v1/asr/providers": {
+      "get": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Providers",
+        "operationId": "providers_api_v1_asr_providers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/asr/settings": {
       "get": {
         "tags": [
@@ -3167,6 +3186,30 @@
             "type": "string",
             "format": "uuid",
             "title": "Material Id"
+          },
+          "previous_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Job Id"
+          },
+          "expected_previous_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Previous Revision"
           }
         },
         "additionalProperties": false,

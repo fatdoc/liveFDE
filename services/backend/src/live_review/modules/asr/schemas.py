@@ -40,3 +40,11 @@ class Authorization(BaseModel):
 
 class TranscriptionInput(Authorization):
     material_id: UUID
+    previous_job_id: UUID | None = None
+    expected_previous_revision: int | None = Field(default=None, ge=1, strict=True)
+
+    @model_validator(mode="after")
+    def previous_pair(self):
+        if (self.previous_job_id is None) != (self.expected_previous_revision is None):
+            raise ValueError("previous_job_and_revision_required_together")
+        return self

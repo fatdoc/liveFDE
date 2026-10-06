@@ -8,6 +8,11 @@ enabled: false
 finder_name: FDE Capture
 finder_port: 8198
 max_seconds: 14400
-max_bytes: 500000000
-min_free_bytes: 1073741824
-# Cookies are read only from LIVE_CAPTURE_DOUYIN_COOKIE; never store them here.
+default_duration_seconds: 7200
+max_bytes: 17179869184
+default_max_bytes: 8589934592
+min_free_bytes: 2147483648
+# Remove older 60-second/50-MB overrides from environment/local layers when upgrading.
+# Actual capacity is bounded by free space for the recording plus import copies.
+# Web/native capture reads the workspace's private platform settings snapshot.
+# Configure Cookie through Settings > Platform access; never store credentials in this YAML.

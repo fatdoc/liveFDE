@@ -15,3 +15,5 @@ StartInput增加可选duration_seconds/max_bytes；每run冻结recording_limits�
 增量契约：POST /asr/transcriptions支持成对previous_job_id/expected_previous_revision；材料行与旧任务加锁，旧任务必须同workspace/material、failed且can_retry，无未知调用或停止未确认。同一旧job至多一个后继，保留旧失败，重复409附details.job_id；GET转写结果额外successor_job_id用于恢复后继查询。省略前序也不能绕过同材料进行中/未知任务。FE仅后端确认可重试时显示显式按所选服务重新转写，不自动重试。
 
 必要底层范围补充 integrations/storage/local.py（可选内部tick，普通调用不变）、capture_limits测试；materials validation/transfer与capture专属导入边界保持后端可信限额。ASR长音频结果帧与整文件内存尚未改造，不宣称4h本地转写已验。
+
+交付模板具体范围追加config/capture-policy.example.yaml：默认2h/8GiB、上限4h/16GiB、2GiB保留，enabled继续false；移除仅env Cookie旧说明，提醒环境/local旧测试覆盖需更新。

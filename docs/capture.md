@@ -1,6 +1,6 @@
 # 统一直播采集（LIVE-015～017）
 
-产品默认关闭；2026-10-07本地联调已由用户授权开放抖音HTTPS限定60秒/50MB手动试录，当前8199 API与5199前端提供此入口。视频号未开放，8197与DLNA接收端保持停止。Cookie已支持工作区设置；真实解析成功不等于媒体录制验收。LIVE-025曾因返回HTTP候选被策略拒绝；LIVE-026补齐受限HTTPS候选适配后，已完成一个授权房间的一次约60秒录制、导入与Edge播放，详见reports/LIVE-026/delivery.md。该结果不等于所有房间或长期录制验收。精确版本与独立证据见[技术审查](../project-team/reports/LIVE-015/arc-review.md)。
+产品默认关闭；LIVE-026本地联调由用户授权开放抖音HTTPS限定60秒/50MB手动试录。LIVE-029扩展可配置长录制，当前8199 API与5199前端的精确部署状态见工作区runtime/live-029/closure.json。视频号未开放，8197与DLNA接收端保持停止。Cookie已支持工作区设置；真实解析成功不等于媒体录制验收。LIVE-025曾因返回HTTP候选被策略拒绝；LIVE-026补齐受限HTTPS候选适配后，已完成一个授权房间的一次约60秒录制、导入与Edge播放，详见reports/LIVE-026/delivery.md。该结果不等于所有房间或长期录制验收。精确版本与独立证据见[技术审查](../project-team/reports/LIVE-015/arc-review.md)。
 
 实现位于唯一后端，不新增独立业务 Demo、队列或模型系统。当前首版支持抖音 **PC 数字直播间地址** `https://live.douyin.com/<room_id>`，不接受分享文案、短链、主页链接或签名取流地址。视频号为本机 DLNA 投屏接收，输入固定 `phone_cast`。真实平台验收状态见本轮报告，安装成功、协议测试、真实平台录制和真实 ASR 分别记录。
 
@@ -35,7 +35,7 @@ Finder 支持的 AirPlay/Chromecast/加密音频功能没有全部接入本版�
 
 沿用 `LIVE_MODEL_CONFIG_DIR`、安全 YAML 读取与 deep_merge，单独加载 `capture-policy.yaml` → `environments/<environment>.capture.yaml` → 开发/测试 `capture.local.yaml`，不改变旧模型配置快照。模板 `config/capture-policy.example.yaml` 默认关闭。Cookie/Token 不写 YAML，默认环境变量 `LIVE_CAPTURE_DOUYIN_COOKIE`；API 不接受凭证、任意磁盘路径或执行命令。
 
-本机已登记：API 8197，DLNA 8198/UDP SSDP 1900，PG 15490/live015，运行目录工作区 `runtime/live-015`。动态内存 relay 只绑定 127.0.0.1 随机空闲端口，URL 凭证不出进程。旧 5196/8196/15480 不改。`private.env` 权限 0600；路径、依赖解释器和目录在私有 `config/capture.local.yaml`。本机真实试录限制为 60 秒、50,000,000 字节、最低 8 GiB 空闲。阈值都在录制前/录制中检查；到阈值会受控停止并保留中断原因，不删除用户文件。FFmpeg `-fs` 是停止阈值而非精确字节配额（可能超过一个封装包），磁盘保留量须覆盖此余量与导入的两份临时副本。
+本机已登记：API 8197，DLNA 8198/UDP SSDP 1900，PG 15490/live015，运行目录工作区 `runtime/live-015`。动态内存 relay 只绑定 127.0.0.1 随机空闲端口，URL 凭证不出进程。旧 5196/8196/15480 不改。`private.env` 权限 0600；路径、依赖解释器和目录在私有 `config/capture.local.yaml`。LIVE-015历史试录限制为 60 秒、50,000,000 字节、最低 8 GiB 空闲。阈值都在录制前/录制中检查；到阈值会受控停止并保留中断原因，不删除用户文件。FFmpeg `-fs` 是停止阈值而非精确字节配额（可能超过一个封装包），磁盘保留量须覆盖此余量与导入的两份临时副本。
 
 从工作区执行部署准备（实际源已固定在下列路径，已存在时不要重复 clone）：
 

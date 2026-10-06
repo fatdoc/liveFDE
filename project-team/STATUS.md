@@ -14,7 +14,9 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-006B | CFG/BE/ARC | done | 集成706f28e；独立组合QA及PM最终验收通过；204后端tests零跳过、36工程checks及v1/v2烟测；真实调用0 |
 | LIVE-006C | LOCAL/TENCENT/UI/ARC | done | 代码751c331；独立QA及PM按基础版范围通过；313后端0skip、36工程、真实本地2file/WS及页面上传；腾讯真实调用和质量缺口见报告 |
 | LIVE-007～014 | 见计划 | backlog | docs/05 |
-| LIVE-015～017 | 见计划 | backlog | M5 |
+| LIVE-015 | CAP-01 | in_progress | 用户明确提前启动；统一采集基础与抖音适配，任务卡LIVE-015 |
+| LIVE-016 | CAP-01 | in_progress | 与015同一capture分支，视频号投屏接入调研/实现；真实投屏待操作证据 |
+| LIVE-017 | CAP-01 | in_progress | 与015/016统一导入、去重及场次/ASR接缝，首版录后手动转写 |
 
 待决策：远程组织/仓库/可见性；评分标准；后续多场景标注样本、真实云配置与预算。已授权的本轮公开本地样本实测完成，不等于新增云调用授权。
 版本/端口/DB 隔离由 LIVE-002 探针登记；不抢占已有预览。
@@ -30,3 +32,5 @@ LIVE-006结束：代码649eb0759d1adf397e24f09b9ba458e612989939，独立批准�
 LIVE-006B结束：代码706f28ef87333718d5ce34c2ddf634fedf11a6f3，独立批准树e8d9d5f9289b307c65d243b61d5892c17fbfb8f8。PG15470与本轮独立库/产物保留，CFG/JOBS副本干净只读保留，QA数据库锁已交还；无本轮worker/FFmpeg常驻。ARC纯文档收尾提交后释放main index本轮独占。不启动007，不新增真实模型授权；前端仍Demo，非ASR仅声明。
 
 LIVE-006C结束：最终代码751c331e834823021db6ba85bda410e5bd1fd04a，独立批准树b1f19ae8f4b3117545b22d841c8a34abf6c2c6d3。PM验收本地ASR基础闭环与设置，非十场景质量全部达标。真实腾讯/多人/方言/长录音/DER/情绪准确率未验，云长文件、MPS、原生低延迟流仍缺；首次revision0 GUI未测但API/源码门禁已验。预览5196、API8196、独立worker和PG15480保留，worker空闲60秒卸载模型；不伪称自动开发/监控。旧环境不动，员工副本保留审计；main收尾仅文档。入口、账号获取方式、91文件清单、实测/失败保留与恢复见reports/LIVE-006C/change.md。不启动LIVE-007。
+
+2026-10-06用户另行在CAP任务直接授权提前LIVE-015～017，不等待M3/M4；不改变007～014 backlog。开发基线61c2cbb，feat/LIVE-015-capture，.worktrees/LIVE-015-capture，runtime/live-015。API8197/助手8198/PG15490拟保留，登记时无TCP监听（不等于已启动），live015独立新库。共享接线/依赖/唯一0006迁移由CAP在其副本独占，ARC只维护台账/门禁与串行集成。原预览不动；独立Review待首个可审SHA再启动，当前不声明通过。详见tasks/LIVE-015.md。

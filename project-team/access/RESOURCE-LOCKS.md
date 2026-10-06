@@ -67,3 +67,13 @@ LIVE-006B收尾：CFG/JOBS开发写入结束，clean worktree只读保留。QA�
 ## LIVE-006C（base840d461）
 
 分工与工作副本见tasks/LIVE-006C.md。LOCAL独占gateway/local与本地依赖/缓存，TENCENT独占gateway/tencent，UI独占frontend/web本轮设置/试用；ARC独占共用contracts/factory、registry扩展、modules/asr、0005迁移、worker接线、pyproject/lock及环境/验收。独立QA需非本轮作者。新PG15480、API8196、UI5196、runtime/live-006c，各资源启动前探端口，不动旧006B/5188。主index仅ARC串行；旧库/worktree只读保留。
+
+006C已于61c2cbb收尾，作者/QA任务完成；上述代码写锁释放，副本只读保留审计。5196/8196/15480及本地ASR Unix worker保留预览用途，不能作为新轮测试库或采集端口。保留服务不等于保留共享源码作者锁。
+
+## LIVE-015～017 提前启动（base61c2cbb，2026-10-06）
+
+用户直接授权，CAP任务01a11105-8328-7283-b726-8e9d34e75c36独占 `.worktrees/LIVE-015-capture` / `feat/LIVE-015-capture`。模块与逐段验收详见tasks/LIVE-015.md。
+
+当前共享源码唯一作者为CAP，仅在其副本修改：main.py、core/config.py捕获字段、workers/handlers.py捕获注册、modules/materials必要接缝、backend pyproject.toml/uv.lock、migrations/env.py和唯一新增0006_capture.py（down_revision=0005_asr_settings）。ARC不并写这些代码，持有main index/台账/结构门禁与最终串行集成；CAP按具体新增路径另行协调，旧身份/ASR等测试不在默认写范围。代码集成前独立Review绑定SHA；本次登记核对不等于采集代码验收。
+
+拟资源API8197/助手8198/PG15490/live015，ARC登记时无TCP监听，未声称启动；CAP启动前复核并登记实际值/独立测试库。运行产物只在runtime/live-015；旧预览与旧库不动。磁盘复核约7.1GiB空闲，下载/录制须先做空间预算与受控停止，不能清理他人缓存或重下ASR权重。

@@ -45,11 +45,13 @@ def analyze_audio(models, audio, request, *, offset_ms=0, first_index=0, windowe
     cfg = models.config
     duration_ms = len(audio) * 1000 // cfg.sample_rate
     vad = models.generate(cfg.vad_model, audio)
-    intervals = vad[0].get("value", []) if vad else []
+    if not vad or not isinstance(vad[0].get("value"), list):
+        raise ASRError("local_vad_result_invalid")
+    intervals = vad[0]["value"]
     observed = []
     for interval in intervals:
         start, end = (int(interval[0]), int(interval[1]))
-        if start < 0 or end < start or end > duration_ms + 50:
+        if start < 0 or start >= duration_ms or end <= start or end > duration_ms + 50:
             raise ASRError("local_vad_result_invalid")
         end = min(end, duration_ms)
         # Bound long utterance decoding, regardless of VAD implementation limits.
@@ -57,7 +59,7 @@ def analyze_audio(models, audio, request, *, offset_ms=0, first_index=0, windowe
             stop = min(end, begin + cfg.vad_max_segment_ms)
             samples = audio[begin * 16 : stop * 16]
             if len(samples) < 400:
-                continue
+                raise ASRError("local_speech_segment_too_short")
             raw = models.generate(
                 cfg.asr_model,
                 samples,
@@ -69,7 +71,7 @@ def analyze_audio(models, audio, request, *, offset_ms=0, first_index=0, windowe
             )
             text = raw[0].get("text", "").strip() if raw else ""
             if not text:
-                continue
+                raise ASRError("local_asr_empty_for_speech")
             if request.punctuation and cfg.punctuation_model:
                 punc = models.generate(
                     cfg.punctuation_model, punctuation_input(text), data_type="text"

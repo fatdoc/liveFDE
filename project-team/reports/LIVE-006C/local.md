@@ -68,3 +68,9 @@ CAM++上游sv_chunk使用1.5秒窗、0.75秒步长并对短片段补零；2秒sp
 最终配置新增 `cache_idle_seconds=60`、`min_speaker_duration_ms=2000`；其余精确字段/约束见 `local/config.py`，device支持cpu/cuda/auto/mps（mps明确拒绝，cuda未真机验）。独立推理venv真实安装80包；最终runtime逻辑体积约5.7GB，低于7GB上限；推理结束可用盘约8.41GiB，后续下载仍需复核至少8GiB reserve。未删除任何他人文件/全局缓存。
 
 本轮检查：`tests/test_asr_local.py` **15 passed，0 skipped**，Ruff check/format通过、git diff --check通过。单测中device使用轻量fake torch.cuda，仅检验设备选择；实际CPU模型另由上述真实smoke证明。所有直接provider烟测进程结束并显式unload，residency锁已释放，可供常驻worker独立验收。
+
+## 独立QA P1修复增量
+
+QA指出：VAD发现语音而Nano返回空列表/空白文本时，原实现continue并给complete=true，会掩盖转写缺口。现改为明确抛出 `local_asr_empty_for_speech`，包括已有正常段后出现空段；file不返回完整成功，stream不发送completed。明确VAD `value=[]` 仍允许静音空成功；VAD结果本身缺失报 `local_vad_result_invalid`，短到无法处理的已检出语音报 `local_speech_segment_too_short`，均不当成静音。
+
+修复后local单测21 passed、0 skipped，Ruff通过。新增file/stream空列表、空白文本、正常+空混合段，以及真实观测路径静音对照和缺失VAD/过短语音边界。按独立QA范围仅重跑模型边界测试，未重跑或改写此前真实权重烟测证据。本增量仍需非作者复审。

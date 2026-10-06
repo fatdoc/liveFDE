@@ -45,3 +45,5 @@ WebSocket/provider流输入为原始PCM16LE、16kHz、mono，单chunk不可大�
 声纹最短片段阈值2000ms是保守工程默认，非官方质量保证。上游CAM++ sv_chunk使用1.5秒窗、0.75秒步长并对短片段补零，没有给出通用准确率所需最小时长。我们没有采用上游把很短片段归给邻人的smooth策略。来源 https://github.com/modelscope/FunASR/blob/main/funasr/models/campplus/utils.py 。
 
 已验证重跑入口：在backend src可导入的环境运行 `python -m live_review.integrations.asr_gateway.local.smoke MODEL_ROOT OUTPUT_JSON --observations --punctuation`。该入口直接禁止socket.connect并执行冷file、暖file、暖stream，结束显式卸载缓存。它不会下载；输入固定为预置公开example/zh.mp3。评分指标不在smoke里伪造，单样本reference/CER证据在本轮作者报告。
+
+完整性：只有明确VAD `value=[]` 才按无语音返回空成功。已检出语音但Nano无文本，抛 `local_asr_empty_for_speech`（混合正常/空段也失败）；不把转写丢失标为complete=true。VAD响应缺失/非法、语音片段短到无法处理均有明确错误。

@@ -315,3 +315,91 @@ def test_punctuation_restoration_preserves_numeric_and_word_syntax():
     assert punctuation_input("时间：9:00，金额3.5元。Don't stop!") == "时间9:00金额3.5元Don't stop"
 
     assert punctuation_input("Hello,world.") == "Hello world"
+
+
+@pytest.mark.parametrize("outputs", [[[]], [[{"text": "   "}]], [[{"text": "speech"}], []]])
+def test_vad_speech_without_asr_text_fails_file_and_stream(tmp_path, monkeypatch, outputs):
+    from live_review.integrations.asr_gateway.local import observations as observation_module
+
+    provider, _ = _stub(monkeypatch, tmp_path)
+    # Exercise the real observation path through both provider entry points.
+    monkeypatch.setattr(provider_module, "analyze_audio", observation_module.analyze_audio)
+
+    class EmptyASRModels:
+        def __init__(self, config):
+            self.config = config
+            self.index = 0
+
+        def generate(self, name, data, **kwargs):
+            if name == self.config.vad_model:
+                return [{"value": [[i * 500, (i + 1) * 500] for i in range(len(outputs))]}]
+            value = outputs[self.index]
+            self.index += 1
+            return value
+
+        def clear(self):
+            pass
+
+    monkeypatch.setattr(cache_module, "Models", EmptyASRModels)
+    path = tmp_path / "speech.wav"
+    sf.write(path, np.zeros(16000), 16000)
+    with pytest.raises(ASRError, match="local_asr_empty_for_speech"):
+        asyncio.run(provider.transcribe_file(path, ASRRequest(request_id="empty-file")))
+
+    async def stream():
+        async def chunks():
+            yield b"\0" * 32000
+
+        events = []
+        try:
+            async for event in provider.transcribe_stream(
+                chunks(), ASRRequest(request_id="empty-stream")
+            ):
+                events.append(event)
+        finally:
+            assert not any(event.type == "completed" for event in events)
+
+    with pytest.raises(ASRError, match="local_asr_empty_for_speech"):
+        asyncio.run(stream())
+
+
+def test_explicit_no_vad_speech_is_valid_empty_result(tmp_path, monkeypatch):
+    from live_review.integrations.asr_gateway.local import observations as observation_module
+
+    provider, _ = _stub(monkeypatch, tmp_path)
+    monkeypatch.setattr(provider_module, "analyze_audio", observation_module.analyze_audio)
+
+    class SilentModels:
+        def __init__(self, config):
+            self.config = config
+
+        def generate(self, name, data, **kwargs):
+            assert name == self.config.vad_model
+            return [{"value": []}]
+
+        def clear(self):
+            pass
+
+    monkeypatch.setattr(cache_module, "Models", SilentModels)
+    path = tmp_path / "silence.wav"
+    sf.write(path, np.zeros(16000), 16000)
+    result = asyncio.run(provider.transcribe_file(path, ASRRequest(request_id="silence")))
+    assert result.complete and not result.segments
+
+
+@pytest.mark.parametrize(
+    "vad,code",
+    [([], "local_vad_result_invalid"), ([{"value": [[0, 10]]}], "local_speech_segment_too_short")],
+)
+def test_missing_vad_or_unprocessable_speech_does_not_become_silence(tmp_path, vad, code):
+    from live_review.integrations.asr_gateway.local.observations import analyze_audio
+
+    class BoundaryModels:
+        config = LocalConfig(model_root=tmp_path)
+
+        def generate(self, name, data, **kwargs):
+            assert name == self.config.vad_model
+            return vad
+
+    with pytest.raises(ASRError, match=code):
+        analyze_audio(BoundaryModels(), np.zeros(16000), ASRRequest(request_id="boundary"))

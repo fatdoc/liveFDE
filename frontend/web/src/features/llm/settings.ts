@@ -43,7 +43,7 @@ export function safeReason(code: string | null) {
     llm_request_reused: '此请求已处理，不会重复发送。',
     llm_check_limit: '已达到连接测试限制，请管理员核查记录。',
     llm_auth_failed: '服务鉴权失败，请核对密钥。',
-    llm_model_not_found: '服务未找到指定模型，请核对模型名称。',
+    llm_model_not_found: '接口或模型不存在，请检查接口地址和模型名。',
     llm_rate_limited: '服务请求受限，请核对额度或限流状态。',
     llm_endpoint_rejected: '接口地址被服务端拒绝。',
     llm_http_not_allowed: '此 HTTP 接口未获服务端调试授权。',

@@ -72,14 +72,14 @@ def claim(engine, job_id, attempt, lease_seconds):
         return token
 
 
-def recover_expired(engine):
+def recover_expired(engine, *, kind=None):
     count = 0
     with Session(engine) as db:
+        query = select(Job).where(Job.lease_token.is_not(None), Job.lease_until <= now())
+        if kind is not None:
+            query = query.where(Job.input_data["kind"].astext == kind)
         jobs = db.scalars(
-            select(Job)
-            .where(Job.lease_token.is_not(None), Job.lease_until <= now())
-            .with_for_update(skip_locked=True)
-            .execution_options(populate_existing=True)
+            query.with_for_update(skip_locked=True).execution_options(populate_existing=True)
         ).all()
         for job in jobs:
             stages = stages_for(db, job.id)

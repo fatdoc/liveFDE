@@ -1,12 +1,16 @@
+import base64
+import binascii
 import hashlib
 import json
-from uuid import uuid4
+from datetime import datetime
+from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, tuple_
 from sqlalchemy.exc import IntegrityError
 
 from live_review.core.errors import ApiError
 from live_review.integrations.capture.policy import fingerprint
+from live_review.modules.capture.executor_health import execution_health
 from live_review.modules.capture.models import CaptureRun
 from live_review.modules.jobs.models import Job
 from live_review.modules.jobs.service import TERMINAL, create_job, now
@@ -43,6 +47,7 @@ def view(db, run):
     return {
         "capture_run_id": str(run.id),
         "job_id": str(run.job_id),
+        "created_at": run.created_at,
         "session_id": str(run.session_id),
         "platform": run.platform,
         "source_ref": run.source_ref,
@@ -60,7 +65,7 @@ def view(db, run):
     }
 
 
-def start(db, admin, data, key, policy):
+def start(db, admin, data, key, policy, *, settings=None):
     if not key or len(key) > 128:
         raise ApiError(400, "invalid_idempotency_key", "需要有效幂等键")
     get_session(db, admin.workspace_id, data.session_id)
@@ -75,6 +80,10 @@ def start(db, admin, data, key, policy):
         if existing.request_hash != digest:
             raise ApiError(409, "idempotency_conflict", "幂等键已用于不同采集")
         return existing
+    if policy.execution_mode == "native" and (
+        settings is None or not execution_health(settings, policy)["ready"]
+    ):
+        raise ApiError(503, "capture_executor_unavailable", "采集执行器未就绪，请稍后重试")
     # Clean terminal activity claims, without using file-size heuristics.
     active = db.scalars(
         select(CaptureRun).where(
@@ -129,3 +138,43 @@ def request_stop(db, run):
         run.stop_requested = True
         db.commit()
     return view(db, run)
+
+
+def list_runs(db, admin, session_id, limit=20, cursor=None):
+    get_session(db, admin.workspace_id, session_id)
+    query = select(CaptureRun).where(
+        CaptureRun.workspace_id == admin.workspace_id, CaptureRun.session_id == session_id
+    )
+    if cursor:
+        try:
+            payload = json.loads(base64.b64decode(cursor, altchars=b"-_", validate=True))
+            if not isinstance(payload, dict) or any(
+                not isinstance(payload.get(key), str)
+                for key in ("session_id", "created_at", "id")
+            ):
+                raise ValueError
+            if payload["session_id"] != str(session_id):
+                raise ValueError
+            boundary_time = datetime.fromisoformat(payload["created_at"])
+            boundary_id = UUID(payload["id"])
+            if boundary_time.tzinfo is None:
+                raise ValueError
+        except (ValueError, TypeError, KeyError, binascii.Error):
+            raise ApiError(422, "invalid_cursor", "采集列表分页标记无效") from None
+        query = query.where(
+            tuple_(CaptureRun.created_at, CaptureRun.id) < tuple_(boundary_time, boundary_id)
+        )
+    rows = db.scalars(
+        query.order_by(CaptureRun.created_at.desc(), CaptureRun.id.desc()).limit(limit + 1)
+    ).all()
+    page = rows[:limit]
+    next_cursor = None
+    if len(rows) > limit:
+        last = page[-1]
+        payload = {
+            "session_id": str(session_id),
+            "created_at": last.created_at.isoformat(),
+            "id": str(last.id),
+        }
+        next_cursor = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
+    return {"items": [view(db, run) for run in page], "next_cursor": next_cursor}

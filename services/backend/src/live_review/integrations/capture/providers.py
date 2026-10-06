@@ -12,6 +12,21 @@ from live_review.integrations.capture.contracts import CaptureError, Source
 
 DOUYIN_COMMIT = "add187f8d8c7ff7d231fcbee45cbb4f1ed247d3a"
 FINDER_VERSION = "0.4.3"
+DOUYIN_ERRORS = frozenset(
+    {
+        "source_parse_failed",
+        "provider_dependencies_missing",
+        "source_auth_required",
+        "source_http_error",
+        "source_rate_limited",
+        "source_challenge_required",
+        "source_empty_response",
+        "source_schema_changed",
+        "source_protocol_error",
+        "source_timeout",
+        "source_network_error",
+    }
+)
 
 
 def canonical_reference(platform, reference):
@@ -68,7 +83,7 @@ class DouyinProvider:
         return {
             "dependencies_ready": ready,
             "real_platform_verified": False,
-            "cookie_configured": bool(os.environ.get(p.douyin_cookie_env)),
+            "cookie_configured": bool(os.environ.get(p.douyin_cookie_env, "").strip()),
             "upstream_commit": DOUYIN_COMMIT,
             "requires_phone": False,
         }
@@ -90,7 +105,7 @@ class DouyinProvider:
             {
                 "source": reference,
                 "checkout": str(p.douyin_checkout),
-                "cookie": os.environ.get(p.douyin_cookie_env, " "),
+                "cookie": os.environ.get(p.douyin_cookie_env, "").strip(),
             }
         ).encode()
         for attempt in range(p.probe_attempts):
@@ -103,14 +118,24 @@ class DouyinProvider:
                     p.douyin_checkout,
                 )
                 data = json.loads(output)
-                if data.get("error"):
+                if not isinstance(data, dict):
                     raise CaptureError("source_parse_failed")
+                if data.get("error"):
+                    code = data["error"]
+                    raise CaptureError(
+                        code
+                        if isinstance(code, str) and code in DOUYIN_ERRORS
+                        else "source_parse_failed"
+                    )
                 if type(data.get("live")) is not bool:
                     raise CaptureError("source_parse_failed")
                 return Source(data["live"], data.get("url"))
-            except (ValueError, CaptureError):
+            except (ValueError, CaptureError) as error:
                 if attempt + 1 == p.probe_attempts:
-                    raise CaptureError("source_parse_failed") from None
+                    code = error.code if isinstance(error, CaptureError) else "source_parse_failed"
+                    raise CaptureError(
+                        code if code in DOUYIN_ERRORS else "source_parse_failed"
+                    ) from None
                 deadline = time.monotonic() + 2**attempt
                 while time.monotonic() < deadline:
                     tick()

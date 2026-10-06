@@ -11,6 +11,13 @@ import live006b_environment as env
 
 
 class EnvironmentTests(unittest.TestCase):
+    def setUp(self):
+        # Exercise the guards with a registered checkout on every host.
+        # Only the test fixture changes; real resource scripts stay restricted.
+        checkout = patch.object(env, "ROOT", env.WORKSPACE / "app")
+        checkout.start()
+        self.addCleanup(checkout.stop)
+
     def test_overrides_rejected_before_docker(self):
         for key in (
             "DOCKER_HOST",
@@ -110,6 +117,13 @@ class EnvironmentTests(unittest.TestCase):
 
 
 class AcceptanceBoundaryTests(unittest.TestCase):
+    def setUp(self):
+        # Exercise the guards with a registered checkout on every host.
+        # Only the test fixture changes; real resource scripts stay restricted.
+        checkout = patch.object(acceptance, "ROOT", acceptance.WORKSPACE / "app")
+        checkout.start()
+        self.addCleanup(checkout.stop)
+
     def test_private_destination_and_inherited_fields(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

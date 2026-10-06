@@ -21,6 +21,7 @@ def capture_env(materials, tmp_path, monkeypatch):
     config.mkdir()
     (config / "capture.local.yaml").write_text(
         f"enabled: true\nroot: {root}\nmin_free_bytes: 1048576\nmax_seconds: 30\n"
+        "max_bytes: 4194304\ndefault_max_bytes: 2097152\n"
     )
     settings = app.state.settings.model_copy(update={"model_config_dir": config})
     monkeypatch.setattr(app.state, "settings", settings)

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ApiError, request, message } from '../../api/client'
+import { RecordingLimits } from './RecordingLimits'
+import { recordingChoiceValid, readableBytes, readableDuration } from './captureLimitPolicy'
 import { Button, Badge } from '../../components/UI'
 import type { LiveSession } from '../sessions/types'
 import { isActive, runLabel, type CaptureHealth, type CaptureRun } from './types'
@@ -19,9 +21,24 @@ export function CapturePanel({
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [loaded, setLoaded] = useState(false)
+  const [older, setOlder] = useState<CaptureRun[]>([]),
+    [cursor, setCursor] = useState<string | null>(null),
+    [historyBusy, setHistoryBusy] = useState(false)
+  const historyLock = useRef(false),
+    paged = useRef(false),
+    previousPage = useRef<CaptureRun[]>([])
   const [source, setSource] = useState(''),
     [retry, setRetry] = useState(0),
-    [pending, setPending] = useState<{ key: string; source: string } | null>(null)
+    [pending, setPending] = useState<{
+      key: string
+      source: string
+      duration_seconds?: number
+      max_bytes?: number
+    } | null>(null)
+  const [durationSeconds, setDurationSeconds] = useState(0),
+    [maxBytes, setMaxBytes] = useState(0)
+  const initializedLimits = useRef(false)
+  const trackedActive = useRef(new Set<string>())
   const lock = useRef(false),
     knownMaterials = useRef(new Set<string>())
   const storageKey = `capture-attempt:${scope}:${session.id}`
@@ -51,9 +68,36 @@ export function CapturePanel({
         ])
         if (abort.signal.aborted) return
         setHealth(h)
+        if (!initializedLimits.current && h.limits) {
+          setDurationSeconds(h.limits.default_duration_seconds ?? h.limits.max_seconds)
+          setMaxBytes(h.limits.default_max_bytes ?? h.limits.max_bytes)
+          initializedLimits.current = true
+        }
+        const ids = new Set(page.items.map((r) => r.capture_run_id))
+        const tracked = await Promise.all(
+          [...trackedActive.current]
+            .filter((id) => !ids.has(id))
+            .map((id) => request<CaptureRun>(`/capture/runs/${id}`, { signal: abort.signal })),
+        )
+        if (abort.signal.aborted) return
+        if (tracked.length)
+          setOlder((old) => [
+            ...new Map([...old, ...tracked].map((r) => [r.capture_run_id, r])).values(),
+          ])
+        for (const run of [...page.items, ...tracked]) {
+          if (isActive(run)) trackedActive.current.add(run.capture_run_id)
+          else trackedActive.current.delete(run.capture_run_id)
+        }
+        const displaced = previousPage.current.filter((r) => !ids.has(r.capture_run_id))
+        if (displaced.length)
+          setOlder((old) => [
+            ...new Map([...displaced, ...old].map((r) => [r.capture_run_id, r])).values(),
+          ])
+        previousPage.current = page.items
         setRuns(page.items)
+        if (!paged.current) setCursor(page.next_cursor)
         setLoaded(true)
-        for (const r of page.items)
+        for (const r of [...page.items, ...tracked])
           if (r.material_id && !knownMaterials.current.has(r.material_id)) {
             knownMaterials.current.add(r.material_id)
             onImported()
@@ -72,8 +116,37 @@ export function CapturePanel({
       clearTimeout(timer)
     }
   }, [session.id, retry])
+  async function loadOlder() {
+    if (!cursor || historyLock.current) return
+    historyLock.current = true
+    setHistoryBusy(true)
+    try {
+      const page = await request<{ items: CaptureRun[]; next_cursor: string | null }>(
+        `/capture/runs?session_id=${session.id}&limit=20&cursor=${encodeURIComponent(cursor)}`,
+      )
+      setOlder((old) => [
+        ...new Map([...old, ...page.items].map((r) => [r.capture_run_id, r])).values(),
+      ])
+      for (const run of page.items) if (isActive(run)) trackedActive.current.add(run.capture_run_id)
+      paged.current = true
+      setCursor(page.next_cursor)
+    } catch (e) {
+      setError(message(e))
+    } finally {
+      historyLock.current = false
+      setHistoryBusy(false)
+    }
+  }
+  const allRuns = [...new Map([...older, ...runs].map((r) => [r.capture_run_id, r])).values()]
+  const currentRuns = allRuns.some(isActive) ? allRuns.filter(isActive) : runs.slice(0, 1)
+  const currentIds = new Set(currentRuns.map((r) => r.capture_run_id))
+  const historyRuns = [...runs, ...older].filter(
+    (r, i, items) =>
+      !currentIds.has(r.capture_run_id) &&
+      items.findIndex((x) => x.capture_run_id === r.capture_run_id) === i,
+  )
   const platform = session.platform,
-    active = runs.some(isActive)
+    active = allRuns.some(isActive)
   const provider = health?.providers[platform]
   const ready =
     loaded &&
@@ -91,7 +164,8 @@ export function CapturePanel({
       !health?.enabled ||
       (!ready && !pending) ||
       (active && !pending) ||
-      !validSource
+      !validSource ||
+      (!pending && !recordingChoiceValid(health?.limits, durationSeconds, maxBytes))
     )
       return
     lock.current = true
@@ -100,6 +174,8 @@ export function CapturePanel({
     const attempt = pending ?? {
       key: crypto.randomUUID(),
       source: platform === 'wechat' ? 'phone_cast' : source.trim(),
+      duration_seconds: durationSeconds,
+      max_bytes: maxBytes,
     }
     setPending(attempt)
     try {
@@ -109,7 +185,15 @@ export function CapturePanel({
         {
           method: 'POST',
           headers: { 'Idempotency-Key': attempt.key },
-          body: JSON.stringify({ session_id: session.id, platform, source_ref: attempt.source }),
+          body: JSON.stringify({
+            session_id: session.id,
+            platform,
+            source_ref: attempt.source,
+            ...(attempt.duration_seconds === undefined
+              ? {}
+              : { duration_seconds: attempt.duration_seconds }),
+            ...(attempt.max_bytes === undefined ? {} : { max_bytes: attempt.max_bytes }),
+          }),
         },
         csrf,
       )
@@ -145,6 +229,42 @@ export function CapturePanel({
       setBusy(false)
     }
   }
+  function renderRun(run: CaptureRun) {
+    return (
+      <article className="asr-section" key={run.capture_run_id}>
+        <Badge tone={run.error_code ? 'amber' : 'teal'}>{runLabel(run)}</Badge>
+        <p>
+          <small>采集编号 {run.capture_run_id}</small>
+        </p>
+        {run.recording_limits && (
+          <p className="muted">
+            本次上限 {readableDuration(run.recording_limits.max_seconds)} / {readableBytes(run.recording_limits.max_bytes)}
+          </p>
+        )}
+        {(run.recorded_bytes != null || run.elapsed_seconds != null) && (
+          <p className="muted">
+            已封装材料：{run.elapsed_seconds == null ? '未提供' : readableDuration(run.elapsed_seconds)} · {run.recorded_bytes == null ? '未提供' : readableBytes(run.recorded_bytes)}
+          </p>
+        )}
+        {run.error_code && (
+          <details>
+            <summary>失败详情</summary>
+            <p className="asr-error">采集未完成：{run.error_code}</p>
+          </details>
+        )}
+        {isActive(run) && (
+          <Button disabled={busy || run.stop_requested} onClick={() => act(run, 'stop')}>
+            {run.stop_requested ? '等待服务器停止' : '停止录制'}
+          </Button>
+        )}
+        {!isActive(run) && !!run.manifest && !run.material_id && (
+          <Button disabled={busy} onClick={() => act(run, 'import')}>
+            重新导入录制材料
+          </Button>
+        )}
+      </article>
+    )
+  }
   if (platform === 'other')
     return (
       <section className="asr-section">
@@ -159,7 +279,8 @@ export function CapturePanel({
       {ready && (
         <p className="muted">
           配置已就绪，可测试录制；真实直播源尚待验证。
-          {health?.limits && ` 单次最多 ${health.limits.max_seconds} 秒 / ${Math.round(health.limits.max_bytes / 1000000)} MB。`}
+          {health?.limits &&
+            ` 单次最多 ${readableDuration(health.limits.max_seconds)} / ${readableBytes(health.limits.max_bytes)}。`}
         </p>
       )}
       {!ready && (
@@ -196,6 +317,14 @@ export function CapturePanel({
           <p>若直播没有投屏入口，本次无法采集。无需粘贴临时播放地址。</p>
         </div>
       )}
+      <RecordingLimits
+        limits={health?.limits}
+        duration={durationSeconds}
+        bytes={maxBytes}
+        disabled={busy || active || !!pending}
+        onDuration={setDurationSeconds}
+        onBytes={setMaxBytes}
+      />
       {pending && (
         <p className="asr-warning">
           上一次提交尚待确认。重试将查询同一次请求，不创建新的录制；请保留当前直播间。
@@ -210,7 +339,8 @@ export function CapturePanel({
             !loaded ||
             (active && !pending) ||
             busy ||
-            !validSource
+            !validSource ||
+            (!pending && !recordingChoiceValid(health?.limits, durationSeconds, maxBytes))
           }
           onClick={start}
         >
@@ -232,25 +362,17 @@ export function CapturePanel({
         </p>
       )}
       <div aria-live="polite">
-        {runs.map((run) => (
-          <article className="asr-section" key={run.capture_run_id}>
-            <Badge tone={run.error_code ? 'amber' : 'teal'}>{runLabel(run)}</Badge>
-            <p>
-              <small>采集编号 {run.capture_run_id}</small>
-            </p>
-            {run.error_code && <p className="asr-error">采集未完成：{run.error_code}</p>}
-            {isActive(run) && (
-              <Button disabled={busy || run.stop_requested} onClick={() => act(run, 'stop')}>
-                {run.stop_requested ? '等待服务器停止' : '停止录制'}
-              </Button>
-            )}
-            {!isActive(run) && !!run.manifest && !run.material_id && (
-              <Button disabled={busy} onClick={() => act(run, 'import')}>
-                重新导入录制材料
-              </Button>
-            )}
-          </article>
-        ))}
+        {currentRuns.map(renderRun)}
+        <details>
+          <summary>历史采集记录（当前已加载 {historyRuns.length} 条）</summary>
+          <p className="muted">历史失败仅收起，不删除记录；可继续读取更早记录。</p>
+          {historyRuns.map(renderRun)}
+          {cursor && (
+            <Button disabled={historyBusy} onClick={loadOlder}>
+              {historyBusy ? '正在加载…' : '加载更早记录'}
+            </Button>
+          )}
+        </details>
       </div>
     </section>
   )

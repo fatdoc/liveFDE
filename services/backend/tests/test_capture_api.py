@@ -204,7 +204,7 @@ def test_wechat_wait_url_record_import_states(capture_env, av_file, monkeypatch)
 
     original_record = recording.record
 
-    def checked_record(source, path, policy, tick, progress, *args):
+    def checked_record(source, path, policy, tick, progress, *args, **kwargs):
         observed.append(state())
 
         def progress_and_stop(value):
@@ -215,7 +215,7 @@ def test_wechat_wait_url_record_import_states(capture_env, av_file, monkeypatch)
                 == 202
             )
 
-        return original_record(source, path, policy, tick, progress_and_stop, *args)
+        return original_record(source, path, policy, tick, progress_and_stop, *args, **kwargs)
 
     monkeypatch.setattr(capture_jobs, "record", checked_record)
     monkeypatch.setattr(relay, "destination", permit_fixture)

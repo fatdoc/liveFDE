@@ -1,4 +1,6 @@
 import os
+import time
+from datetime import timedelta
 
 from fastapi import Request
 from sqlalchemy import select
@@ -19,7 +21,25 @@ from live_review.modules.materials.service import (
 from live_review.modules.materials.validation import validate_file
 
 
-async def receive(request: Request, db, admin, upload_id):
+def transfer_pulse(db, admin, upload_id, token, settings, tick):
+    last = 0.0
+
+    def pulse():
+        nonlocal last
+        if tick is None:
+            return
+        tick()
+        current_time = time.monotonic()
+        if current_time - last >= min(1.0, settings.upload_lease_seconds / 3):
+            current = locked_lease(db, upload_id, admin, token)
+            current.lease_until = now() + timedelta(seconds=settings.upload_lease_seconds)
+            db.commit()
+            last = current_time
+
+    return pulse
+
+
+async def receive(request: Request, db, admin, upload_id, *, tick=None):
     settings = request.app.state.settings
     storage = LocalStorage(settings.storage_root)
     upload = owned_upload(db, upload_id, admin)
@@ -36,9 +56,11 @@ async def receive(request: Request, db, admin, upload_id):
     partial = storage.prepare("uploads", token, ".part")
     complete = storage.path("uploads", token)
     count = 0
+    pulse = transfer_pulse(db, admin, upload_id, token, settings, tick)
     try:
         with partial.open("xb") as output:
             async for chunk in request.stream():
+                pulse()
                 count += len(chunk)
                 if count > upload.byte_size or count > settings.upload_max_bytes:
                     raise ApiError(413, "upload_too_large", "接收数据超出声明大小")
@@ -65,7 +87,7 @@ async def receive(request: Request, db, admin, upload_id):
     return {"upload_id": str(upload_id), "status": "uploaded", "received_size": count}
 
 
-def finalize(request: Request, db, admin, upload_id):
+def finalize(request: Request, db, admin, upload_id, *, tick=None, publish_tick=None):
     settings = request.app.state.settings
     storage = LocalStorage(settings.storage_root)
     upload, token = claim(db, upload_id, admin, "finalizing", settings)
@@ -73,6 +95,7 @@ def finalize(request: Request, db, admin, upload_id):
         _, blob = get_material(db, upload.material_id, admin)
         return finalized_json(upload, blob)
     candidate = None
+    pulse = transfer_pulse(db, admin, upload_id, token, settings, tick)
     try:
         source = storage.path("uploads", upload.temp_key) if upload.temp_key else None
         if source is None or not source.is_file():
@@ -84,10 +107,17 @@ def finalize(request: Request, db, admin, upload_id):
             upload.media_type,
             upload.purpose,
             settings.ffprobe_path,
+            **({"tick": pulse} if tick is not None else {}),
         )
         # Each lease writes a unique immutable candidate. A stale finalizer cannot
         # overwrite a later successful attempt, even after a lease takeover.
-        candidate = storage.promote_copy(source, token)
+        candidate = storage.promote_copy(
+            source, token, **({"tick": pulse} if tick is not None else {})
+        )
+        # Do not use the throttled lease pulse at publication boundaries.
+        checkpoint = publish_tick if publish_tick is not None else tick
+        if checkpoint is not None:
+            checkpoint()
         current = locked_lease(db, upload_id, admin, token)
         query = select(Blob).where(Blob.workspace_id == admin.workspace_id, Blob.sha256 == digest)
         blob = db.scalar(query)
@@ -123,6 +153,8 @@ def finalize(request: Request, db, admin, upload_id):
         current.deduplicated = deduplicated
         current.lease_token = None
         current.lease_until = None
+        if checkpoint is not None:
+            checkpoint()
         db.commit()
         # No deletion before commit: rollback/restart may need the uploaded bytes.
         # Cleanup failure cannot turn a successful finalization into failed state.

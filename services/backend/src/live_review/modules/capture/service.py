@@ -10,6 +10,7 @@ from sqlalchemy import select, tuple_
 from sqlalchemy.exc import IntegrityError
 
 from live_review.core.errors import ApiError
+from live_review.integrations.capture.limits import require_capacity, select_limits
 from live_review.integrations.capture.policy import fingerprint
 from live_review.modules.capture.credentials import CredentialStore
 from live_review.modules.capture.executor_health import execution_health
@@ -48,6 +49,9 @@ def reconcile(db, run):
 def view(db, run):
     job = reconcile(db, run)
     return {
+        "recording_limits": job.input_data.get("recording_limits"),
+        "recorded_bytes": run.manifest.get("size_bytes") if run.manifest else None,
+        "elapsed_seconds": run.manifest.get("duration_ms", 0) / 1000 if run.manifest else None,
         "capture_run_id": str(run.id),
         "job_id": str(run.job_id),
         "created_at": run.created_at,
@@ -72,9 +76,12 @@ def start(db, admin, data, key, policy, *, settings=None):
     if not key or len(key) > 128:
         raise ApiError(400, "invalid_idempotency_key", "需要有效幂等键")
     get_session(db, admin.workspace_id, data.session_id)
-    digest = hashlib.sha256(
-        json.dumps(data.model_dump(mode="json"), sort_keys=True).encode()
-    ).hexdigest()
+    limits = select_limits(policy, data.duration_seconds, data.max_bytes)
+    normalized = data.model_dump(mode="json") | {
+        "duration_seconds": limits.max_seconds,
+        "max_bytes": limits.max_bytes,
+    }
+    digest = hashlib.sha256(json.dumps(normalized, sort_keys=True).encode()).hexdigest()
     query = select(CaptureRun).where(
         CaptureRun.workspace_id == admin.workspace_id, CaptureRun.idempotency_key == key
     )
@@ -112,6 +119,13 @@ def start(db, admin, data, key, policy, *, settings=None):
     ).all()
     for run in active:
         reconcile(db, run)
+    require_capacity(
+        policy.root,
+        settings.storage_root if settings else None,
+        limits.min_free_bytes,
+        limits.max_bytes,
+        before_start=True,
+    )
     run_id = uuid4()
     try:
         with db.begin_nested():
@@ -127,6 +141,7 @@ def start(db, admin, data, key, policy, *, settings=None):
                     "kind": "capture_v1",
                     "capture_run_id": str(run_id),
                     "policy_sha256": fingerprint(policy),
+                    "recording_limits": limits.model_dump(),
                 },
             )
             run = CaptureRun(

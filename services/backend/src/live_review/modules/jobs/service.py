@@ -2,12 +2,13 @@ import hashlib
 import json
 import re
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy import select
 
 from live_review.core.errors import ApiError
 from live_review.modules.jobs.models import CallIntent, Job, JobStage, Outbox, RetryKey
+from live_review.modules.materials.models import Material
 
 TERMINAL = {"succeeded", "failed", "canceled"}
 
@@ -76,6 +77,26 @@ def owned(db, job_id, admin, lock=False):
     return job
 
 
+def asr_retry_blocked(db, job):
+    if job.input_data.get("kind") != "asr_gateway_v1":
+        return False
+    siblings = db.scalars(
+        select(Job).where(
+            Job.workspace_id == job.workspace_id,
+            Job.id != job.id,
+            Job.input_data["kind"].astext == "asr_gateway_v1",
+            Job.input_data["material_id"].astext == job.input_data.get("material_id"),
+        )
+    ).all()
+    return any(
+        sibling.input_data.get("previous_job_id") == str(job.id)
+        or sibling.status in {"queued", "running", "cancel_requested"}
+        or unknown_calls(db, sibling.id)
+        or (sibling.error or {}).get("code") == "execution_stop_unconfirmed"
+        for sibling in siblings
+    )
+
+
 def view(db, job):
     stages = stages_for(db, job.id)
     return {
@@ -91,6 +112,7 @@ def view(db, job):
         "can_retry": job.input_data.get("kind") != "asr_stream_v1"
         and job.status == "failed"
         and not unknown_calls(db, job.id)
+        and not asr_retry_blocked(db, job)
         and (job.error or {}).get("code") != "execution_stop_unconfirmed",
         "cancel_requested": job.cancel_requested,
     }
@@ -99,6 +121,17 @@ def view(db, job):
 def retry_job(db, job_id, admin, key, expected_revision, from_stage):
     if not key or len(key) > 128:
         raise ApiError(400, "invalid_idempotency_key", "需要有效幂等键")
+    initial = owned(db, job_id, admin)
+    if initial.input_data.get("kind") == "asr_gateway_v1":
+        # All ASR enqueue paths use Material -> Job to serialize retries and replacements.
+        db.scalar(
+            select(Material)
+            .where(
+                Material.id == UUID(initial.input_data["material_id"]),
+                Material.workspace_id == admin.workspace_id,
+            )
+            .with_for_update()
+        )
     job = owned(db, job_id, admin, lock=True)
     digest = hashlib.sha256(json.dumps([expected_revision, from_stage]).encode()).hexdigest()
     saved = db.scalar(
@@ -116,6 +149,7 @@ def retry_job(db, job_id, admin, key, expected_revision, from_stage):
         job.input_data.get("kind") == "asr_stream_v1"
         or job.status != "failed"
         or unknown_calls(db, job.id)
+        or asr_retry_blocked(db, job)
         or (job.error or {}).get("code") == "execution_stop_unconfirmed"
     ):
         raise ApiError(409, "retry_not_allowed", "任务状态或未知调用结果阻止重试")

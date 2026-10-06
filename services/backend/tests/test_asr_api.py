@@ -76,6 +76,81 @@ def test_settings_auth_csrf_persistence_revision_and_tenant(materials):
     assert client.get(endpoint).status_code == 401
 
 
+def test_provider_options_are_admin_only_and_configuration_only(materials, tmp_path, monkeypatch):
+    client, _, _, _, _ = materials
+    configured(tmp_path, monkeypatch)
+    response = client.get("/api/v1/asr/providers")
+    assert response.status_code == 200
+    options = response.json()["providers"]
+    assert [row["provider"] for row in options] == ["local", "tencent"]
+    assert all(row["network_checked"] is False for row in options)
+    assert all("secret" not in row and "model_root" not in row for row in options)
+    assert options[1]["max_audio_bytes"] == 5_000_000
+    client.cookies.clear()
+    assert client.get("/api/v1/asr/providers").status_code == 401
+
+
+def test_failed_material_can_have_only_one_authorized_successor(materials, tmp_path, monkeypatch):
+    client, headers, _, _, _ = materials
+    configured(tmp_path, monkeypatch)
+    _, material = upload(client, headers, wav_bytes(), "audio/wav", "session_media")
+    client.put("/api/v1/asr/settings", headers=headers, json={"expected_revision": 0})
+    body = {"material_id": material["material_id"], "expected_revision": 1}
+    first = client.post("/api/v1/asr/transcriptions", headers=headers, json=body).json()
+    successor = body | {"previous_job_id": first["id"], "expected_previous_revision": 1}
+    assert (
+        client.post("/api/v1/asr/transcriptions", headers=headers, json=successor).status_code
+        == 409
+    )
+    with Session(app.state.engine) as db:
+        old = db.get(Job, UUID(first["id"]))
+        old.status, old.error = "failed", {"code": "execution_stop_unconfirmed"}
+        db.commit()
+    assert (
+        client.post("/api/v1/asr/transcriptions", headers=headers, json=successor).status_code
+        == 409
+    )
+    with Session(app.state.engine) as db:
+        old = db.get(Job, UUID(first["id"]))
+        old.error = {"code": "local_model_missing"}
+        stage = db.scalar(select(JobStage).where(JobStage.job_id == old.id))
+        db.add(
+            CallIntent(
+                job_id=old.id, stage_id=stage.id, attempt=1, call_key="test", state="unknown"
+            )
+        )
+        db.commit()
+    assert (
+        client.post("/api/v1/asr/transcriptions", headers=headers, json=successor).status_code
+        == 409
+    )
+    with Session(app.state.engine) as db:
+        db.execute(delete(CallIntent).where(CallIntent.job_id == UUID(first["id"])))
+        db.commit()
+    created = client.post("/api/v1/asr/transcriptions", headers=headers, json=successor)
+    assert created.status_code == 202, created.text
+    assert created.json()["id"] != first["id"]
+    restored = client.get(f"/api/v1/asr/transcriptions/{first['id']}").json()
+    assert restored["successor_job_id"] == created.json()["id"]
+    assert restored["job"]["can_retry"] is False
+    old_retry = client.post(
+        f"/api/v1/jobs/{first['id']}/retry",
+        headers=headers | {"Idempotency-Key": "synthetic-old-retry"},
+        json={"expected_revision": 1, "from_stage": "asr"},
+    )
+    assert old_retry.status_code == 409
+    duplicate = client.post("/api/v1/asr/transcriptions", headers=headers, json=successor)
+    assert duplicate.status_code == 409 and duplicate.json()["code"] == "asr_successor_exists"
+    assert duplicate.json()["details"]["job_id"] == created.json()["id"]
+    # Omitting the predecessor cannot bypass an unresolved task on the same material.
+    assert client.post("/api/v1/asr/transcriptions", headers=headers, json=body).status_code == 409
+    with Session(app.state.engine) as db:
+        assert db.get(Job, UUID(first["id"])).status == "failed"
+        new = db.get(Job, UUID(created.json()["id"]))
+        assert new.input_data["previous_job_id"] == first["id"]
+        assert new.input_data["authorization"]["allow_network"] is False
+
+
 def test_yaml_default_then_workspace_override(materials, tmp_path, monkeypatch):
     client, headers, _, _, _ = materials
     configured(tmp_path, monkeypatch)

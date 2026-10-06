@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { ApiError, message, request } from '../../api/client'
 import { Button, Badge } from '../../components/UI'
 import { formatTimestamp, seekProblem, timestampOrigin } from './transcriptionTimeline'
-import type { ASRSettings, Job, Transcription } from '../asr/types'
+import { MaterialASRControls } from './MaterialASRControls'
+import type { MaterialGrant } from './materialASR'
+import type { Job, Transcription } from '../asr/types'
 export function MaterialTranscription({
   materialId,
   csrf,
@@ -17,8 +18,7 @@ export function MaterialTranscription({
   durationSeconds: number | null
   onSeek: (start: number, end: number) => void
 }) {
-  const [settings, setSettings] = useState<ASRSettings | null>(null),
-    [data, setData] = useState<Transcription | null>(null),
+  const [data, setData] = useState<Transcription | null>(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [jobId, setJobId] = useState(''),
@@ -27,14 +27,11 @@ export function MaterialTranscription({
     [uncertain, setUncertain] = useState(false)
   const lock = useRef(false),
     storageKey = `material-asr:${scope}:${materialId}`
+  const canRetry =
+    data?.job.status === 'failed' && data.job.can_retry === true && !data.successor_job_id
   const active = !!data && ['queued', 'running', 'cancel_requested'].includes(data.job.status)
   useEffect(() => {
     const a = new AbortController()
-    request<ASRSettings>('/asr/settings', { signal: a.signal })
-      .then(setSettings)
-      .catch((e) => {
-        if (!a.signal.aborted) setError(message(e))
-      })
     const saved = sessionStorage.getItem(storageKey)
     if (saved === 'unknown') setUncertain(true)
     else if (saved) setJobId(saved)
@@ -61,15 +58,8 @@ export function MaterialTranscription({
       clearTimeout(timer)
     }
   }, [jobId, query])
-  async function start() {
-    if (
-      lock.current ||
-      !settings ||
-      settings.provider !== 'local' ||
-      !settings.revision ||
-      uncertain
-    )
-      return
+  async function start(grant: MaterialGrant) {
+    if (lock.current || uncertain || active || (!!data && !canRetry)) return
     lock.current = true
     setBusy(true)
     setError('')
@@ -82,8 +72,10 @@ export function MaterialTranscription({
           method: 'POST',
           body: JSON.stringify({
             material_id: materialId,
-            expected_revision: settings.revision,
-            allow_network: false,
+            ...grant,
+            ...(canRetry && data
+              ? { previous_job_id: data.job.id, expected_previous_revision: data.job.revision }
+              : {}),
           }),
         },
         csrf,
@@ -106,30 +98,13 @@ export function MaterialTranscription({
   }
   return (
     <div className="asr-section">
-      <h3>本地转写</h3>
-      <p className="muted">直接使用这份材料，不再次上传，不调用云端服务。</p>
-      {(!settings?.revision || settings.provider !== 'local') && (
-        <p>
-          请先在
-          <Link className="text-link" to="/settings">
-            设置
-          </Link>
-          中保存本地转写配置。
-        </p>
-      )}
-      <Button
-        disabled={
-          busy ||
-          active ||
-          !!data ||
-          uncertain ||
-          !settings?.revision ||
-          settings.provider !== 'local'
-        }
-        onClick={start}
-      >
-        {busy ? '正在提交…' : '手动开始本地转写'}
-      </Button>
+      <MaterialASRControls
+        csrf={csrf}
+        durationSeconds={durationSeconds}
+        retrying={canRetry}
+        disabled={busy || active || (!!data && !canRetry) || uncertain}
+        onStart={start}
+      />
       {uncertain && (
         <p className="asr-warning">
           提交结果尚未确认，已阻止重复提交。请核查服务器任务，取得任务编号后恢复查询。
@@ -161,6 +136,18 @@ export function MaterialTranscription({
               }[data.job.status]
             }
           </Badge>
+          {data.successor_job_id && (
+            <Button
+              disabled={busy || active}
+              onClick={() => {
+                setBoundJobId('')
+                setJobId(data.successor_job_id!)
+                setQuery((x) => x + 1)
+              }}
+            >
+              查看后续任务
+            </Button>
+          )}
           {data.job.error && <p role="alert">{data.job.error.code}</p>}
           {data.result && (
             <>

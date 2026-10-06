@@ -1,6 +1,6 @@
 # 统一直播采集（LIVE-015～017）
 
-产品默认关闭；2026-10-07本地联调已由用户授权开放抖音HTTPS限定60秒/50MB手动试录，当前8199 API与5199前端提供此入口。视频号未开放，8197与DLNA接收端保持停止。Cookie已支持工作区设置；真实解析成功不等于媒体录制验收。LIVE-025曾因返回HTTP候选被策略拒绝；LIVE-026补齐受限HTTPS候选适配后，已完成一个授权房间的一次约60秒录制、导入与Edge播放，详见reports/LIVE-026/delivery.md。该结果不等于所有房间或长期录制验收。精确版本与独立证据见[技术审查](../project-team/reports/LIVE-015/arc-review.md)。
+产品默认关闭；LIVE-026本地联调由用户授权开放抖音HTTPS限定60秒/50MB手动试录。LIVE-029扩展可配置长录制，当前8199 API与5199前端的精确部署状态见工作区runtime/live-029/closure.json。视频号未开放，8197与DLNA接收端保持停止。Cookie已支持工作区设置；真实解析成功不等于媒体录制验收。LIVE-025曾因返回HTTP候选被策略拒绝；LIVE-026补齐受限HTTPS候选适配后，已完成一个授权房间的一次约60秒录制、导入与Edge播放，详见reports/LIVE-026/delivery.md。该结果不等于所有房间或长期录制验收。精确版本与独立证据见[技术审查](../project-team/reports/LIVE-015/arc-review.md)。
 
 实现位于唯一后端，不新增独立业务 Demo、队列或模型系统。当前首版支持抖音 **PC 数字直播间地址** `https://live.douyin.com/<room_id>`，不接受分享文案、短链、主页链接或签名取流地址。视频号为本机 DLNA 投屏接收，输入固定 `phone_cast`。真实平台验收状态见本轮报告，安装成功、协议测试、真实平台录制和真实 ASR 分别记录。
 
@@ -33,9 +33,9 @@ Finder 支持的 AirPlay/Chromecast/加密音频功能没有全部接入本版�
 
 ## 配置与安装
 
-沿用 `LIVE_MODEL_CONFIG_DIR`、安全 YAML 读取与 deep_merge，单独加载 `capture-policy.yaml` → `environments/<environment>.capture.yaml` → 开发/测试 `capture.local.yaml`，不改变旧模型配置快照。模板 `config/capture-policy.example.yaml` 默认关闭。Cookie/Token 不写 YAML，默认环境变量 `LIVE_CAPTURE_DOUYIN_COOKIE`；API 不接受凭证、任意磁盘路径或执行命令。
+沿用 `LIVE_MODEL_CONFIG_DIR`、安全 YAML 读取与 deep_merge，单独加载 `capture-policy.yaml` → `environments/<environment>.capture.yaml` → 开发/测试 `capture.local.yaml`，不改变旧模型配置快照。模板 `config/capture-policy.example.yaml` 默认关闭。Web/native采集从工作区私密平台设置快照读取Cookie；凭证不写YAML，采集任务API不接受凭证、任意磁盘路径或执行命令。
 
-本机已登记：API 8197，DLNA 8198/UDP SSDP 1900，PG 15490/live015，运行目录工作区 `runtime/live-015`。动态内存 relay 只绑定 127.0.0.1 随机空闲端口，URL 凭证不出进程。旧 5196/8196/15480 不改。`private.env` 权限 0600；路径、依赖解释器和目录在私有 `config/capture.local.yaml`。本机真实试录限制为 60 秒、50,000,000 字节、最低 8 GiB 空闲。阈值都在录制前/录制中检查；到阈值会受控停止并保留中断原因，不删除用户文件。FFmpeg `-fs` 是停止阈值而非精确字节配额（可能超过一个封装包），磁盘保留量须覆盖此余量与导入的两份临时副本。
+本机已登记：API 8197，DLNA 8198/UDP SSDP 1900，PG 15490/live015，运行目录工作区 `runtime/live-015`。动态内存 relay 只绑定 127.0.0.1 随机空闲端口，URL 凭证不出进程。旧 5196/8196/15480 不改。`private.env` 权限 0600；路径、依赖解释器和目录在私有 `config/capture.local.yaml`。LIVE-015历史试录限制为 60 秒、50,000,000 字节、最低 8 GiB 空闲。阈值都在录制前/录制中检查；到阈值会受控停止并保留中断原因，不删除用户文件。FFmpeg `-fs` 是停止阈值而非精确字节配额（可能超过一个封装包），磁盘保留量须覆盖此余量与导入的两份临时副本。
 
 从工作区执行部署准备（实际源已固定在下列路径，已存在时不要重复 clone）：
 
@@ -78,7 +78,7 @@ POST /api/v1/capture/runs/<capture_run_id>/import （任务终态后重试已关
 ```
 
 1. 登录并建立主播/场次，创建采集 run，启动返回 job_id 的 operator（或已配置生产 worker）。
-2. 抖音：输入受支持的 PC 直播间地址，开播检测/取流后自动开始，最长按本机限制录制。风控需要 Cookie 时在本机私有进程环境配置，不能把 Cookie 贴进任务消息。
+2. 抖音：输入受支持的 PC 直播间地址，开播检测/取流后自动开始，最长按本机限制录制。需要 Cookie 时在“设置 → 平台接入”保存到工作区私密设置，不能把 Cookie 贴进任务消息。
 3. 视频号：等待 API 显示 `waiting_for_cast`；手机打开有权录制的直播，菜单 → 投屏 → **FDE Capture**。没有投屏入口/找不到设备由真实手机验收记录，不能用抓取 URL 替代成功。
 4. 看状态先 `url_received`，再真实 `recording`。主动停止调用 stop，轮询直到 recorded/imported 或明确 failed/stopped；不要把 202 当作已关闭。
 5. imported 后返回 material_id；使用现有 `/api/v1/sessions/<id>/materials` 与受鉴权材料 content 播放。只有明确点击/调用 `/api/v1/asr/transcriptions` 才转写；需先保存 ASR 设置、提供 expected_revision，云端仍需本次授权与请求/金额预算。长文件超过现有 ASR 限制时仍保留已录制/已导入，不把采集改成失败。当前 API 的 transcription_status=not_requested 表示采集模块未请求ASR，不聚合后续用户独立创建的ASR任务。
@@ -170,3 +170,11 @@ Cookie在执行器开始解析时读取一次不可变快照；更新/清除对�
 选流遵循固定DLR的非h265优先FLV规则，再考虑其明确返回的HLS/record候选，同时服从当前HTTPS与域策略。LIVE-026在没有合格原始HTTPS地址时补充协议候选：仅对同时命中配置白名单与douyincdn.com边界的HTTP默认端口地址，构造同主机、同path/query的HTTPS候选（显式80改为默认443）。优先使用原始合格HTTPS，再按非h265的FLV/HLS偏好选择转换候选；不转换任意域/端口，不发送Cookie给CDN，不回退HTTP。候选转换并不证明CDN可用，证书和每一跳仍由录制relay检查。全部候选不合格时在解析/检查阶段返回https_required/domain_not_allowed/unsafe_stream_url，不进入录制。TLS、域限制、重定向和HLS逐资源检查不放宽。
 
 LIVE-026依据固定上游main.py1150–1151的HTTPS转换选项补齐协议层；上游该选项默认否，默认允许HTTP，本系统仍要求HTTPS。settings检查仅解析/静态策略，不是网络媒体验收；真实录制结果见本轮报告。
+
+
+## LIVE-029 长录制限制
+本轮增加每次duration_seconds/max_bytes选择，默认2小时/8GiB，服务端最长4小时/16GiB；实际还受磁盘可用预算约束。health公布默认、最大、30m/1h/2h/4h预设及磁盘预算。运行环境旧60秒/50MB覆盖需部署时更新，不因代码默认改变就视为上线。
+
+每次选择冻结在job输入recording_limits，运行查询返回实际限额；旧run无快照返回null。FFmpeg单fragmented MP4，先达到时长/大小/磁盘保护或用户停止即结束，容许64MiB有界封装余量。保留源文件和导入临时副本，按同盘三份/不同盘源一份与目标两份及2GiB保留预检，增长时持续检查。hash/copy/ffprobe期间继续job心跳、取消和上传租约，导入只给可信run局部放宽容量，普通上传512MiB不变。
+
+历史默认收起，当前/最新紧凑显示，分页保留旧失败证据；停止入口在进行中任务旁。无断点恢复/多分段材料合并；更改基础policy后，旧hash不符任务仍拒绝重放，不静默借用新限额。65秒本地合成媒体录制/导入仅证明媒体时轴和收尾闭环，真实平台2h连续稳定性未验收。

@@ -37,3 +37,7 @@ LIVE-020增加GET /capture/runs按session_id与created_at/id游标分页（limit
 ## LIVE-028 大模型设置
 
 新增管理员workspace设置GET/PUT/DELETE `/api/v1/llm/settings` 与POST `/check`：密钥只写、修订号、独立最小连接测试、usage/安全错误状态。复用Model Loader/Registry生成workspace配置视图；不改全局ASR配置，LLM分析消费者仍未实现。普通HTTPS策略保持，development特定HTTP端点由server精确授权。实现与实际验收分别见 `../llm-settings.md` 和 `../../project-team/reports/LIVE-028/delivery.md`。
+
+
+## LIVE-029 材料转写与录制限额
+新增GET `/api/v1/asr/providers`配置能力列表；转写POST可带前序失败任务/revision，GET多successor_job_id，服务端材料锁与通用retry共同防重复排队。capture start多可选duration_seconds/max_bytes，health.limits扩展默认/预设/可用磁盘预算，run.recording_limits显示冻结限额。字段与32条实际路径见OpenAPI。复盘/评分及长音频云聚合仍未实现，工程/运行验收分别记录。

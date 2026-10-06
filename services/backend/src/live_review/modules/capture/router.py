@@ -7,6 +7,7 @@ from fastapi import APIRouter, Query, Request
 from live_review.core.auth import CurrentAdmin, Database, MutationAdmin
 from live_review.core.errors import ApiError
 from live_review.integrations.capture.contracts import CaptureError
+from live_review.integrations.capture.limits import health_limits
 from live_review.integrations.capture.policy import load_policy, require_enabled
 from live_review.integrations.capture.providers import CaptureRegistry
 from live_review.modules.capture import service
@@ -44,7 +45,7 @@ def health(request: Request, admin: CurrentAdmin):
             "enabled": policy.enabled,
             "execution": execution,
             "automatic_asr": False,
-            "limits": {"max_seconds": policy.max_seconds, "max_bytes": policy.max_bytes},
+            "limits": health_limits(policy, request.app.state.settings),
             "ffmpeg_ready": ffmpeg_ready,
             "ffprobe_ready": ffprobe_ready,
             "providers": {

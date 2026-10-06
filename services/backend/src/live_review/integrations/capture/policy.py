@@ -34,9 +34,11 @@ class CapturePolicy(BaseModel):
     wait_seconds: int = Field(default=300, ge=1, le=3600)
     probe_seconds: int = Field(default=30, ge=1, le=60)
     probe_attempts: int = Field(default=2, ge=1, le=3)
-    max_seconds: int = Field(default=14400, ge=1, le=86400)
-    min_free_bytes: int = Field(default=1073741824, ge=1048576)
-    max_bytes: int = Field(default=500000000, ge=1048576)
+    max_seconds: int = Field(default=14400, ge=1, le=14400)
+    default_duration_seconds: int = Field(default=7200, ge=1, le=14400)
+    default_max_bytes: int = Field(default=8589934592, ge=1048576, le=17179869184)
+    min_free_bytes: int = Field(default=2147483648, ge=1048576)
+    max_bytes: int = Field(default=17179869184, ge=1048576, le=17179869184)
     stall_seconds: int = Field(default=30, ge=2, le=300)
     stream_domains: list[str] = Field(
         default_factory=lambda: [

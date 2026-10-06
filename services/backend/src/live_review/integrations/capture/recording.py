@@ -1,6 +1,5 @@
 """One recording, explicit process exit + media validation + atomic close manifest."""
 
-import hashlib
 import json
 import os
 import queue
@@ -12,20 +11,25 @@ import time
 from datetime import UTC, datetime
 
 from live_review.integrations.capture.contracts import CaptureError, StopCapture
+from live_review.integrations.capture.limits import require_capacity
 from live_review.integrations.capture.relay import Relay
+from live_review.integrations.media.process import MediaError, run_process
+from live_review.integrations.storage.local import hash_file
 
 
 def utcnow():
     return datetime.now(UTC).isoformat()
 
 
-def atomic_json(path, value):
+def atomic_json(path, value, *, before_publish=None):
     temporary = path.with_suffix(".tmp")
     with temporary.open("x") as stream:
         os.chmod(temporary, 0o600)
         json.dump(value, stream, ensure_ascii=False)
         stream.flush()
         os.fsync(stream.fileno())
+    if before_publish is not None:
+        before_publish()
     os.replace(temporary, path)
     fd = os.open(path.parent, os.O_RDONLY)
     try:
@@ -34,20 +38,24 @@ def atomic_json(path, value):
         os.close(fd)
 
 
-def inspect_media(path, ffprobe):
-    result = subprocess.run(
-        [ffprobe, "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)],
-        capture_output=True,
-        timeout=30,
-    )
+def inspect_media(path, ffprobe, tick=lambda: None):
+    def cancel():
+        tick()
+        return False
+
     try:
-        data = json.loads(result.stdout)
+        output = run_process(
+            [ffprobe, "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)],
+            timeout=30,
+            cancel=cancel,
+        )
+        data = json.loads(output)
         types = {s["codec_type"] for s in data["streams"]}
         duration = float(data["format"]["duration"])
-        if result.returncode or not {"audio", "video"} <= types or not 0 < duration < 172800:
+        if not {"audio", "video"} <= types or not 0 < duration < 172800:
             raise ValueError
         return round(duration * 1000), sorted(types)
-    except (ValueError, KeyError):
+    except (MediaError, ValueError, KeyError):
         raise CaptureError("invalid_recorded_media") from None
 
 
@@ -62,11 +70,17 @@ def close_process(process):
             raise CaptureError("recording_stop_unconfirmed") from None
 
 
-def record(source, directory, policy, tick, progress, platform, run_id, reference):
+def record(
+    source, directory, policy, tick, progress, platform, run_id, reference, *, storage_root=None
+):
     # Acquisition's DNS/setup time belongs to this recording budget, not a later FFmpeg clock.
     deadline = time.monotonic() + policy.max_seconds
     if shutil.disk_usage(directory).free < policy.min_free_bytes:
         raise CaptureError("disk_full")
+    if storage_root is not None:
+        require_capacity(
+            directory, storage_root, policy.min_free_bytes, policy.max_bytes, before_start=True
+        )
     target = directory / "recording.partial.mp4"
     started = utcnow()
     # Marker prevents silently starting a new live interval after worker loss.
@@ -142,8 +156,14 @@ def record(source, directory, policy, tick, progress, platform, run_id, referenc
                         if not recorded:
                             recorded = True
                             progress("recording")
-                if shutil.disk_usage(directory).free < policy.min_free_bytes:
-                    reason = "disk_full"
+                try:
+                    if storage_root is not None:
+                        size = target.stat().st_size if target.exists() else 0
+                        require_capacity(directory, storage_root, policy.min_free_bytes, size)
+                    elif shutil.disk_usage(directory).free < policy.min_free_bytes:
+                        raise CaptureError("disk_full")
+                except CaptureError as error:
+                    reason = error.code
                     break
                 if time.monotonic() >= deadline:
                     reason = "duration_limit"
@@ -172,16 +192,30 @@ def record(source, directory, policy, tick, progress, platform, run_id, referenc
             reason = "size_limit" if reason == "source_eof_unconfirmed" else reason
     if not target.exists() or target.stat().st_size == 0:
         raise CaptureError(reason if reason != "user_stop" else "stopped_without_media")
+
+    last_close_tick = 0.0
+
+    def closing_tick(*, force=False):
+        nonlocal last_close_tick
+        current = time.monotonic()
+        if not force and current - last_close_tick < 1:
+            return
+        last_close_tick = current
+        try:
+            tick()
+        except StopCapture:
+            pass  # A requested recording stop still authorizes closing/archiving its bytes.
+
     try:
-        duration, types = inspect_media(target, policy.ffprobe)
+        duration, types = inspect_media(target, policy.ffprobe, closing_tick)
     except CaptureError:
         raise CaptureError(
             reason if reason != "source_eof_unconfirmed" else "invalid_recorded_media"
         ) from None
-    with target.open("rb") as stream:
-        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+    digest = hash_file(target, closing_tick)
     with target.open("rb") as stream:
         os.fsync(stream.fileno())
+    closing_tick(force=True)
     final = directory / "recording.mp4"
     os.replace(target, final)
     manifest = {
@@ -201,5 +235,7 @@ def record(source, directory, policy, tick, progress, platform, run_id, referenc
         "end_reason": reason,
         "closed": True,
     }
-    atomic_json(directory / "manifest.json", manifest)
+    atomic_json(
+        directory / "manifest.json", manifest, before_publish=lambda: closing_tick(force=True)
+    )
     return manifest

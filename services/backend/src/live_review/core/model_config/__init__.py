@@ -152,6 +152,14 @@ def load_model_config(
             {"name": name, "model": value} for name, value in sorted(data["aliases"].items())
         )
         public = PublicModelConfig.model_validate(data)
+        # Schema-filled defaults also receive a source label; never include field values.
+        for field in public.media.model_dump():
+            trace.setdefault(f"media.{field}", "builtin")
+        for model in public.models:
+            for group in ("route", "parameters"):
+                for field in getattr(model, group).model_dump():
+                    trace.setdefault(f"models.{model.name}.{group}.{field}", "builtin")
+        trace["environment"] = "server"
         refs = {model.route.key_env for model in public.models if model.route.key_env}
         secrets = tuple(
             (name, SecretStr(combined[name])) for name in sorted(refs) if name in combined

@@ -1,6 +1,7 @@
 """Immutable public registry contracts; mutable YAML maps are normalized into tuples."""
 
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator, model_validator
 
@@ -28,14 +29,65 @@ class ModelParameters(FrozenModel):
         return value
 
 
+class DeclaredRoute(FrozenModel):
+    """Non-executable model descriptions; no downloads, discovery or adapter defaults."""
+
+    protocol: Literal["huggingface", "ollama", "yolo"]
+    enabled: bool = False
+    provider: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_-]{0,63}$")
+    model: str = Field(min_length=1, max_length=128)
+    base_url: str | None = Field(default=None, max_length=512)
+    key_env: str | None = Field(default=None, pattern=r"^[A-Z][A-Z0-9_]{0,127}$")
+
+    @field_validator("model")
+    @classmethod
+    def model_name(cls, value):
+        return ProviderRoute.safe_model(value)
+
+    @model_validator(mode="after")
+    def local_declaration(self):
+        if self.protocol != "ollama":
+            if self.base_url is not None:
+                raise ValueError("local_model_does_not_use_base_url")
+            return self
+        if self.base_url is None:
+            raise ValueError("ollama_endpoint_required")
+        parsed = urlsplit(self.base_url)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.username
+            or parsed.password
+            or parsed.query
+            or parsed.fragment
+            or any(c.isspace() for c in self.base_url)
+            or any(c in self.base_url for c in ("$", "%", "\\"))
+            or ".." in parsed.path.split("/")
+        ):
+            raise ValueError("invalid_declared_endpoint")
+        if parsed.scheme == "http" and parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            raise ValueError("plaintext_endpoint_must_be_loopback")
+        if parsed.port is not None and not 1 <= parsed.port <= 65535:
+            raise ValueError("invalid_port")
+        return self
+
+
 class ModelDescriptor(FrozenModel):
     name: str = Field(pattern=r"^[a-z][a-z0-9_.-]{0,63}$")
     capability: Capability
-    route: ProviderRoute
+    route: ProviderRoute | DeclaredRoute
     parameters: ModelParameters = Field(default_factory=ModelParameters)
 
     @model_validator(mode="after")
     def protocol_matches_capability(self):
+        if isinstance(self.route, DeclaredRoute):
+            allowed = {
+                "huggingface": {"llm", "embedding", "reranker", "vision"},
+                "ollama": {"llm", "embedding"},
+                "yolo": {"vision", "detection"},
+            }
+            if self.capability not in allowed[self.route.protocol]:
+                raise ValueError("declared_protocol_capability_mismatch")
         if self.capability == "asr" and any(
             v is not None for v in self.parameters.model_dump().values()
         ):
@@ -52,7 +104,7 @@ class ModelDescriptor(FrozenModel):
         if self.route.protocol == "openai_compatible" and self.capability == "asr":
             if self.route.operation != "audio_transcriptions":
                 raise ValueError("asr_operation_required")
-        if self.capability != "asr" and self.route.operation is not None:
+        if self.capability != "asr" and getattr(self.route, "operation", None) is not None:
             raise ValueError("audio_operation_requires_asr")
         return self
 

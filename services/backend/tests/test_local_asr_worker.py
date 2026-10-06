@@ -529,3 +529,72 @@ def test_cancel_during_partial_socket_write_waits_for_generator_finally(paths, m
             await server.close()
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize(
+    "code,expected",
+    [
+        ("local_vad_result_invalid", "local_vad_result_invalid"),
+        ("local_asr_empty_for_speech", "local_asr_empty_for_speech"),
+        ("secret=/private/raw.wav\nCookie=private", "worker_failed"),
+        (["private"], "worker_failed"),
+    ],
+)
+def test_failed_rpc_retains_safe_diagnostic_and_logs_only_safe_fields(
+    paths, capsys, code, expected
+):
+    root, audio = paths
+
+    class Failing(Synthetic):
+        async def transcribe_file(self, path, request):
+            raise ASRError(code)
+
+    async def run():
+        config = Config(model_root=root)
+        server = await LocalWorkerServer(root / "s", config, root, Failing()).start()
+        try:
+            with pytest.raises(ASRError) as failure:
+                await LocalWorkerProvider(root / "s", config).transcribe_file(
+                    audio, req(request_id="synthetic:diagnostic-1")
+                )
+            assert failure.value.code == expected and not failure.value.unknown
+        finally:
+            await server.close()
+
+    asyncio.run(run())
+    output = capsys.readouterr().out
+    assert output == f"local_worker_error code={expected} request_id=synthetic:diagnostic-1\n"
+    assert str(root) not in output and "Cookie" not in output and "raw.wav" not in output
+
+
+def test_invalid_request_id_never_enters_server_log(paths, capsys):
+    root, audio = paths
+
+    async def run():
+        config = Config(model_root=root)
+        provider = Synthetic()
+        server = await LocalWorkerServer(root / "s", config, root, provider).start()
+        try:
+            reader, writer = await asyncio.open_unix_connection(str(root / "s"))
+            await write(
+                writer,
+                {
+                    "op": "file",
+                    "fingerprint": fingerprint(config),
+                    "path": str(audio),
+                    "request": req(request_id="bad\nsecret=/private").model_dump(mode="json"),
+                },
+            )
+            assert await read(reader) == {"type": "error", "code": "worker_request_id_invalid"}
+            assert await read(reader) == {"type": "stopped"}
+            writer.close()
+            await writer.wait_closed()
+            assert provider.calls == 0
+        finally:
+            await server.close()
+
+    asyncio.run(run())
+    assert (
+        capsys.readouterr().out
+        == "local_worker_error code=worker_request_id_invalid request_id=unavailable\n"
+    )

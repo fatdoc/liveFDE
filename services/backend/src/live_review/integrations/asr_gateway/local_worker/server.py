@@ -121,6 +121,7 @@ class LocalWorkerServer:
         self.connections.add(current)
         tasks = []
         error_code, entry = None, None
+        log_request_id = None
         try:
             if len(self.connections) > 8:
                 raise ASRError("worker_busy")
@@ -136,6 +137,11 @@ class LocalWorkerServer:
             if op not in {"file", "stream", "health", "cancel"} or set(initial) != fields:
                 raise ASRError("worker_protocol_invalid")
             if op == "cancel":
+                candidate = initial["request_id"]
+                if isinstance(candidate, str) and re.fullmatch(
+                    r"[A-Za-z0-9_.:-]{1,128}", candidate
+                ):
+                    log_request_id = candidate
                 await self.cancel_request(initial["request_id"])
                 await write(writer, {"type": "cancel_status", "stopped": True})
                 return
@@ -149,6 +155,7 @@ class LocalWorkerServer:
             request_id = request.request_id
             if not re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", request_id):
                 raise ASRError("worker_request_id_invalid")
+            log_request_id = request_id
             if request_id in self.requests:
                 raise ASRError("worker_request_reused")
             if len(self.requests) >= 4096:
@@ -259,6 +266,11 @@ class LocalWorkerServer:
                 entry["task"] = None
             with suppress(Exception):
                 if error_code:
+                    print(
+                        f"local_worker_error code={error_code} "
+                        f"request_id={log_request_id or 'unavailable'}",
+                        flush=True,
+                    )
                     await write(writer, {"type": "error", "code": error_code})
                 # Sole proof of stop: all inference tasks finished and released their locks.
                 await write(writer, {"type": "stopped"})

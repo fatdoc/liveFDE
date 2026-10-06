@@ -7,12 +7,39 @@ import threading
 import time
 
 from live_review.core.database import build_engine
+from live_review.integrations.asr_gateway.contracts import ASRError
+from live_review.integrations.asr_gateway.local_worker.protocol import safe_code
 from live_review.modules.jobs.execution import Canceled, Context, LostLease, SkipStage, UnknownCall
 from live_review.workers.handlers import HandlerUnavailable, resolve
 
 
 class StopUnconfirmed(Exception):
     """Execution may still be alive; automatic replay is forbidden."""
+
+
+class ASRHandlerFailed(Exception):
+    """Only a sanitized diagnostic crosses the private handler pipe."""
+
+    def __init__(self, code):
+        self.code = safe_code(ASRError(code))
+        super().__init__(self.code)
+
+
+def error_payload(error):
+    # Control-flow categories take precedence over optional diagnostics.
+    if isinstance(error, LostLease):
+        return "lost", None
+    if isinstance(error, Canceled):
+        return "canceled", None
+    if isinstance(error, UnknownCall):
+        return "unknown", None
+    if isinstance(error, HandlerUnavailable):
+        return "unavailable", None
+    if isinstance(error, ASRError):
+        if error.unknown:
+            return "unknown", None
+        return "asr_failed", safe_code(error)
+    return "failed", None
 
 
 def _child(connection, parent_pid, settings, job_id, token, stage_id, handler_name):
@@ -41,21 +68,9 @@ def _child(connection, parent_pid, settings, job_id, token, stage_id, handler_na
     except SkipStage as skip:
         connection.send(("skip", skip.reason))
     except BaseException as error:
-        print(f"handler_error type={type(error).__name__}", flush=True)
-        category = (
-            "lost"
-            if isinstance(error, LostLease)
-            else (
-                "canceled"
-                if isinstance(error, Canceled)
-                else (
-                    "unknown"
-                    if isinstance(error, UnknownCall)
-                    else ("unavailable" if isinstance(error, HandlerUnavailable) else "failed")
-                )
-            )
-        )
-        connection.send((category, None))
+        category, diagnostic = error_payload(error)
+        print(f"handler_error code={diagnostic or category}", flush=True)
+        connection.send((category, diagnostic))
     finally:
         engine.dispose()
         connection.close()
@@ -111,6 +126,8 @@ def execute_handler(context, settings, handler_name):
                     return artifact
                 if category == "skip":
                     raise SkipStage(artifact)
+                if category == "asr_failed":
+                    raise ASRHandlerFailed(artifact)
                 kinds = {
                     "lost": LostLease,
                     "canceled": Canceled,

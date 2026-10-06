@@ -126,3 +126,21 @@ HLS 现在先经过严格标签/属性解析，再交给 FFmpeg：URI 只能使�
 worker 开始采集、采集心跳和公共导入入口会重新检查 actor.active、actor/job/run/workspace 和场次归属。账号撤销或迁移后不得继续取流/导入，手动导入 API 同样覆盖。导入的 ApiError/CaptureError 均持久记录原因；hash/disk/manifest 问题不抹去已录制事实。manifest 使用严格结构、时区/时间顺序、音视频与哈希字段校验，拒绝异常文件类型/符号链接/过大文件；只有与run/platform/source匹配才可恢复。
 
 已存在material_id时，手动重试/worker恢复遭遇撤权等失败仍保留imported状态和材料关联，错误单独展示；不会因后续鉴权失败把已导入事实降回recorded。
+
+## LIVE-020 浏览器任务执行与恢复（待独立验收）
+
+运行参数仍分层YAML，默认enabled=false、execution_mode=operator。本机需要明确设置execution_mode=native，由环境所有者启动一个独立进程：
+
+```sh
+python -m live_review.workers.capture_executor
+```
+
+它消费现有数据库Outbox里的capture_v1并调用既有run_job，无新队列或任务表。HTTP请求只持久创建任务；浏览器无需每个job另开终端。当前容量为一条采集串行执行，后续任务保持queued。原生执行器仅消费capture，不执行手动提交的ASR；ASR消费仍需既有媒体worker，由统筹部署。本轮运行资源由ARC登记API8199/UI5199/PG15500/DLNA8200/runtime/live-020，启动状态以实时health和验收记录为准。
+
+GET /api/v1/capture/health新增execution：mode、automatic_dispatch、ready、state、reason、heartbeat_at。原生执行器就绪同时要求受控root锁仍被进程持有、10秒内心跳、数据库/策略指纹一致和数据库可连接；不以残留心跳文件冒充服务在线。state为disabled/manual/unavailable/idle/busy/draining；busy允许排队，draining禁止接收新任务。新run在native未就绪时返回503 capture_executor_unavailable，既有幂等请求仍返回相同run。进程与API必须在同主机/同runtime目录，此就绪机制不适用于跨主机服务。
+
+GET /api/v1/capture/runs?session_id=UUID&limit=20&cursor=opaque恢复当前工作区场次的采集列表，返回items,next_cursor。limit范围1..100；以created_at/id倒序分页；每个run额外返回created_at。前端刷新后用服务端run恢复显示；提交结果未知时复用同幂等键，不创建另一条录制。
+
+SIGTERM/SIGINT令原生执行器进入draining、停止消费、对当前任务请求受控停止，等待既有FFmpeg/接收助手退出和关闭后导入；不把收到退出信号当成文件已关闭。SIGKILL继承原handler父进程管道watchdog与Job租约恢复。恢复仍要求closed manifest，只有started标记不自动重录或导入未关闭片段。
+
+HLS支持边界沿用严格解析器；普通本地音视频全链功能测试和纯解析拒绝测试不能替代尚未完成的端到端出站隔离复核。不重跑被平台安全审核中止的探针，不通过更换工具规避。真实平台启用仍须最终就绪审查与PM集中安排直播间/手机样本。

@@ -130,7 +130,11 @@ def test_interruption_preserves_closed_partial(tmp_path, av_file, monkeypatch, m
             if mode == "size":
                 with open(command[-1], "ab") as stream:
                     stream.truncate(1200000)
-        return original_popen(command, **kwargs)
+        process = original_popen(command, **kwargs)
+        if command[0] == str(script) and mode == "crash":
+            # Observe the injected crash before the recorder stall clock starts.
+            process.wait(timeout=15)
+        return process
 
     monkeypatch.setattr(recording.subprocess, "Popen", ready_process)
     monkeypatch.setattr(relay, "destination", permit_fixture)

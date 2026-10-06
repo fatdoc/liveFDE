@@ -13,7 +13,7 @@ from live_review.core.config import get_settings
 from live_review.core.database import build_engine
 from live_review.core.health import dependencies_ready
 from live_review.modules.jobs.execution import recover_expired
-from live_review.modules.jobs.models import Outbox
+from live_review.modules.jobs.models import Job, Outbox
 from live_review.modules.jobs.service import now
 from live_review.workers.celery_app import celery_app
 
@@ -54,14 +54,19 @@ def publish(event, settings):
             raise RuntimeError("Broker returned unroutable task")
 
 
-def dispatch_once(engine, settings, publisher=publish):
-    recover_expired(engine)
+def dispatch_once(engine, settings, publisher=publish, *, kind=None):
+    recover_expired(engine, kind=kind)
     with Session(engine) as db:
+        query = select(Outbox).where(
+            Outbox.status == "pending", Outbox.next_attempt_at <= now()
+        )
+        if kind is not None:
+            query = query.join(Job, Job.id == Outbox.job_id).where(
+                Job.input_data["kind"].astext == kind
+            )
         event = db.scalar(
-            select(Outbox)
-            .where(Outbox.status == "pending", Outbox.next_attempt_at <= now())
-            .order_by(Outbox.next_attempt_at, Outbox.id)
-            .with_for_update(skip_locked=True)
+            query.order_by(Outbox.next_attempt_at, Outbox.id)
+            .with_for_update(skip_locked=True, of=Outbox)
             .limit(1)
         )
         if event is None:

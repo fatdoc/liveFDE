@@ -3,6 +3,7 @@
 import hashlib
 import json
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -16,6 +17,7 @@ class CapturePolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
     schema_version: int = Field(default=1, ge=1, le=1)
     enabled: bool = False
+    execution_mode: Literal["operator", "native"] = "operator"
     root: Path | None = None
     ffmpeg: str = "ffmpeg"
     ffprobe: str = "ffprobe"

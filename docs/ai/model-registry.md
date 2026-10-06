@@ -48,7 +48,7 @@ restored = restore_snapshot(captured.model_dump(mode='json'))
 
 get支持alias或具名模型name，返回不可变ModelDescriptor；名字不存在明确失败，不找备用模型。aliases前缀必须匹配目标capability。所有嵌套对象frozen，models/aliases为tuple；model_dump返回独立JSON数据，不泄露内部可变容器。
 
-ASR route保留旧ProviderRoute严格规则：disabled、offline_fixture、openai_compatible+audio_transcriptions。provider/model/base_url/key_env/timeout/请求预算等与006一致。非ASR还可声明typed DeclaredRoute：huggingface用于llm/embedding/reranker/vision；ollama用于llm/embedding，HTTP允许localhost、loopback、RFC1918局域网私有IP和IPv6 ULA（例如192.168.1.100:11434）；其他地址必须HTTPS，校验不做DNS或网络请求；yolo用于vision/detection。本地声明无需key或付费预算，无自动下载/连接，resolve一律model_capability_not_executable。
+ASR route保留旧ProviderRoute严格规则：disabled、offline_fixture、openai_compatible+audio_transcriptions。provider/model/base_url/key_env/timeout/请求预算等与006一致。非ASR还可声明typed DeclaredRoute：huggingface用于llm/embedding/reranker/vision；ollama用于llm/embedding，HTTP允许localhost、loopback、RFC1918局域网私有IP和IPv6 ULA（例如192.168.1.100:11434）；其他地址必须HTTPS，校验不做DNS或网络请求；yolo用于vision/detection。DeclaredRoute统一提供timeout_seconds，严格整数1–600秒、默认60，与ASR ProviderRoute一致；目前仅声明并计入快照，不代表本地模型已执行。 本地声明无需key或付费预算，无自动下载/连接，resolve一律model_capability_not_executable。
 
 parameters是具名强类型对象：temperature有限0–2且仅LLM；confidence有限0–1且仅vision/detection；device限定cpu/mps/cuda/cuda:N；model_path为未执行本地声明，不允许变量、URL或..逃逸。ASR现有adapter不消费这些额外参数，因此ASR非空parameters直接拒绝，不能悄悄忽略。16k mono等已实现媒体约束仍沿用MediaConfig。
 

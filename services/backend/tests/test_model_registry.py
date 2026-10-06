@@ -235,3 +235,54 @@ aliases:
     for name in ("llm.default", "embedding.default"):
         with pytest.raises(ProviderConfigError, match="not_executable"):
             registry.resolve(name, allow_network=True)
+
+
+@pytest.mark.parametrize("timeout", [0, 601, -1, True, "60", 1.5])
+def test_declared_timeout_strict_type_and_bounds(registry, timeout):
+    import yaml
+
+    root, _ = registry
+    (root / "local.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "models": {
+                    "local_chat": {
+                        "capability": "llm",
+                        "route": {
+                            "protocol": "ollama",
+                            "model": "placeholder",
+                            "base_url": "http://localhost:11434",
+                            "timeout_seconds": timeout,
+                        },
+                    }
+                }
+            }
+        )
+    )
+    with pytest.raises(ProviderConfigError):
+        load_model_config(root, environment="test", environ={})
+
+
+def test_declared_timeout_in_snapshot_invalidates_asr_retry(registry):
+    root, model_registry = registry
+    local = root / "local.yaml"
+    profile = """models:
+  local_chat:
+    capability: llm
+    route:
+      protocol: ollama
+      model: placeholder
+      base_url: 'http://localhost:11434'
+      timeout_seconds: 60
+"""
+    local.write_text(profile)
+    first = ModelRegistry(load_model_config(root, environment="test", environ={}))
+    captured = first.snapshot()
+    assert first.get("local_chat").route.timeout_seconds == 60
+    restored = restore_snapshot(json.loads(captured.model_dump_json()))
+    assert restored == captured
+    local.write_text(profile.replace("timeout_seconds: 60", "timeout_seconds: 120"))
+    second = ModelRegistry(load_model_config(root, environment="test", environ={}))
+    assert second.get("local_chat").route.timeout_seconds == 120
+    with pytest.raises(ProviderConfigError, match="configuration_changed"):
+        second.resolve("asr.default", captured=captured)

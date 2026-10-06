@@ -97,6 +97,27 @@ CAPTURE_UI_FRONTEND_SCOPE = [
     "project-team/reports/LIVE-021/",
 ]
 SCOPES = {
+    "LIVE-028": [
+        "scripts/checks/repository.py",
+        "project-team/tasks/LIVE-028.md",
+        "project-team/reports/LIVE-028/",
+        "project-team/STATUS.md",
+        "docs/llm-settings.md",
+        "docs/contracts/openapi.json",
+        "docs/contracts/implementation-status.md",
+        "services/backend/src/live_review/core/config.py",
+        "services/backend/src/live_review/core/model_config/",
+        "services/backend/src/live_review/core/model_registry.py",
+        "services/backend/src/live_review/modules/llm/",
+        "services/backend/src/live_review/integrations/llm/",
+        "services/backend/src/live_review/main.py",
+        "services/backend/tests/test_llm_settings.py",
+        "services/backend/tests/test_llm_connection.py",
+        "frontend/web/src/pages/Settings.tsx",
+        "frontend/web/src/features/llm/",
+        "frontend/web/tests/llm-settings-browser.js",
+        "frontend/web/tests/llm-settings.mjs",
+    ],
     "LIVE-027": [
         "services/backend/src/live_review/workers/handler_process.py",
         "services/backend/src/live_review/workers/job_runner.py",

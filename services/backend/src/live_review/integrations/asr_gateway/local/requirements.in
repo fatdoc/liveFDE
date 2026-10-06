@@ -1,0 +1,12 @@
+# Isolated local inference environment; never install into backend or system Python.
+funasr==1.4.16
+torch==2.11.0
+torchaudio==2.11.0
+transformers==4.57.6
+pydantic==2.13.5
+numpy==2.2.6
+soundfile==0.13.1
+scikit-learn==1.7.2
+sentencepiece==0.2.1
+einops==0.8.2
+pytest==8.4.2

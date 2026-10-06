@@ -33,7 +33,7 @@ Finder 支持的 AirPlay/Chromecast/加密音频功能没有全部接入本版�
 
 ## 配置与安装
 
-沿用 `LIVE_MODEL_CONFIG_DIR`、安全 YAML 读取与 deep_merge，单独加载 `capture-policy.yaml` → `environments/<environment>.capture.yaml` → 开发/测试 `capture.local.yaml`，不改变旧模型配置快照。模板 `config/capture-policy.example.yaml` 默认关闭。Cookie/Token 不写 YAML，默认环境变量 `LIVE_CAPTURE_DOUYIN_COOKIE`；API 不接受凭证、任意磁盘路径或执行命令。
+沿用 `LIVE_MODEL_CONFIG_DIR`、安全 YAML 读取与 deep_merge，单独加载 `capture-policy.yaml` → `environments/<environment>.capture.yaml` → 开发/测试 `capture.local.yaml`，不改变旧模型配置快照。模板 `config/capture-policy.example.yaml` 默认关闭。Web/native采集从工作区私密平台设置快照读取Cookie；凭证不写YAML，采集任务API不接受凭证、任意磁盘路径或执行命令。
 
 本机已登记：API 8197，DLNA 8198/UDP SSDP 1900，PG 15490/live015，运行目录工作区 `runtime/live-015`。动态内存 relay 只绑定 127.0.0.1 随机空闲端口，URL 凭证不出进程。旧 5196/8196/15480 不改。`private.env` 权限 0600；路径、依赖解释器和目录在私有 `config/capture.local.yaml`。LIVE-015历史试录限制为 60 秒、50,000,000 字节、最低 8 GiB 空闲。阈值都在录制前/录制中检查；到阈值会受控停止并保留中断原因，不删除用户文件。FFmpeg `-fs` 是停止阈值而非精确字节配额（可能超过一个封装包），磁盘保留量须覆盖此余量与导入的两份临时副本。
 
@@ -78,7 +78,7 @@ POST /api/v1/capture/runs/<capture_run_id>/import （任务终态后重试已关
 ```
 
 1. 登录并建立主播/场次，创建采集 run，启动返回 job_id 的 operator（或已配置生产 worker）。
-2. 抖音：输入受支持的 PC 直播间地址，开播检测/取流后自动开始，最长按本机限制录制。风控需要 Cookie 时在本机私有进程环境配置，不能把 Cookie 贴进任务消息。
+2. 抖音：输入受支持的 PC 直播间地址，开播检测/取流后自动开始，最长按本机限制录制。需要 Cookie 时在“设置 → 平台接入”保存到工作区私密设置，不能把 Cookie 贴进任务消息。
 3. 视频号：等待 API 显示 `waiting_for_cast`；手机打开有权录制的直播，菜单 → 投屏 → **FDE Capture**。没有投屏入口/找不到设备由真实手机验收记录，不能用抓取 URL 替代成功。
 4. 看状态先 `url_received`，再真实 `recording`。主动停止调用 stop，轮询直到 recorded/imported 或明确 failed/stopped；不要把 202 当作已关闭。
 5. imported 后返回 material_id；使用现有 `/api/v1/sessions/<id>/materials` 与受鉴权材料 content 播放。只有明确点击/调用 `/api/v1/asr/transcriptions` 才转写；需先保存 ASR 设置、提供 expected_revision，云端仍需本次授权与请求/金额预算。长文件超过现有 ASR 限制时仍保留已录制/已导入，不把采集改成失败。当前 API 的 transcription_status=not_requested 表示采集模块未请求ASR，不聚合后续用户独立创建的ASR任务。

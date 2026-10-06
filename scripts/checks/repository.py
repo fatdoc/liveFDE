@@ -98,6 +98,7 @@ CAPTURE_UI_FRONTEND_SCOPE = [
 ]
 SCOPES = {
     "LIVE-025": [
+        "services/backend/src/live_review/integrations/capture/douyin_bridge.py",
         "scripts/checks/repository.py",
         "services/backend/src/live_review/modules/capture/",
         "services/backend/src/live_review/integrations/capture/providers.py",

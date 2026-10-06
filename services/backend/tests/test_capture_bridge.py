@@ -177,3 +177,77 @@ def test_main_suppresses_upstream_output(parser, monkeypatch, capsys, tmp_path):
     output = capsys.readouterr()
     assert json.loads(output.out) == {"error": "source_auth_required"}
     assert output.err == "" and "private-fixture" not in output.out
+
+
+@pytest.mark.parametrize(
+    "selected,policy,expected",
+    [
+        (
+            {
+                "flv_url": "https://pull.example.com/live.flv",
+                "record_url": "https://pull.example.com/live.m3u8",
+            },
+            {},
+            "https://pull.example.com/live.flv",
+        ),
+        (
+            {
+                "flv_url": "http://pull.example.com/live.flv",
+                "m3u8_url": "https://pull.example.com/live.m3u8",
+            },
+            {"https_only": True},
+            "https://pull.example.com/live.m3u8",
+        ),
+        (
+            {
+                "flv_url": "https://pull.example.com/live.flv?codec=h265",
+                "record_url": "https://pull.example.com/live.m3u8",
+            },
+            {},
+            "https://pull.example.com/live.m3u8",
+        ),
+        (
+            {
+                "flv_url": "https://outside.invalid/live.flv",
+                "record_url": "https://pull.example.com/live.m3u8",
+            },
+            {"stream_domains": ["example.com"]},
+            "https://pull.example.com/live.m3u8",
+        ),
+    ],
+)
+def test_explicit_eligible_stream_selection(selected, policy, expected):
+    assert bridge.select_stream(selected, policy) == expected
+
+
+@pytest.mark.parametrize(
+    "selected,policy,code",
+    [
+        (
+            {
+                "flv_url": "http://pull.example.com/live.flv",
+                "record_url": "http://pull.example.com/live.m3u8",
+            },
+            {"https_only": True},
+            "https_required",
+        ),
+        (
+            {"record_url": "https://example.com.evil.invalid/live.m3u8?secret=fixture"},
+            {"stream_domains": ["example.com"]},
+            "domain_not_allowed",
+        ),
+        (
+            {"record_url": "https://user:private@pull.example.com/live.m3u8"},
+            {},
+            "unsafe_stream_url",
+        ),
+        ({"record_url": "https://pull.example.com:invalid/live.m3u8"}, {}, "unsafe_stream_url"),
+        ({"flv_url": "https://pull.example.com/live.flv?codec=h265"}, {}, "source_schema_changed"),
+        ({}, {}, "source_schema_changed"),
+    ],
+)
+def test_stream_selection_fails_without_rewriting_or_secret_errors(selected, policy, code):
+    with pytest.raises(bridge.ParserFailure) as caught:
+        bridge.select_stream(selected, policy)
+    assert caught.value.code == code
+    assert str(caught.value) == code

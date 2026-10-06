@@ -9,17 +9,27 @@ export type CaptureRun = {
   material_id: string | null
   import_status: string
   error_code: string | null
+  recording_limits?: { max_seconds: number; max_bytes: number; min_free_bytes: number } | null
+  recorded_bytes?: number | null
+  elapsed_seconds?: number | null
   manifest: unknown
 }
 export type CaptureHealth = {
   enabled: boolean
-  limits?: { max_seconds: number; max_bytes: number }
+  limits?: CaptureLimits
   ffmpeg_ready: boolean
   ffprobe_ready: boolean
   execution: { ready: boolean; automatic_dispatch: boolean; state: string; reason: string | null }
   providers: Record<
     string,
-    { dependencies_ready?: boolean; start_ready?: boolean; blockers?: {code: string; message: string}[]; device_name?: string; reason?: string; [key: string]: unknown }
+    {
+      dependencies_ready?: boolean
+      start_ready?: boolean
+      blockers?: { code: string; message: string }[]
+      device_name?: string
+      reason?: string
+      [key: string]: unknown
+    }
   >
 }
 export const isActive = (run: CaptureRun) =>
@@ -48,4 +58,19 @@ export function runLabel(run: CaptureRun) {
       } as Record<string, string>
     )[run.state] ?? `采集状态：${run.state}`
   )
+}
+
+export type CaptureLimits = {
+  max_seconds: number
+  max_bytes: number
+  duration_presets_seconds?: number[]
+  default_duration_seconds?: number
+  default_max_bytes?: number
+  min_free_bytes?: number
+  manual_upload_max_bytes?: number
+  available_max_bytes?: number | null
+  import_overhead_copies?: number
+  fragmented_mp4?: boolean
+  resumable_recording?: boolean
+  size_overrun_bytes?: number
 }

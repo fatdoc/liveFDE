@@ -11,6 +11,7 @@ async (page) => {
   else if(p.endsWith(`/sessions/${sid}/materials`))data={items:materials.map(material=>({material})),total:2,limit:100,offset:0}
   else if(p.endsWith('/capture/health'))data={enabled:false,providers:{},execution:{ready:false}}
   else if(p.endsWith('/capture/runs'))data={items:[],next_cursor:null}
+  else if(p.endsWith('/asr/providers'))data={providers:[{provider:'local',configured:true,reason:null,max_duration_seconds:14400,max_audio_bytes:null,network_checked:false}]}
   else if(p.endsWith('/asr/settings'))data={revision:1,provider:'local'}
   else if(p.includes('/asr/transcriptions/')){
    const a=p.endsWith('job-a');data={job:{id:a?'job-a':'job-b',status:'succeeded',error:null},result:{provider:'local',source:'local',model:'synthetic-test',synthetic:true,complete:true,segments:[{id:'valid',start_ms:a?1250:4500,end_ms:a?2500:6000,text:a?'A段':'B段',timestamp_source:a?'vad':'provider'},{id:'unknown',start_ms:null,end_ms:null,text:'未知段'},{id:'reversed',start_ms:3000,end_ms:1000,text:'逆序段'},{id:'beyond',start_ms:7000,end_ms:9000,text:'越界段'}]}}
@@ -18,9 +19,9 @@ async (page) => {
   else throw Error('unexpected API '+p)
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)})
  })
- await page.goto('http://127.0.0.1:5205/settings')
+ await page.goto('http://127.0.0.1:5207/settings')
  await page.evaluate(scope=>{sessionStorage.setItem(`material-asr:${scope}:media-a`,'job-a');sessionStorage.setItem(`material-asr:${scope}:media-b`,'job-b')},scope)
- await page.goto(`http://127.0.0.1:5205/sessions/${sid}`)
+ await page.goto(`http://127.0.0.1:5207/sessions/${sid}`)
  const a=page.getByRole('article',{name:'材料：A.mp4',exact:true}),b=page.getByRole('article',{name:'材料：B.wav',exact:true})
  await a.getByText('A段',{exact:true}).waitFor();await b.getByText('B段',{exact:true}).waitFor()
  if(!await a.getByRole('button',{name:'00:01.250 — 00:02.500',exact:true}).isDisabled())throw Error('metadata-unavailable seek enabled')

@@ -1,6 +1,6 @@
-# 已实现接口与设计边界（LIVE-004～017基础）
+# 已实现接口与设计边界（LIVE-004～022基础）
 
-已实现管理员身份、主播/场次、材料；LIVE-005增加任务与恢复基础设施，最终验收状态见任务看板。LIVE-006C将现有React的ASR设置/登录/试用接到后端，其余页面仍演示数据。正式身份/场次/材料schema以Python模块和从FastAPI导出的openapi.json为准。draft.schema.json仍仅描述后续分析/报告/审核等设计及合成样例，不是另一个生产schema。
+已实现管理员身份、主播/场次、材料；LIVE-005增加任务与恢复基础设施，最终验收状态见任务看板。LIVE-006C将现有React的ASR设置/登录/试用接到后端，LIVE-021将直播场次列表/创建/详情与材料播放、采集控制、已有材料手动转写接到真实API；其他业务页面仍演示数据。正式身份/场次/材料schema以Python模块和从FastAPI导出的openapi.json为准。draft.schema.json仍仅描述后续分析/报告/审核等设计及合成样例，不是另一个生产schema。
 
 | 已实现 | 范围 |
 |---|---|
@@ -30,3 +30,5 @@ LIVE-006注册media.extract/media.asr处理器，由本地受控操作员CLI提�
 LIVE-005相对旧草案增加typed attempt_history：重试前的attempt、安全错误、各阶段状态/reason和受限JSON产物快照同事务保留，可通过GET任务查询；当前没有历史分页。真实多进程验收与交付边界见project-team/reports/LIVE-005/integration.md。
 
 006配置/媒体/任务入口、真实本地与模拟协议的证据边界见 [LIVE-006 验收入口](../ai/live006-acceptance.md)。YAML公开快照固定在任务输入，密钥仅执行内存解析；配置漂移拒绝重试，预算美元值是授权声明，未实现厂商精确计费。评分、长期画像与报告仍未实现。
+
+LIVE-020增加GET /capture/runs按session_id与created_at/id游标分页（limit1..100），恢复浏览器任务列表；health增加execution就绪信息。显式native模式由独立进程只消费capture_v1；默认operator/disabled不变。LIVE-022只在隔离本机环境验收，真实平台与完整出站隔离仍待验证。

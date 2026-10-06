@@ -120,3 +120,21 @@ def test_alias_type_and_duplicate_model_names_rejected(config_dir):
     (config_dir / "local.yaml").write_text("aliases: {asr.default: llm_unconfigured}")
     with pytest.raises(ProviderConfigError):
         load_model_config(config_dir, environment="dev", environ={})
+
+
+@pytest.mark.parametrize(
+    "route",
+    [
+        "{base_url: 'https://user:QA_SENTINEL@example.invalid/v1'}",
+        "{base_url: 'https://example.invalid/v1?key=QA_SENTINEL'}",
+        "{base_url: 'https://example.invalid/v1#QA_SENTINEL'}",
+        "{client_secret: QA_SENTINEL}",
+        "{refresh_token: QA_SENTINEL}",
+    ],
+)
+def test_lower_layer_embedded_credentials_cannot_be_hidden_by_null(config_dir, route):
+    (config_dir / "models.yaml").write_text(f"models: {{asr_unconfigured: {{route: {route}}}}}")
+    (config_dir / "local.yaml").write_text("models: {asr_unconfigured: {route: {base_url: null}}}")
+    with pytest.raises(ProviderConfigError) as error:
+        load_model_config(config_dir, environment="test", environ={})
+    assert "QA_SENTINEL" not in str(error.value)

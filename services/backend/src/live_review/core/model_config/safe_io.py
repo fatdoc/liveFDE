@@ -4,6 +4,7 @@ import os
 import re
 import stat
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import yaml
 from yaml.events import (
@@ -53,11 +54,21 @@ def reject_secret_fields(value):
                 "token",
                 "credentials",
                 "authorization",
-                "access_token",
                 "access_key",
                 "private_key",
-            }:
+                "secret_key",
+            } or normalized.endswith(("_secret", "_password", "_token")):
                 raise ProviderConfigError("plaintext_secret_forbidden")
+            if normalized == "base_url" and child is not None:
+                if not isinstance(child, str):
+                    raise ProviderConfigError("invalid_endpoint")
+                parsed = urlsplit(child)
+                if (
+                    parsed.username is not None
+                    or parsed.password is not None
+                    or (parsed.query or parsed.fragment)
+                ):
+                    raise ProviderConfigError("endpoint_credentials_forbidden")
             reject_secret_fields(child)
     elif isinstance(value, str) and any(marker in value for marker in ("${", "$(", "`")):
         raise ProviderConfigError("yaml_interpolation_forbidden")

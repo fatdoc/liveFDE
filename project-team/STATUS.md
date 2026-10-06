@@ -1,5 +1,5 @@
 # 当前事实与任务
-更新：2026-10-06，非自动监控。
+更新：2026-10-07，非自动监控。
 已有 React Demo、CPB 审计、规范、Python工程基础和业务契约草案。LIVE-004身份/场次/材料已验；LIVE-006C的ASR设置/试用已接真实后端，真实本地文件与窗口流转写闭环已验。LIVE-021真实场次与材料页已接后端；其他业务页面仍Demo，报告、评分未实现。LIVE-015～017采集基础代码完成有限技术验收并集成，默认关闭，真实平台接入待验收。
 远端同步：用户指定公开仓库 https://github.com/fatdoc/liveFDE；LIVE-018 保留远端初始化 LICENSE 和本地全部 Git 开发历史，通过初始化 PR 同步。采集默认关闭及真实试录暂停不变。
 
@@ -27,6 +27,7 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-024 | ARC/ENG/QA | done | PR15合并52bfde6；独立109通过、CI通过；原真实空响应保留，后续会话/地址条件见LIVE-025 |
 | LIVE-025 | ARC/BE/FE/QA | integrated_limited | PR16合并8a76d7b；设置页真实Edge与workspace隔离验收通过；真实HTTP源适配后续LIVE-026 |
 | LIVE-026 | ARC/QA | verified_limited | 79586de独立111通过；一次约60秒真实抖音录制→导入→Edge播放通过；限定片段，非全平台/整场验收；合并记录runtime/live-026/closure.json |
+| LIVE-027 | ARC/BE/FE/QA | in_review | 真实ASR974e38db失败且无结果；未重试，安全诊断与时间戳UI修复审查中，真实识别/定位/听核未验，见reports/LIVE-027/delivery.md |
 | LIVE-022 | ARC/QA | in_review | 隔离本机361独立通过；浏览器/原生receiver/串行本地ASR已验，首次ASR停止异常保留跟进 |
 
 待决策：评分标准；后续多场景标注样本、真实云配置与预算。已授权的本轮公开本地样本实测完成，不等于新增云调用授权。

@@ -9,6 +9,7 @@ async (page) => {
     asrCalls = [],
     stopCount = 0,
     unknown = true,
+    reject = true,
     platform = 'douyin'
   const person = { id: 'person1', name: '测试主播', platform: 'douyin' }
   const session = {
@@ -72,6 +73,7 @@ async (page) => {
       data = { items: run ? [run] : [], next_cursor: null }
     else if (path === '/capture/runs' && req.method() === 'POST') {
       starts.push({ key: req.headers()['idempotency-key'], body: req.postDataJSON() })
+      if (reject) {reject = false; await route.fulfill({status: 422, contentType: 'application/json', body: JSON.stringify({error:{code:'source_rejected'}})}); return}
       if (unknown) {
         unknown = false
         await route.abort()
@@ -134,14 +136,17 @@ async (page) => {
     .getByPlaceholder('https://live.douyin.com/数字房间号')
     .fill('https://live.douyin.com/123456')
   await page.getByRole('button', { name: '开始录制', exact: true }).click()
+  await page.getByText('请求未成功（422 / source_rejected）', { exact: false }).waitFor()
+  await page.getByPlaceholder('https://live.douyin.com/数字房间号').fill('https://live.douyin.com/654321')
+  await page.getByRole('button', { name: '开始录制', exact: true }).click()
   await page.getByText('上一次提交尚待确认。', { exact: false }).waitFor()
   await page.getByRole('button', { name: '重试确认同次采集', exact: true }).click()
   await page.getByText('正在录制', { exact: true }).waitFor()
-  if (starts.length !== 2 || starts[0].key !== starts[1].key)
+  if (starts.length !== 3 || starts[1].key !== starts[2].key || starts[0].key === starts[1].key)
     throw Error('unknown submission changed idempotency key')
   await page.reload()
   await page.getByText('正在录制', { exact: true }).waitFor()
-  if (starts.length !== 2) throw Error('refresh created another run')
+  if (starts.length !== 3) throw Error('refresh created another run')
   await page.getByRole('button', { name: '停止录制', exact: true }).click()
   await page.getByText('已请求停止，等待确认', { exact: true }).waitFor()
   if (stopCount !== 1) throw Error('stop request duplicated')
@@ -169,6 +174,7 @@ async (page) => {
   return {
     passed: [
       'disabled gating',
+      'definitive rejection permits correction',
       'unknown retry idempotency',
       'refresh recovery',
       'stop confirmation',

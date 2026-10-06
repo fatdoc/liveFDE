@@ -25,3 +25,5 @@ class ProbeInput(BaseModel):
 
 class StartInput(ProbeInput):
     session_id: UUID
+    duration_seconds: int | None = Field(default=None, ge=1, le=14400, strict=True)
+    max_bytes: int | None = Field(default=None, ge=1048576, le=17179869184, strict=True)

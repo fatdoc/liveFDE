@@ -1,11 +1,25 @@
 """Only UUID keys; filenames and user URLs never become filesystem paths."""
 
+import hashlib
 import os
 import shutil
 from pathlib import Path
 from uuid import UUID
 
 from live_review.core.errors import ApiError
+
+
+def hash_file(path, tick=None):
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        while True:
+            if tick:
+                tick()
+            chunk = source.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 class LocalStorage:
@@ -28,12 +42,20 @@ class LocalStorage:
         path.parent.mkdir(parents=True, exist_ok=True)
         return path
 
-    def promote_copy(self, source: Path, key: UUID) -> Path:
+    def promote_copy(self, source: Path, key: UUID, *, tick=None) -> Path:
         target = self.prepare("blobs", key)
         temporary = self.prepare("blobs", key, ".part")
         # Source remains intact until the DB commit, making finalization replayable.
         with source.open("rb") as src, temporary.open("wb") as dst:
-            shutil.copyfileobj(src, dst, length=1024 * 1024)
+            if tick is None:
+                shutil.copyfileobj(src, dst, length=1024 * 1024)
+            else:
+                while True:
+                    tick()
+                    chunk = src.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    dst.write(chunk)
             dst.flush()
             os.fsync(dst.fileno())
         os.replace(temporary, target)

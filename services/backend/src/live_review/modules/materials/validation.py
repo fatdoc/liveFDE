@@ -1,9 +1,11 @@
-import hashlib
 import json
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 
 from live_review.core.errors import ApiError
+from live_review.integrations.media.process import MediaError, run_process
+from live_review.integrations.storage.local import hash_file
 
 
 def validate_file(
@@ -13,11 +15,12 @@ def validate_file(
     media_type: str,
     purpose: str,
     ffprobe: str,
+    *,
+    tick=None,
 ) -> str:
     if path.stat().st_size != declared_size or declared_size == 0:
         raise ApiError(422, "file_size_mismatch", "文件大小与声明不一致")
-    with path.open("rb") as stream:
-        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+    digest = hash_file(path, tick)
     if declared_hash and digest != declared_hash:
         raise ApiError(422, "file_hash_mismatch", "文件校验失败，请重新上传")
     if purpose == "transcript":
@@ -62,26 +65,32 @@ def validate_file(
         if media_type not in allowed:
             raise ApiError(415, "unsupported_format", "直播材料仅支持MP4/WAV/MP3/M4A/AAC")
         try:
-            result = subprocess.run(
-                [
-                    ffprobe,
-                    "-v",
-                    "error",
-                    "-protocol_whitelist",
-                    "file,pipe",
-                    "-f",
-                    "mov" if media_type in {"video/mp4", "audio/mp4"} else allowed[media_type],
-                    "-show_format",
-                    "-show_streams",
-                    "-of",
-                    "json",
-                    str(path),
-                ],
-                capture_output=True,
-                timeout=30,
-                check=False,
-            )
-        except (OSError, subprocess.TimeoutExpired) as exc:
+            command = [
+                ffprobe,
+                "-v",
+                "error",
+                "-protocol_whitelist",
+                "file,pipe",
+                "-f",
+                "mov" if media_type in {"video/mp4", "audio/mp4"} else allowed[media_type],
+                "-show_format",
+                "-show_streams",
+                "-of",
+                "json",
+                str(path),
+            ]
+            if tick is None:
+                result = subprocess.run(command, capture_output=True, timeout=30, check=False)
+            else:
+
+                def cancel():
+                    tick()
+                    return False
+
+                result = SimpleNamespace(
+                    stdout=run_process(command, timeout=30, cancel=cancel), returncode=0
+                )
+        except (OSError, subprocess.TimeoutExpired, MediaError) as exc:
             raise ApiError(503, "media_probe_unavailable", "媒体验证服务暂不可用") from exc
         try:
             info = json.loads(result.stdout)

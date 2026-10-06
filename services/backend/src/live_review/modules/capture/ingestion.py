@@ -1,15 +1,16 @@
 """Capture import calls the existing upload and association services, never writes their tables."""
 
 import asyncio
-import hashlib
-import shutil
+import time
 from types import SimpleNamespace
 from uuid import UUID
 
 from live_review.core.errors import ApiError
 from live_review.integrations.capture.contracts import CaptureError
+from live_review.integrations.capture.limits import OVERRUN_BYTES, disk, effective_policy
 from live_review.integrations.capture.policy import fingerprint
 from live_review.integrations.capture.recording import inspect_media
+from live_review.integrations.storage.local import hash_file
 from live_review.modules.capture.authorization import execution_actor
 from live_review.modules.capture.files import directory, exclusive, load_manifest
 from live_review.modules.jobs.models import Job
@@ -27,6 +28,23 @@ def import_recording(db, admin, run, settings, policy, tick=lambda: None):
     job = db.get(Job, run.job_id)
     if job.input_data.get("policy_sha256") != fingerprint(policy):
         raise CaptureError("capture_config_changed")
+    recording_policy = effective_policy(policy, job.input_data)
+    if "recording_limits" in job.input_data:
+        settings = settings.model_copy(
+            update={"upload_max_bytes": recording_policy.max_bytes + OVERRUN_BYTES}
+        )
+    last_authorization = 0.0
+
+    def progress():
+        nonlocal last_authorization
+        current = time.monotonic()
+        if current - last_authorization >= 1:
+            tick()
+            execution_actor(db, run)
+            last_authorization = current
+        if disk(settings.storage_root)[1] < recording_policy.min_free_bytes + 1048576:
+            raise CaptureError("disk_full")
+
     path = directory(policy, run.id)
     with exclusive(path / "import.lock"):
         manifest_path = path / "manifest.json"
@@ -44,16 +62,18 @@ def import_recording(db, admin, run, settings, policy, tick=lambda: None):
         source = path / "recording.mp4"
         if not source.is_file() or source.is_symlink():
             raise CaptureError("capture_media_missing")
-        with source.open("rb") as stream:
-            digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        if source.stat().st_size > settings.upload_max_bytes:
+            raise CaptureError("upload_too_large")
+        digest = hash_file(source, progress)
         if digest != manifest["sha256"] or source.stat().st_size != manifest["size_bytes"]:
             raise CaptureError("capture_hash_mismatch")
-        inspect_media(source, policy.ffprobe)
+        inspect_media(source, policy.ffprobe, progress)
         execution_actor(db, run)
         tick()
         if (
             not run.material_id
-            and shutil.disk_usage(path).free < policy.min_free_bytes + 2 * source.stat().st_size
+            and disk(settings.storage_root)[1]
+            < recording_policy.min_free_bytes + 2 * source.stat().st_size
         ):
             raise CaptureError("disk_full")
         payload = UploadInput(
@@ -72,16 +92,14 @@ def import_recording(db, admin, run, settings, policy, tick=lambda: None):
             async def chunks():
                 with source.open("rb") as stream:
                     while chunk := stream.read(1024 * 1024):
-                        execution_actor(db, run)
-                        tick()
                         yield chunk
 
             request.headers = {"content-length": str(source.stat().st_size)}
             request.stream = chunks
-            asyncio.run(receive(request, db, admin, upload_id))
+            asyncio.run(receive(request, db, admin, upload_id, tick=progress))
         execution_actor(db, run)
         tick()
-        result = finalize(request, db, admin, upload_id)
+        result = finalize(request, db, admin, upload_id, tick=progress)
         execution_actor(db, run)
         tick()
         associate_material(

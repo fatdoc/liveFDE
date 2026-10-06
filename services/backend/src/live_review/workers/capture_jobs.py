@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from live_review.core.errors import ApiError
 from live_review.integrations.capture.contracts import CaptureError, StopCapture
+from live_review.integrations.capture.limits import effective_policy
 from live_review.integrations.capture.policy import fingerprint, load_policy, require_enabled
 from live_review.integrations.capture.providers import CaptureRegistry
 from live_review.integrations.capture.recording import atomic_json, record
@@ -84,6 +85,7 @@ def run_stage(context, settings, handler):
                     cookie = CredentialStore(settings, workspace_id).read().cookie
                 except ApiError:
                     raise CaptureError("platform_storage_unavailable") from None
+            recording_policy = effective_policy(policy, data)
             provider = CaptureRegistry(policy, douyin_cookie=cookie).get(platform)
             update(state="waiting_for_cast" if platform == "wechat" else "probing")
             # A receiver has one owner across all workspaces on this host.
@@ -98,12 +100,13 @@ def run_stage(context, settings, handler):
                 manifest = record(
                     source,
                     path,
-                    policy,
+                    recording_policy,
                     tick,
                     lambda state: update(state=state),
                     platform,
                     run_id,
                     reference,
+                    storage_root=settings.storage_root,
                 )
             if platform == "douyin" and manifest["end_reason"] == "source_eof_unconfirmed":
                 try:

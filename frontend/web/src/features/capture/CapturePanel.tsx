@@ -170,7 +170,7 @@ export function CapturePanel({
           />
         </label>
       ) : (
-        <div className="callout">
+        <div className="callout" style={{ display: 'block' }}>
           <strong>手机投屏录制</strong>
           <ol>
             <li>手机与采集电脑连接同一局域网。</li>

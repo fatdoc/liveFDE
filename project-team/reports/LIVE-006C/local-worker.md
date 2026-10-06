@@ -15,3 +15,9 @@
 830a2db的client close socket只能触发server清理，不能证明已停，原取消证据范围不足。本增量增加stopped ACK、5秒等待/worker_stop_unconfirmed unknown、外部cancel_and_wait(job:attempt)、迟到tombstone/重复ID拒绝。server清理ack在所有任务和模型锁结束之后；重复取消不会中断清理等待。19项Unix tests通过，覆盖file/stream本地取消、停止未确认、外部active/queued/not-connected/finished取消及迟到请求。状态最多4096条且不逐出，仅本进程有效；跨重启业务幂等由root Job保持。
 
 同一提交含stream.py窄增量：job:1、显式aclose、传播gather内worker_stop_unconfirmed，未知停止终态failed；test fixture先持久save revision1再start。19项真实PG WS测试通过（独立原测试库，23.34s）。root还需005父进程在强杀子进程后外部cancel_and_wait，gateway/recorder层aclosing，及worker_stop_unconfirmed禁retry。未改这些共享路径，不声称它们已集成。依赖5143069在本树为e6cb912，仅用于取得现有stream文件，不重复交付。
+
+## 独立QA P1修复
+
+QA指出91f5629在socket写partial期间取消，provider生成器停在yield位置，普通async for退出未同步aclose，导致ACK先于provider finally。已在server execute以contextlib.aclosing包住provider stream迭代器，保持串行锁直到生成器finally清理完毕。新增真实Unix回归刻意阻塞partial写入，再取消并检查收到停止确认时cleanup已完成。
+
+专项现20 passed（1.06s）。保留QA原失败探针与报告未改；用同一runtime/live-006c/qa-ipc/stop_probe.py只读重跑，输出cleanup_finished_at_stop_ack=True、cleanup_finished_later=True。这是作者修复证据，仍需QA对新SHA独立复审。

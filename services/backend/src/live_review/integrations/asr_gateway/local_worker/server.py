@@ -6,7 +6,7 @@ import os
 import re
 import socket
 import wave
-from contextlib import suppress
+from contextlib import aclosing, suppress
 from pathlib import Path
 
 from ..contracts import ASRError, ASRRequest
@@ -209,15 +209,18 @@ class LocalWorkerServer:
                         )
                     else:
                         completed = None
-                        async for event in self.provider.transcribe_stream(chunks(), request):
-                            if event.type == "completed":
-                                if not ended:
-                                    raise ASRError("worker_response_invalid")
-                                completed = event
-                                continue
-                            await write(
-                                writer, {"type": "event", "data": event.model_dump(mode="json")}
-                            )
+                        async with aclosing(
+                            self.provider.transcribe_stream(chunks(), request)
+                        ) as events:
+                            async for event in events:
+                                if event.type == "completed":
+                                    if not ended:
+                                        raise ASRError("worker_response_invalid")
+                                    completed = event
+                                    continue
+                                await write(
+                                    writer, {"type": "event", "data": event.model_dump(mode="json")}
+                                )
                         if completed is None:
                             raise ASRError("worker_response_invalid")
                         # Exhaust the generator first so successful EOF cannot cancel its lease.

@@ -470,3 +470,60 @@ def test_stream_cancel_waits_for_native_cleanup_ack(paths):
             await server.close()
 
     asyncio.run(run())
+
+
+def test_cancel_during_partial_socket_write_waits_for_generator_finally(paths, monkeypatch):
+    from live_review.integrations.asr_gateway.local_worker import server as implementation
+
+    root, _ = paths
+
+    class PartialProvider:
+        def __init__(self):
+            self.cleaned = asyncio.Event()
+
+        async def transcribe_stream(self, chunks, request):
+            try:
+                async for _ in chunks:
+                    yield ASREvent(
+                        type="partial", segment=ASRSegment(id="0", text="合成", final=False)
+                    )
+            finally:
+                await asyncio.sleep(0.15)
+                self.cleaned.set()
+
+    async def run():
+        blocked = asyncio.Event()
+        original = implementation.write
+
+        async def slow_write(writer, value):
+            if value.get("type") == "event":
+                blocked.set()
+                await asyncio.sleep(30)
+            return await original(writer, value)
+
+        monkeypatch.setattr(implementation, "write", slow_write)
+        config, provider = Config(model_root=root), PartialProvider()
+        server = await LocalWorkerServer(root / "s", config, root, provider).start()
+
+        async def chunks():
+            yield b"\0\0" * 3200
+            await asyncio.sleep(30)
+
+        async def consume():
+            async for _ in LocalWorkerProvider(root / "s", config).transcribe_stream(
+                chunks(), req()
+            ):
+                pass
+
+        try:
+            task = asyncio.create_task(consume())
+            await asyncio.wait_for(blocked.wait(), 2)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+            assert provider.cleaned.is_set(), "stop ACK must wait for suspended generator cleanup"
+            assert not server.inference.locked()
+        finally:
+            await server.close()
+
+    asyncio.run(run())

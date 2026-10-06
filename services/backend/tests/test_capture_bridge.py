@@ -259,3 +259,54 @@ def test_stream_selection_fails_without_rewriting_or_secret_errors(selected, pol
 def test_invalid_first_candidate_does_not_hide_valid_fallback(invalid):
     valid = "https://pull.example.com/live.m3u8"
     assert bridge.select_stream({"flv_url": invalid, "record_url": valid}, {}) == valid
+
+
+@pytest.mark.parametrize(
+    "authority", ["pull-t3.douyincdn.com", "pull-t3.douyincdn.com:80", "PULL-T3.DOUYINCDN.COM:80"]
+)
+@pytest.mark.parametrize(
+    "tail", ["/live.flv?sign=a%2Fb+Q&x=http://literal/path&x=2", "/live.flv?", "/live.flv"]
+)
+def test_scoped_https_candidate_preserves_path_and_query(authority, tail):
+    value = "http://" + authority + tail
+    policy = {"https_only": True, "stream_domains": ["douyincdn.com"]}
+    result = bridge.select_stream({"flv_url": value}, policy)
+    assert result == "https://" + authority.removesuffix(":80") + tail
+
+
+@pytest.mark.parametrize(
+    "url,domains",
+    [
+        ("http://pull-t3.douyincdn.com:443/live.flv", ["douyincdn.com"]),
+        ("http://pull-t3.douyincdn.com:/live.flv", ["douyincdn.com"]),
+        ("http://douyincdn.com.evil.invalid/live.flv", ["evil.invalid"]),
+        ("http://other.example.com/live.flv", ["example.com"]),
+        ("http://pull-t3.douyincdn.com/live.flv", []),
+        ("http://pull-t3.douyincdn.com/live.flv", None),
+        ("http://user@pull-t3.douyincdn.com/live.flv", ["douyincdn.com"]),
+        ("http://pull-t3.douyincdn.com:8080/live.flv", ["douyincdn.com"]),
+    ],
+)
+def test_unapproved_upgrade_never_returns_candidate(url, domains):
+    policy = {"https_only": True}
+    if domains is not None:
+        policy["stream_domains"] = domains
+    with pytest.raises(bridge.ParserFailure):
+        bridge.select_stream({"flv_url": url}, policy)
+
+
+def test_explicit_https_precedes_generated_candidate():
+    policy = {"https_only": True, "stream_domains": ["douyincdn.com"]}
+    result = bridge.select_stream(
+        {
+            "flv_url": "http://pull.douyincdn.com/a.flv",
+            "m3u8_url": "https://pull.douyincdn.com/a.m3u8",
+        },
+        policy,
+    )
+    assert result == "https://pull.douyincdn.com/a.m3u8"
+
+
+def test_protocol_adaptation_is_local_and_does_not_change_http_policy():
+    value = "http://pull.douyincdn.com/a.flv"
+    assert bridge.select_stream({"flv_url": value}, {"stream_domains": ["douyincdn.com"]}) == value

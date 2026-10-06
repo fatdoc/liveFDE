@@ -167,4 +167,6 @@ DNS在独立可回收子进程执行，每次最多5秒并受录制总deadline�
 
 Cookie在执行器开始解析时读取一次不可变快照；更新/清除对后续检查和未开始解析的排队任务生效。已开始解析/录制的任务保持旧快照直到结束；需要立即终止时在场次页停止任务。清除后工作区传空Cookie，绝不回落服务器全局env或上游示例。
 
-选流遵循固定DLR的非h265优先FLV规则，再考虑其明确返回的HLS/record候选，同时服从当前HTTPS与域策略。只选择已返回的合格地址，绝不把HTTP字符串改写为HTTPS。全部候选不合格时在解析/检查阶段返回https_required/domain_not_allowed/unsafe_stream_url，不进入录制。TLS、域限制、重定向和HLS逐资源检查不放宽。
+选流遵循固定DLR的非h265优先FLV规则，再考虑其明确返回的HLS/record候选，同时服从当前HTTPS与域策略。LIVE-026在没有合格原始HTTPS地址时补充协议候选：仅对同时命中配置白名单与douyincdn.com边界的HTTP默认端口地址，构造同主机、同path/query的HTTPS候选（显式80改为默认443）。优先使用原始合格HTTPS，再按非h265的FLV/HLS偏好选择转换候选；不转换任意域/端口，不发送Cookie给CDN，不回退HTTP。候选转换并不证明CDN可用，证书和每一跳仍由录制relay检查。全部候选不合格时在解析/检查阶段返回https_required/domain_not_allowed/unsafe_stream_url，不进入录制。TLS、域限制、重定向和HLS逐资源检查不放宽。
+
+LIVE-026依据固定上游main.py1150–1151的HTTPS转换选项补齐协议层；上游该选项默认否，默认允许HTTP，本系统仍要求HTTPS。settings检查仅解析/静态策略，不是网络媒体验收；真实录制结果见本轮报告。

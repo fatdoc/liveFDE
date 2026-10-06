@@ -98,6 +98,12 @@ CAPTURE_UI_FRONTEND_SCOPE = [
 ]
 SCOPES = {
     "LIVE-023": [
+        'services/backend/src/live_review/integrations/capture/relay.py',
+        'services/backend/src/live_review/integrations/capture/recording.py',
+        'services/backend/src/live_review/integrations/capture/policy.py',
+        'services/backend/src/live_review/integrations/capture/resolver.py',
+        'services/backend/tests/test_capture_resolution.py',
+        'services/backend/tests/test_capture_recording.py',
         "scripts/checks/repository.py",
         "services/backend/src/live_review/modules/capture/",
         "services/backend/src/live_review/integrations/capture/providers.py",

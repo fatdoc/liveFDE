@@ -2,6 +2,7 @@ import base64
 import binascii
 import hashlib
 import json
+import shutil
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -12,6 +13,7 @@ from live_review.core.errors import ApiError
 from live_review.integrations.capture.policy import fingerprint
 from live_review.modules.capture.executor_health import execution_health
 from live_review.modules.capture.models import CaptureRun
+from live_review.modules.capture.readiness import platform_conditions
 from live_review.modules.jobs.models import Job
 from live_review.modules.jobs.service import TERMINAL, create_job, now
 from live_review.modules.sessions.service import get_session
@@ -80,10 +82,19 @@ def start(db, admin, data, key, policy, *, settings=None):
         if existing.request_hash != digest:
             raise ApiError(409, "idempotency_conflict", "幂等键已用于不同采集")
         return existing
+    if data.platform not in policy.allowed_platforms:
+        raise ApiError(503, "capture_platform_disabled", "当前配置未开放该平台采集")
     if policy.execution_mode == "native" and (
         settings is None or not execution_health(settings, policy)["ready"]
     ):
         raise ApiError(503, "capture_executor_unavailable", "采集执行器未就绪，请稍后重试")
+    if policy.execution_mode == "native":
+        blockers = platform_conditions(
+            policy, data.platform, execution_health(settings, policy),
+            bool(shutil.which(policy.ffmpeg)), bool(shutil.which(policy.ffprobe)),
+        )["blockers"]
+        if blockers:
+            raise ApiError(503, blockers[0]["code"], blockers[0]["message"])
     # Clean terminal activity claims, without using file-size heuristics.
     active = db.scalars(
         select(CaptureRun).where(

@@ -4,6 +4,7 @@ async (page) => {
   const sid = '11111111-1111-4111-8111-111111111111',
     mid = '22222222-2222-4222-8222-222222222222'
   let enabled = false,
+    sourceConfigured = false,
     run = null,
     starts = [],
     asrCalls = [],
@@ -65,8 +66,11 @@ async (page) => {
         ffprobe_ready: true,
         execution: { ready: true, automatic_dispatch: true, state: 'idle' },
         providers: {
-          douyin: { dependencies_ready: true },
-          wechat: { dependencies_ready: true, device_name: '直播采集测试设备' },
+          douyin: {
+            dependencies_ready: true, start_ready: enabled && sourceConfigured,
+            blockers: sourceConfigured ? [] : [{code: 'capture_source_access_not_configured', message: '直播来源访问尚未开放：允许访问的域名未配置，需先完成采集就绪复核。'}],
+          },
+          wechat: { dependencies_ready: true, start_ready: enabled, blockers: [], device_name: '直播采集测试设备' },
         },
       }
     else if (path === '/capture/runs' && req.method() === 'GET')
@@ -126,11 +130,17 @@ async (page) => {
     })
   })
   await page.evaluate(() => sessionStorage.clear())
-  await page.goto(`http://127.0.0.1:5199/sessions/${sid}`)
+  await page.goto(new URL(`/sessions/${sid}`, page.url()).href)
   await page.getByText('采集服务尚未启用。', { exact: true }).waitFor()
   if (!(await page.getByRole('button', { name: '开始录制', exact: true }).isDisabled()))
     throw Error('disabled service allowed capture')
   enabled = true
+  await page.getByRole('button', { name: '刷新状态', exact: true }).click()
+  await page.getByText('直播来源访问尚未开放：', { exact: false }).waitFor()
+  if (!(await page.getByRole('button', { name: '开始录制', exact: true }).isDisabled()))
+    throw Error('empty source policy allowed capture despite ready executor and dependencies')
+  if (starts.length) throw Error('blocked state issued a capture request')
+  sourceConfigured = true
   await page.getByRole('button', { name: '刷新状态', exact: true }).click()
   await page
     .getByPlaceholder('https://live.douyin.com/数字房间号')
@@ -174,6 +184,7 @@ async (page) => {
   return {
     passed: [
       'disabled gating',
+      'empty source policy and specific blocker',
       'definitive rejection permits correction',
       'unknown retry idempotency',
       'refresh recovery',

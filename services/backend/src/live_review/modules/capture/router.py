@@ -12,6 +12,7 @@ from live_review.integrations.capture.providers import CaptureRegistry
 from live_review.modules.capture import service
 from live_review.modules.capture.executor_health import execution_health
 from live_review.modules.capture.ingestion import safe_import
+from live_review.modules.capture.readiness import platform_conditions
 from live_review.modules.capture.schemas import ProbeInput, StartInput
 from live_review.modules.identity.models import Admin
 
@@ -32,13 +33,22 @@ def translate(error):
 def health(request: Request, admin: CurrentAdmin):
     try:
         policy = load_policy(request.app.state.settings)
+        execution = execution_health(request.app.state.settings, policy)
+        ffmpeg_ready = bool(shutil.which(policy.ffmpeg))
+        ffprobe_ready = bool(shutil.which(policy.ffprobe))
         return {
             "enabled": policy.enabled,
-            "execution": execution_health(request.app.state.settings, policy),
+            "execution": execution,
             "automatic_asr": False,
-            "ffmpeg_ready": bool(shutil.which(policy.ffmpeg)),
-            "ffprobe_ready": bool(shutil.which(policy.ffprobe)),
-            "providers": {k: v.health() for k, v in CaptureRegistry(policy).providers.items()},
+            "limits": {"max_seconds": policy.max_seconds, "max_bytes": policy.max_bytes},
+            "ffmpeg_ready": ffmpeg_ready,
+            "ffprobe_ready": ffprobe_ready,
+            "providers": {
+                platform: platform_conditions(
+                    policy, platform, execution, ffmpeg_ready, ffprobe_ready
+                )
+                for platform in ("douyin", "wechat")
+            },
         }
     except CaptureError as exc:
         raise translate(exc) from None
@@ -48,6 +58,8 @@ def health(request: Request, admin: CurrentAdmin):
 def probe(data: ProbeInput, request: Request, admin: MutationAdmin):
     try:
         policy = policy_for(request)
+        if data.platform not in policy.allowed_platforms:
+            raise ApiError(503, "capture_platform_disabled", "当前配置未开放该平台采集")
         provider = CaptureRegistry(policy).get(data.platform)
         source = provider.probe(data.source_ref, lambda: None)
         return {

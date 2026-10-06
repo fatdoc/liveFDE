@@ -17,6 +17,10 @@ class CapturePolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
     schema_version: int = Field(default=1, ge=1, le=1)
     enabled: bool = False
+    https_only: bool = False
+    allowed_platforms: list[Literal["douyin", "wechat"]] = Field(
+        default_factory=lambda: ["douyin", "wechat"]
+    )
     execution_mode: Literal["operator", "native"] = "operator"
     root: Path | None = None
     ffmpeg: str = "ffmpeg"

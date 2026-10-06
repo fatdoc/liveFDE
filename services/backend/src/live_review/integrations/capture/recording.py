@@ -63,6 +63,8 @@ def close_process(process):
 
 
 def record(source, directory, policy, tick, progress, platform, run_id, reference):
+    # Acquisition's DNS/setup time belongs to this recording budget, not a later FFmpeg clock.
+    deadline = time.monotonic() + policy.max_seconds
     if shutil.disk_usage(directory).free < policy.min_free_bytes:
         raise CaptureError("disk_full")
     target = directory / "recording.partial.mp4"
@@ -71,7 +73,16 @@ def record(source, directory, policy, tick, progress, platform, run_id, referenc
     atomic_json(directory / "started.json", {"started_at": started})
     events = queue.Queue()
     reason, recorded = "source_eof_unconfirmed", False
-    with Relay(source.url, policy.stream_domains) as relay:
+    with Relay(
+        source.url,
+        policy.stream_domains,
+        deadline=deadline,
+        tick=tick,
+        https_only=policy.https_only,
+    ) as relay:
+        tick()
+        if time.monotonic() >= deadline:
+            raise CaptureError("duration_limit")
         command = [
             policy.ffmpeg,
             "-hide_banner",
@@ -119,7 +130,7 @@ def record(source, directory, policy, tick, progress, platform, run_id, referenc
 
         reader = threading.Thread(target=drain, daemon=True)
         reader.start()
-        begin = last_progress = time.monotonic()
+        last_progress = time.monotonic()
         out_time = 0
         try:
             while process.poll() is None:
@@ -134,7 +145,7 @@ def record(source, directory, policy, tick, progress, platform, run_id, referenc
                 if shutil.disk_usage(directory).free < policy.min_free_bytes:
                     reason = "disk_full"
                     break
-                if time.monotonic() - begin >= policy.max_seconds:
+                if time.monotonic() >= deadline:
                     reason = "duration_limit"
                     break
                 if target.exists() and target.stat().st_size >= policy.max_bytes:

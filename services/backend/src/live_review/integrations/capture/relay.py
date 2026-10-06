@@ -6,16 +6,102 @@ untrusted playlists. No access logs, proxy environment, or arbitrary protocols.
 
 import http.client
 import ipaddress
+import json
 import re
 import secrets
 import socket
 import ssl
+import subprocess
+import sys
 import threading
+import time
+from contextvars import ContextVar
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from socketserver import TCPServer
 from urllib.parse import urljoin, urlsplit
 
-from live_review.integrations.capture.contracts import CaptureError
+from live_review.integrations.capture.contracts import CaptureError, StopCapture
 from live_review.integrations.capture.hls import rewrite
+
+# Per-call controls preserve destination(url, domains), including offline fixture adapters.
+_resolution_controls = ContextVar("capture_resolution_controls", default=None)
+
+
+def _resolver_command(host, port):
+    # No URL, credentials, proxy settings or inherited application code reach this process.
+    script = (
+        "import json,socket,sys; "
+        "rows=socket.getaddrinfo(sys.argv[1],int(sys.argv[2]),type=socket.SOCK_STREAM); "
+        "print(json.dumps([row[4][0] for row in rows] if len(rows)<=256 else []))"
+    )
+    return [sys.executable, "-I", "-c", script, host, str(port)]
+
+
+def resolve_addresses(host, port, *, deadline=None, tick=None, stopped=None):
+    """Bound DNS in a killable subprocess, and reap it before returning or raising."""
+    controls = _resolution_controls.get() or {}
+    deadline = deadline if deadline is not None else controls.get("deadline")
+    tick = tick if tick is not None else controls.get("tick")
+    stopped = stopped if stopped is not None else controls.get("stopped")
+    limit = min(deadline, time.monotonic() + 5) if deadline is not None else time.monotonic() + 5
+
+    def check():
+        if stopped is not None and stopped.is_set():
+            raise StopCapture
+        if tick is not None:
+            tick()
+        if time.monotonic() >= limit:
+            raise CaptureError(
+                "duration_limit"
+                if deadline is not None and time.monotonic() >= deadline
+                else "source_resolution_timeout"
+            )
+
+    process = None
+    try:
+        check()
+        process = subprocess.Popen(
+            _resolver_command(host, port),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        while True:
+            check()
+            try:
+                output, _ = process.communicate(
+                    timeout=max(0.001, min(0.1, limit - time.monotonic()))
+                )
+                break
+            except subprocess.TimeoutExpired:
+                continue
+        check()
+        if process.returncode or len(output) > 65536:
+            raise CaptureError("source_resolution_failed")
+        addresses = json.loads(output)
+        if (
+            not isinstance(addresses, list)
+            or len(addresses) > 256
+            or not all(isinstance(value, str) for value in addresses)
+        ):
+            raise CaptureError("source_resolution_failed")
+        return addresses
+    except (OSError, ValueError):
+        raise CaptureError("source_resolution_failed") from None
+    finally:
+        if process is not None:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=0.2)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    try:
+                        process.wait(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        raise CaptureError("resolver_stop_unconfirmed") from None
+            if process.stdout is not None:
+                process.stdout.close()
 
 
 def destination(url, domains):
@@ -33,22 +119,35 @@ def destination(url, domains):
         ):
             raise CaptureError("unsafe_stream_url")
         port = parts.port or (443 if parts.scheme == "https" else 80)
-        addresses = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
-        if not addresses or any(not ipaddress.ip_address(a[4][0]).is_global for a in addresses):
+        addresses = resolve_addresses(host, port)
+        if not addresses or any(
+            not ipaddress.ip_address(address).is_global for address in addresses
+        ):
             raise CaptureError("unsafe_stream_url")
-        return parts, addresses[0][4][0], port
+        return parts, addresses[0], port
     except (ValueError, OSError):
         raise CaptureError("unsafe_stream_url") from None
 
 
+class LoopbackServer(ThreadingHTTPServer):
+    def server_bind(self):
+        # HTTPServer's default getfqdn() performs an unnecessary unbounded reverse lookup.
+        TCPServer.server_bind(self)
+        self.server_name, self.server_port = "127.0.0.1", self.server_address[1]
+
+
 class Relay:
-    def __init__(self, source, domains):
+    def __init__(self, source, domains, *, deadline=None, tick=None, https_only=False):
         self.domains = domains
+        self.deadline, self.tick, self.https_only = deadline, tick, https_only
+        self.stopped = threading.Event()
+        self.resolution_condition = threading.Condition()
+        self.resolving = 0
         self.urls = {}
         self.reverse = {}
         self.lock = threading.Lock()
         self.error = None
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), self.handler())
+        self.server = LoopbackServer(("127.0.0.1", 0), self.handler())
         self.server.daemon_threads = True
         try:
             self.url = self.register(source)
@@ -57,9 +156,28 @@ class Relay:
             raise
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 
+    def destination(self, url):
+        with self.resolution_condition:
+            if self.stopped.is_set():
+                raise StopCapture
+            self.resolving += 1
+        token = _resolution_controls.set(
+            {"deadline": self.deadline, "tick": self.tick, "stopped": self.stopped}
+        )
+        try:
+            # Enforce this before DNS, even when an offline test substitutes destination.
+            if self.https_only and urlsplit(url).scheme != "https":
+                raise CaptureError("https_required")
+            return destination(url, self.domains)
+        finally:
+            _resolution_controls.reset(token)
+            with self.resolution_condition:
+                self.resolving -= 1
+                self.resolution_condition.notify_all()
+
     def register(self, url, kind=None):
         # Validate before publishing; fetch revalidates and pins the actual connection.
-        destination(url, self.domains)
+        self.destination(url)
         with self.lock:
             identity = (url, kind)
             if identity in self.reverse:
@@ -83,7 +201,7 @@ class Relay:
 
     def fetch(self, url, range_header):
         for _ in range(5):
-            parts, address, port = destination(url, self.domains)
+            parts, address, port = self.destination(url)
             conn = http.client.HTTPConnection(parts.hostname, port, timeout=10)
             sock = socket.create_connection((address, port), timeout=10)
             if parts.scheme == "https":
@@ -156,6 +274,8 @@ class Relay:
                         self.wfile.write(first_bytes)
                         while chunk := response.read(65536):
                             self.wfile.write(chunk)
+                except StopCapture:
+                    relay.error = relay.error or "capture_stopped"
                 except CaptureError as exc:
                     relay.error = exc.code
                 except (OSError, ValueError, http.client.HTTPException):
@@ -171,6 +291,10 @@ class Relay:
         return self
 
     def __exit__(self, *args):
+        self.stopped.set()
         self.server.shutdown()
         self.server.server_close()
         self.thread.join(timeout=2)
+        with self.resolution_condition:
+            if not self.resolution_condition.wait_for(lambda: self.resolving == 0, timeout=2):
+                raise CaptureError("resolver_stop_unconfirmed")

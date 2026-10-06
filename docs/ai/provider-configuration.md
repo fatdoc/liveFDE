@@ -1,5 +1,43 @@
 # 模型能力 YAML 配置与任务快照
 
+## 先填写这几项
+
+默认模板是 `app/infra/providers.example.yaml`，已逐项加中文说明。它现在包含一套完整但**未启用**的 ASR 配置；`your_vendor`、`your-audio-model`、`https://example.invalid/v1` 都是占位内容，不是已选好的服务。
+
+1. 将模板复制到工作区 `runtime/live-006/providers.yaml`，只修改这个本地副本。
+2. 填写 `provider`（供应商英文标识）、`model`（语音转写模型ID）、`base_url`（API基础地址）。程序会追加 `/audio/transcriptions`；服务必须支持 `verbose_json` 的分段时间戳，聊天模型接口不能直接替代。
+3. `key_env: LIVE_ASR_API_KEY` 可原样保留：它表示“去名叫 LIVE_ASR_API_KEY 的环境变量里找密钥”。**不是让你把真实密钥填到 key_env 后面。**
+4. `enabled: false` 先保持关闭。`max_requests: 100`、`max_cost_usd: 1.0` 和时长仅是示例；供应商、样本与预算确认后，才改启用状态并由操作员明确授权该任务。
+
+### 真实密钥在哪里填写
+
+推荐在 macOS 的 zsh 终端临时输入。以下命令只接收密钥，不发网络请求，输入内容不回显，也不把密钥写进命令历史：
+
+```sh
+read -rs 'LIVE_ASR_API_KEY?请输入语音转写服务密钥（输入不显示）：'
+printf '\n'
+export LIVE_ASR_API_KEY
+```
+
+随后须在**同一个终端**启动操作员命令。若使用单独的worker进程，也必须给该worker的启动环境配置同名变量；在这里输入不会自动传到已经运行的其他进程。使用完可执行 `unset LIVE_ASR_API_KEY` 清除当前终端的变量。
+
+需要重启后仍保留密钥时，可以自行保存到工作区 `runtime/live-006/asr.private.env`（文件权限600，不进Git），内容格式为 `LIVE_ASR_API_KEY='你的真实密钥'`。**当前操作员程序不会自动读取这个文件**；需要在启动程序的终端显式加载：
+
+```sh
+chmod 600 '/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-006/asr.private.env'
+set -a
+source '/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-006/asr.private.env'
+set +a
+```
+
+只加载自己创建、内容可信的文件；`source` 会执行文件中的Shell内容。这里仅说明做法，项目没有替你创建密钥文件或读取已有密钥。已有的数据库验收 `private.env` 不要改成ASR密钥文件。
+
+### 程序怎样找到你的 YAML
+
+操作员提交任务时，用 `--config /Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-006/providers.yaml` 指定本地副本，不会自动发现刚编辑的任意文件。完整提交步骤见 [操作员入口](media-jobs.md)。
+
+真正调用需要配置 `enabled: true` **以及**该任务的 `--allow-network` 明确授权；仅填好配置或导出密钥都不会自动调用。本轮仍未获真实调用授权。文本总结和画面理解目前只有配置结构，不能通过改成true就使用。
+
 LIVE-006 的供应商尚未选定。默认 `infra/providers.example.yaml` 的 ASR、text、vision 全部 disabled；没有默认厂商、自动发现、网络探测、环境路由覆盖或降级回退。YAML 是唯一配置策略来源，服务器受信任的 environment 决定是否为生产，不从YAML自报环境。
 
 `infra/providers.offline.example.yaml` 仅供显式合成ASR验收，标记 provider=synthetic、model=fixture-v1；生产加载及执行均拒绝。它不能冒充真实转写、模型可用性或分析质量。ASR的`openai_compatible`必须显式配`operation: audio_transcriptions`，对应音频转写multipart协议，不能因厂商聊天接口兼容就认定ASR也兼容。resolve_execution默认allow_network=False，在读取任何密钥前拒绝；只有上层针对本次执行授权并显式传allow_network=True，才从key_env读取SecretStr到内存。配置层本身不发网络。text/vision真实协议仍报provider_protocol_unsupported。本轮测试仅注入合成环境密钥，不读取真实凭证、不调用真实模型。

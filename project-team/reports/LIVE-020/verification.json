@@ -1,0 +1,30 @@
+{
+  "source_sha": "b2637a52830526f9128478f7603531719ea07795",
+  "full_regression": {
+    "source_sha": "34ce4eaafe2cc7738093ce770e2bc22df1d56146",
+    "passed": 361,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "evidence": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-020/evidence/live020_suite_752ac72438824536b42283f121311629",
+    "excluded": "existing tests/test_jobs_broker.py"
+  },
+  "final_capture": {
+    "passed": 48,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "evidence": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-020/evidence/live020_suite_fa46050f3c634c1c961da0df4992ce84"
+  },
+  "synthetic_media": {
+    "path": "/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-020/evidence/live020_suite_752ac72438824536b42283f121311629/tmp/test_browser_queue_to_actual_m0/captures/bd5c8068-0c05-478b-b9cc-79a6bdac38fb/recording.mp4",
+    "duration_seconds": 1.6,
+    "video": "h264",
+    "audio": "aac",
+    "full_decode_exit": 0
+  },
+  "real_platform_recordings": 0,
+  "real_phone_recordings": 0,
+  "real_asr_calls": 0,
+  "review": "pending ARC final fixed-head review"
+}

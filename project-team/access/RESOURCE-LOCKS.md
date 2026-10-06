@@ -96,3 +96,7 @@ LIVE-023交接：214b8ed审查通过后runtime20已换API25919/executor25920/UI2
 LIVE-024：ARC持runtime20串行控制，ENG-02仅在.worktrees/LIVE-024-douyin-parser改bridge/providers及对应测试，root提交；QA-02非作者固定SHA复核。原失败run546dd419及文件保留，无源码写入当前运行的023。
 
 LIVE-024运行已切换：API34403/executor34405使用已审676c439，UI25921保留023，策略未改。一次授权真实复验返回source_empty_response，handler已退出，无媒体；原失败都保留。ARC继续串行控制，PM协调正常浏览器/会话条件，不并发重试。
+
+
+LIVE-025：ARC独占runtime20串行操作；BE在LIVE-025-platform-settings写后端，FE在LIVE-025-frontend写Settings/新平台panel，QA非作者只读固定SHA。ARC持目录门禁、契约快照、docs/capture.md与交付记录。测试使用live025_suite_<uuid>独立PG库与独立storage，禁止写运行中live020业务数据。FE模拟UI端口5205登记，必须启动前核空闲。
+实际Cookie离线格式合法，API51186/executor51188安全注入后一次解析返回live，前后总run7/活跃0，无录制；证据runtime/live-025/connection-once.json。当前允许用户手动测试，后续部署重新核空闲，不中断用户录制。

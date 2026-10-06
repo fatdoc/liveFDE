@@ -5,11 +5,13 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from live_review.core.errors import ApiError
 from live_review.integrations.capture.contracts import CaptureError, StopCapture
 from live_review.integrations.capture.policy import fingerprint, load_policy, require_enabled
 from live_review.integrations.capture.providers import CaptureRegistry
 from live_review.integrations.capture.recording import atomic_json, record
 from live_review.modules.capture.authorization import execution_actor
+from live_review.modules.capture.credentials import CredentialStore
 from live_review.modules.capture.files import directory, exclusive, load_manifest
 from live_review.modules.capture.ingestion import retained_state, safe_import
 from live_review.modules.capture.models import CaptureRun
@@ -51,16 +53,14 @@ def run_stage(context, settings, handler):
             if data.get("policy_sha256") != fingerprint(policy):
                 raise CaptureError("capture_config_changed")
         except CaptureError as exc:
-            update(
-                error_code=exc.code, state=retained_state(run, "failed"), active=False
-            )
+            update(error_code=exc.code, state=retained_state(run, "failed"), active=False)
             raise
         if handler == "capture.import":
             if run.state == "stopped" and not run.manifest:
                 return {"stopped_without_media": True}
             admin = db.get(Admin, run.actor_id)
             return safe_import(db, admin, run, settings, policy, context.heartbeat)
-        reference, platform = run.source_ref, run.platform
+        reference, platform, workspace_id = run.source_ref, run.platform, run.workspace_id
     path = directory(policy, run_id)
     try:
         with exclusive(path / "record.lock"):
@@ -77,7 +77,14 @@ def run_stage(context, settings, handler):
             if (path / "started.json").exists():
                 raise CaptureError("restart_interrupted")
             tick()
-            provider = CaptureRegistry(policy).get(platform)
+            # Read at execution/parse start, not enqueue time. Provider retains this snapshot.
+            cookie = ""
+            if platform == "douyin":
+                try:
+                    cookie = CredentialStore(settings, workspace_id).read().cookie
+                except ApiError:
+                    raise CaptureError("platform_storage_unavailable") from None
+            provider = CaptureRegistry(policy, douyin_cookie=cookie).get(platform)
             update(state="waiting_for_cast" if platform == "wechat" else "probing")
             # A receiver has one owner across all workspaces on this host.
             receiver_lock = (

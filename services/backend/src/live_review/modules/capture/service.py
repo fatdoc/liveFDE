@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from live_review.core.errors import ApiError
 from live_review.integrations.capture.policy import fingerprint
+from live_review.modules.capture.credentials import CredentialStore
 from live_review.modules.capture.executor_health import execution_health
 from live_review.modules.capture.models import CaptureRun
 from live_review.modules.capture.readiness import platform_conditions
@@ -90,8 +91,16 @@ def start(db, admin, data, key, policy, *, settings=None):
         raise ApiError(503, "capture_executor_unavailable", "采集执行器未就绪，请稍后重试")
     if policy.execution_mode == "native":
         blockers = platform_conditions(
-            policy, data.platform, execution_health(settings, policy),
-            bool(shutil.which(policy.ffmpeg)), bool(shutil.which(policy.ffprobe)),
+            policy,
+            data.platform,
+            execution_health(settings, policy),
+            bool(shutil.which(policy.ffmpeg)),
+            bool(shutil.which(policy.ffprobe)),
+            douyin_cookie=(
+                CredentialStore(settings, admin.workspace_id).read().cookie
+                if data.platform == "douyin"
+                else ""
+            ),
         )["blockers"]
         if blockers:
             raise ApiError(503, blockers[0]["code"], blockers[0]["message"])
@@ -160,8 +169,7 @@ def list_runs(db, admin, session_id, limit=20, cursor=None):
         try:
             payload = json.loads(base64.b64decode(cursor, altchars=b"-_", validate=True))
             if not isinstance(payload, dict) or any(
-                not isinstance(payload.get(key), str)
-                for key in ("session_id", "created_at", "id")
+                not isinstance(payload.get(key), str) for key in ("session_id", "created_at", "id")
             ):
                 raise ValueError
             if payload["session_id"] != str(session_id):

@@ -25,6 +25,9 @@ DOUYIN_ERRORS = frozenset(
         "source_protocol_error",
         "source_timeout",
         "source_network_error",
+        "https_required",
+        "unsafe_stream_url",
+        "domain_not_allowed",
     }
 )
 
@@ -68,8 +71,12 @@ def communicate(command, tick, timeout, payload=None, cwd=None):
 
 
 class DouyinProvider:
-    def __init__(self, policy):
+    def __init__(self, policy, *, cookie=None):
         self.policy = policy
+        # Explicit empty workspace snapshots never fall back to process-global credentials.
+        self._cookie = (
+            os.environ.get(policy.douyin_cookie_env, "") if cookie is None else cookie
+        ).strip()
 
     def health(self):
         p = self.policy
@@ -83,7 +90,7 @@ class DouyinProvider:
         return {
             "dependencies_ready": ready,
             "real_platform_verified": False,
-            "cookie_configured": bool(os.environ.get(p.douyin_cookie_env, "").strip()),
+            "cookie_configured": bool(self._cookie),
             "upstream_commit": DOUYIN_COMMIT,
             "requires_phone": False,
         }
@@ -105,7 +112,9 @@ class DouyinProvider:
             {
                 "source": reference,
                 "checkout": str(p.douyin_checkout),
-                "cookie": os.environ.get(p.douyin_cookie_env, "").strip(),
+                "cookie": self._cookie,
+                "https_only": p.https_only,
+                "stream_domains": p.stream_domains,
             }
         ).encode()
         for attempt in range(p.probe_attempts):
@@ -191,8 +200,11 @@ class FinderProvider:
 
 
 class CaptureRegistry:
-    def __init__(self, policy):
-        self.providers = {"douyin": DouyinProvider(policy), "wechat": FinderProvider(policy)}
+    def __init__(self, policy, *, douyin_cookie=None):
+        self.providers = {
+            "douyin": DouyinProvider(policy, cookie=douyin_cookie),
+            "wechat": FinderProvider(policy),
+        }
 
     def get(self, platform):
         try:

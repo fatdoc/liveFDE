@@ -7,13 +7,59 @@ import json
 import pathlib
 import sys
 import types
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 
 class ParserFailure(Exception):
     def __init__(self, code):
         self.code = code
         super().__init__(code)
+
+
+def select_stream(selected, policy):
+    """DLR FLV preference, constrained to explicitly returned eligible URLs."""
+    if not isinstance(selected, dict):
+        raise ParserFailure("source_schema_changed")
+    flv = selected.get("flv_url")
+    try:
+        h265 = isinstance(flv, str) and "h265" in parse_qs(urlsplit(flv).query).get("codec", [])
+    except ValueError:
+        h265 = False
+    candidates = [] if h265 else [flv]
+    candidates += [selected.get("m3u8_url"), selected.get("record_url")]
+    if h265:
+        candidates = [value for value in candidates if value != flv]
+    errors = []
+    for value in candidates:
+        if not isinstance(value, str) or not value:
+            continue
+        try:
+            parts = urlsplit(value)
+            host = parts.hostname or ""
+            if (
+                parts.scheme not in {"http", "https"}
+                or not host
+                or parts.username is not None
+                or parts.password is not None
+                or parts.fragment
+                or parts.port not in {None, 80, 443}
+                or any(ord(c) < 33 or ord(c) == 127 for c in value)
+            ):
+                errors.append("unsafe_stream_url")
+                continue
+            if policy.get("https_only", False) and parts.scheme != "https":
+                errors.append("https_required")
+                continue
+            domains = policy.get("stream_domains")
+            if domains is not None and not any(
+                host == d or host.endswith("." + d) for d in domains
+            ):
+                errors.append("domain_not_allowed")
+                continue
+            return value
+        except ValueError:
+            errors.append("unsafe_stream_url")
+    raise ParserFailure(errors[0] if errors else "source_schema_changed")
 
 
 async def resolve(data):
@@ -35,8 +81,8 @@ async def resolve(data):
                 parts.scheme != "https"
                 or parts.hostname != "live.douyin.com"
                 or parts.port not in {None, 443}
-                or parts.username
-                or parts.password
+                or parts.username is not None
+                or parts.password is not None
             ):
                 raise ParserFailure("source_protocol_error")
             # Upstream has a built-in Cookie when cookies is falsy: remove it at final send.
@@ -110,13 +156,7 @@ async def resolve(data):
         if room["status"] != 2:
             return {"live": False}
         selected = await stream.get_douyin_stream_url(room, "原画", None)
-        if (
-            not isinstance(selected, dict)
-            or not isinstance(selected.get("record_url"), str)
-            or not selected["record_url"]
-        ):
-            return {"error": "source_schema_changed"}
-        return {"live": True, "url": selected["record_url"]}
+        return {"live": True, "url": select_stream(selected, data)}
     except ParserFailure as error:
         return {"error": error.code}
     except ImportError:

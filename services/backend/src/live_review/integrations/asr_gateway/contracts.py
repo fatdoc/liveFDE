@@ -21,7 +21,7 @@ class ASRSegment(Contract):
     emotion: str | None = None
     confidence: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     emotion_confidence: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
-    timestamp_source: Literal["vad", "provider", "unavailable"] = "unavailable"
+    timestamp_source: Literal["vad", "vad_window", "provider", "unavailable"] = "unavailable"
     speaker_source: Literal["clustering", "provider", "unavailable"] = "unavailable"
     emotion_source: Literal["model", "provider", "unavailable"] = "unavailable"
     final: bool = True

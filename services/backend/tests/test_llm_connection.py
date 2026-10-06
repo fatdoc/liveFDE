@@ -353,3 +353,45 @@ def test_complete_chunked_framing_remains_valid(configured, monkeypatch):
     assert impl.check_connection(*configured) is None
     thread.join(2)
     assert len(requests) == 1
+
+
+@pytest.mark.parametrize("failure", ["eof", "incomplete_read"])
+def test_deadline_watchdog_close_has_priority_over_incomplete_framing(
+    configured, monkeypatch, failure
+):
+    import http.client
+
+    clock, callbacks = [100.0], []
+
+    class ControlledTimer:
+        def __init__(self, interval, callback):
+            assert interval == 1
+            callbacks.append(callback)
+
+        def start(self):
+            pass
+
+        def cancel(self):
+            pass
+
+    # Control only the adapter clock/timer, preserving real socketpair HTTP framing.
+    monkeypatch.setattr(impl, "time", SimpleNamespace(monotonic=lambda: clock[0]))
+    monkeypatch.setattr(
+        impl, "threading", SimpleNamespace(Timer=ControlledTimer, Lock=threading.Lock)
+    )
+    requests, _, thread = wire(monkeypatch, success())
+
+    def deadline_read(response, size):
+        assert response.length > 0  # Headers parsed, but the body has not been consumed.
+        clock[0] = 101.0
+        callbacks[0]()  # The production watchdog closes the active transport at deadline.
+        if failure == "incomplete_read":
+            raise http.client.IncompleteRead(b"")
+        return b""
+
+    monkeypatch.setattr(impl.CompleteResponse, "read1", deadline_read)
+    with pytest.raises(impl.CheckFailure) as error:
+        impl.check_connection(*configured)
+    thread.join(2)
+    assert error.value.code == "llm_timeout" and error.value.unknown
+    assert len(requests) == 1

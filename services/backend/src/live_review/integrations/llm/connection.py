@@ -223,6 +223,8 @@ def check_connection(settings, loaded):
             content.extend(chunk)
             if len(content) > MAX_BODY:
                 raise CheckFailure("llm_response_too_large", unknown=True)
+        # The deadline watchdog also produces EOF: timeout takes priority over framing.
+        remaining()
         # read1() may return EOF with outstanding Content-Length instead of raising.
         if response.length not in {None, 0}:
             raise CheckFailure("llm_response_invalid", unknown=True)
@@ -231,7 +233,10 @@ def check_connection(settings, loaded):
     except CheckFailure:
         raise
     except http.client.IncompleteRead:
-        raise CheckFailure("llm_response_invalid", unknown=True) from None
+        raise CheckFailure(
+            "llm_timeout" if time.monotonic() >= deadline else "llm_response_invalid",
+            unknown=sent,
+        ) from None
     except TimeoutError:
         raise CheckFailure("llm_timeout", unknown=sent) from None
     except Exception:

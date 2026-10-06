@@ -21,12 +21,14 @@ def main():
     observations = {
         "sample_sha256": hashlib.sha256(raw).hexdigest(),
         "synthetic": False,
-        "cloud_calls": 0,
+        "cloud_policy": "local_only_no_cloud_grant",
+        "network_audit": "not_instrumented_by_this_script",
         "file_runs": [],
     }
     with httpx.Client(
         base_url="http://127.0.0.1:8196/api/v1",
         timeout=30,
+        trust_env=False,
         headers={"Origin": "http://127.0.0.1:5196"},
     ) as client:
 
@@ -115,6 +117,7 @@ def main():
             origin="http://127.0.0.1:5196",
             cookie=cookie,
             timeout=180,
+            http_no_proxy=["*"],
         )
         started = time.monotonic()
         events = []

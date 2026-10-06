@@ -2,6 +2,7 @@
 
 import base64
 import json
+import sys
 import threading
 import time
 from contextlib import contextmanager
@@ -30,7 +31,14 @@ from live_review.workers.dispatcher import dispatch_once
 
 def native(settings):
     path = settings.model_config_dir / "capture.local.yaml"
-    path.write_text(path.read_text() + "execution_mode: native\n")
+    checkout = settings.model_config_dir / "synthetic-upstream"
+    (checkout / "src").mkdir(parents=True, exist_ok=True)
+    (checkout / "src/spider.py").touch()
+    content = path.read_text()
+    if "finder_executable:" not in content:
+        content += f"finder_executable: {sys.executable}\n"
+    path.write_text(content + f"execution_mode: native\n"
+                    f"douyin_python: {sys.executable}\ndouyin_checkout: {checkout}\n")
     return load_policy(settings)
 
 
@@ -322,6 +330,9 @@ def test_browser_queue_to_actual_media_and_import(capture_env, av_file, monkeypa
     with http_source(av_file) as url:
 
         class LocalSource:
+            def health(self):
+                return {"dependencies_ready": True, "real_platform_verified": False}
+
             def acquire(self, reference, tick):
                 tick()
                 return Source(True, url)

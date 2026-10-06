@@ -1,7 +1,6 @@
 import contextlib
 import functools
 import json
-import socket
 import subprocess
 import sys
 import threading
@@ -172,13 +171,13 @@ def test_interruption_preserves_closed_partial(tmp_path, av_file, monkeypatch, m
 
 
 def test_ssrf_hls_and_redirect_validation(monkeypatch):
-    monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: [(2, 1, 6, "", ("127.0.0.1", 443))])
+    monkeypatch.setattr(relay, "resolve_addresses", lambda *a, **k: ["127.0.0.1"])
     with pytest.raises(CaptureError, match="unsafe_stream_url"):
         relay.destination("https://cdn.qq.com/a", ["qq.com"])
     for url in ("file:///etc/passwd", "https://qq.com.evil.test/a", "http://169.254.169.254/a"):
         with pytest.raises(CaptureError):
             relay.destination(url, ["qq.com"])
-    monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: [(2, 1, 6, "", ("8.8.8.8", 443))])
+    monkeypatch.setattr(relay, "resolve_addresses", lambda *a, **k: ["8.8.8.8"])
     instance = relay.Relay("https://cdn.qq.com/live.m3u8?secret=one", ["qq.com"])
     try:
         rewritten = instance.playlist(

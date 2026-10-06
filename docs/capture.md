@@ -144,3 +144,14 @@ GET /api/v1/capture/runs?session_id=UUID&limit=20&cursor=opaque恢复当前工�
 SIGTERM/SIGINT令原生执行器进入draining、停止消费、对当前任务请求受控停止，等待既有FFmpeg/接收助手退出和关闭后导入；不把收到退出信号当成文件已关闭。SIGKILL继承原handler父进程管道watchdog与Job租约恢复。恢复仍要求closed manifest，只有started标记不自动重录或导入未关闭片段。
 
 HLS支持边界沿用严格解析器；普通本地音视频全链功能测试和纯解析拒绝测试不能替代尚未完成的端到端出站隔离复核。不重跑被平台安全审核中止的探针，不通过更换工具规避。真实平台启用仍须最终就绪审查与PM集中安排直播间/手机样本。
+
+
+## LIVE-023 平台就绪与限定试录
+
+health.providers每个平台提供start_ready、source_access_configured、blockers(code/message)，仍保留dependencies_ready与real_platform_verified=false。start_ready只证明配置、执行器和媒体工具满足启动条件，不证明任何真实直播已录制成功。空/无效stream_domains、缺解析组件、未开放平台、执行器离线和缺媒体工具分别给出中文原因。native新建API采用同一门禁；既有幂等请求优先恢复原run。allowed_platforms默认两平台兼容，显式受限时probe与operator/native新建均不能越过；停止/导入不受新建平台门禁影响。
+
+health.limits返回max_seconds/max_bytes，页面显示试录上限。https_only默认为false以保留已有配置；本机短试录将显式设true、allowed_platforms=[douyin]、stream_domains=[douyincdn.com]、60秒/50000000字节。仅允许该域及子域，视频号暂不开放；平台解析返回其他域或HTTP时明确拒绝，不能自动扩大范围或降级。配置变更先确认无活跃采集，drain旧executor，API/executor使用相同策略指纹再启动。
+
+DNS在独立可回收子进程执行，每次最多5秒并受录制总deadline约束；初始解析等待消费停止检查，录制总计时在Relay创建之前开始。重定向和HLS子资源同样执行域/IP/HTTPS规则及解析期限。停止/超时先回收解析子进程；未确认回收明确失败，不伪造媒体已关闭。60秒是录制预算（含初始媒体DNS），不包含之前有独立超时的房间解析及之后的停止封装/导入时间。
+
+独立静态审查与离线/本地合成回归只能支持用户自有或授权已知来源的限定短试录，不替代动态出站隔离、任意不可信媒体安全、真实平台成功或长期稳定性验收。尚无具体真实直播链接时，不发起试录。

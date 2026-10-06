@@ -13,12 +13,13 @@ export type CaptureRun = {
 }
 export type CaptureHealth = {
   enabled: boolean
+  limits?: { max_seconds: number; max_bytes: number }
   ffmpeg_ready: boolean
   ffprobe_ready: boolean
   execution: { ready: boolean; automatic_dispatch: boolean; state: string; reason: string | null }
   providers: Record<
     string,
-    { dependencies_ready?: boolean; device_name?: string; reason?: string; [key: string]: unknown }
+    { dependencies_ready?: boolean; start_ready?: boolean; blockers?: {code: string; message: string}[]; device_name?: string; reason?: string; [key: string]: unknown }
   >
 }
 export const isActive = (run: CaptureRun) =>

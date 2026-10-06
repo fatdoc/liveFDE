@@ -82,7 +82,7 @@ export function CapturePanel({
     health.ffprobe_ready &&
     health.execution?.ready === true &&
     health.execution.automatic_dispatch &&
-    provider?.dependencies_ready === true
+    provider?.start_ready === true
   const validSource =
     platform === 'wechat' || /^https:\/\/live\.douyin\.com\/\d+\/?$/.test(source.trim())
   async function start() {
@@ -156,13 +156,21 @@ export function CapturePanel({
     <section className="asr-section">
       <h2>直播采集</h2>
       <p className="muted">录制完成后进入场次材料。转写需要你手动开始。</p>
+      {ready && (
+        <p className="muted">
+          配置已就绪，可测试录制；真实直播源尚待验证。
+          {health?.limits && ` 单次最多 ${health.limits.max_seconds} 秒 / ${Math.round(health.limits.max_bytes / 1000000)} MB。`}
+        </p>
+      )}
       {!ready && (
         <p className="asr-warning">
           {!loaded
             ? '正在读取采集服务状态；未确认就绪前无法启动。'
             : !health?.enabled
               ? '采集服务尚未启用。'
-              : '采集执行环境尚未就绪，请等待配置完成。'}
+              : provider?.blockers?.length
+                ? provider.blockers.map((item) => item.message).join(' ')
+                : '未收到平台就绪信息，请刷新状态或等待服务更新。'}
         </p>
       )}
       {platform === 'douyin' ? (

@@ -1,6 +1,6 @@
 // Synthetic contract checks only. Requires local preview on 5205, never a platform request.
 async (page) => {
- let state={revision:'0',configured:false,status:'not_configured',checked_at:null,checked_source:null,last_error:null,service_ready:true,checked_state:null}
+ let state={revision:'0',configured:false,status:'not_configured',checked_at:null,checked_source:null,last_error:null,service_ready:false,checked_state:null}
  let checks=0, saves=0, clearCalls=0, conflict=false, empty=false, latestRevision='0'
  await page.route('**/api/v1/**',async route=>{
   const req=route.request(),path=new URL(req.url()).pathname;let data,status=200
@@ -30,6 +30,8 @@ async (page) => {
  if(await page.locator('body').innerText().then(t=>t.includes('synthetic_cookie=')))throw Error('secret displayed')
  latestRevision=state.revision
  await page.getByPlaceholder('https://live.douyin.com/数字房间号').fill('https://live.douyin.com/123456')
+ await page.getByText('服务未就绪',{exact:true}).waitFor()
+ if(await page.getByRole('button',{name:'仅检查连接',exact:true}).isDisabled())throw Error('offline recorder incorrectly blocked parser check')
  await page.getByRole('button',{name:'仅检查连接',exact:true}).click()
  await page.getByText('当次解析已验证',{exact:true}).waitFor()
  await page.getByText('当次解析：尚未开播，仍属于解析成功。',{exact:false}).waitFor()
@@ -51,5 +53,5 @@ async (page) => {
  await page.getByRole('button',{name:'确认清除 Cookie',exact:true}).click()
  await page.getByText('未配置',{exact:true}).waitFor()
  if(checks!==2||saves!==2||clearCalls!==1)throw Error('unexpected automatic request')
- return {passed:['save clears secret','saved differs from verified','offline parse success','empty response not expired','revision conflict blocks then refreshes','clear revision','no automatic check'],checks,saves,clearCalls}
+ return {passed:['parser check independent of recorder readiness','save clears secret','saved differs from verified','offline parse success','empty response not expired','revision conflict blocks then refreshes','clear revision','no automatic check'],checks,saves,clearCalls}
 }

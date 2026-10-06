@@ -7,7 +7,9 @@ test('empty, transport and schema failures never assert cookie expiry', () => {
     assert.ok(platformError(code).length > 0)
     assert.doesNotMatch(platformError(code), /Cookie 已过期|Cookie 失效|请更新 Cookie/)
   }
-  assert.match(platformError('source_auth_required'), /重新登录/)
+  assert.match(platformError('source_auth_required'), /核对登录及授权条件/)
+  assert.doesNotMatch(platformError('source_auth_required'), /已过期|要求重新登录/)
+  assert.equal(platformStatus.needs_update, '需要核对接入信息')
 })
 test('saved credentials and a successful parse remain distinct states', () => {
   assert.notEqual(platformStatus.unverified, platformStatus.verified)

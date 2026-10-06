@@ -95,7 +95,7 @@ function Editor({ session, expired }: { session: Session; expired: () => void })
     if (kind === 'save' && !cookie.trim()) return
     if (
       kind === 'check' &&
-      (!saved.configured || !saved.service_ready || cookie || !validDouyinSource(source))
+      (!saved.configured || cookie || !validDouyinSource(source))
     )
       return
     lock.current = true
@@ -251,7 +251,6 @@ function Editor({ session, expired }: { session: Session; expired: () => void })
                 busy ||
                 blocked ||
                 !saved.configured ||
-                !saved.service_ready ||
                 !!cookie ||
                 !validDouyinSource(source)
               }

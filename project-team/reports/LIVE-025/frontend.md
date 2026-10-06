@@ -14,3 +14,6 @@ FE子代理/root/eng_live001，独立副本.worktrees/LIVE-025-frontend，基线
 
 ## 边界
 没有使用用户Cookie，没有真实平台检查或采集请求，也未修改后端、模型、锁文件、CI或站点部署。独立集成验收需使用BE实际服务确认权限/私密存储/工作区隔离与worker消费；mock不能证明这些后端行为。node_modules仅使用临时本地链接，提交前移除，不入Git。
+
+## 非作者 Review 修正
+ARC指出service_ready表示完整采集执行器，不是parser门禁：现已移除连接检查对service_ready的禁止，保留“服务未就绪”状态，parser缺失交后端503分类反馈。合成浏览器配置service_ready=false仍完成显式检查，8类检查通过；检查次数仍仅2次，无平台实请求。source_auth_required改为“平台拒绝访问，请核对登录及授权条件，必要时更新 Cookie。”；needs_update显示“需要核对接入信息”，不确断过期。错误分类5/5与构建再次通过。

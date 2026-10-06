@@ -12,7 +12,7 @@ export const platformStatus: Record<DouyinSettings['status'], string> = {
   not_configured: '未配置',
   unverified: '已保存 · 尚未验证',
   verified: '当次解析已验证',
-  needs_update: '需要更新 Cookie',
+  needs_update: '需要核对接入信息',
   check_failed: '检查未通过',
 }
 export function platformError(code: string | null) {
@@ -21,7 +21,7 @@ export function platformError(code: string | null) {
     https_required: '直播源地址不符合当前 HTTPS 要求，本次未通过检查。',
     domain_not_allowed: '直播来源域未获允许，本次未通过检查。',
     unsafe_stream_url: '直播来源地址不符合安全策略，本次未通过检查。',
-    source_auth_required: '平台要求重新登录，请更新 Cookie 后检查。',
+    source_auth_required: '平台拒绝访问，请核对登录及授权条件，必要时更新 Cookie。',
     source_http_error: '平台返回 HTTP 错误，本次未验证登录状态。',
     source_rate_limited: '平台限制请求频率，请等待后手动检查。',
     source_challenge_required: '平台要求额外验证，本次无法确认连接。',

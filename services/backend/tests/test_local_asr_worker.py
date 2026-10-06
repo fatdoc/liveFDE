@@ -2,7 +2,6 @@
 
 import asyncio
 import os
-import shutil
 import socket
 import tempfile
 import wave
@@ -91,16 +90,19 @@ class Synthetic:
 
 @pytest.fixture
 def paths():
-    # Keep sockaddr below macOS's 104-byte bound, all artifacts in the approved runtime.
-    parent = Path("/Users/docfat/Desktop/个人/project/直播体系FDE/runtime/live-006c")
-    root = Path(tempfile.mkdtemp(prefix="w", dir=parent))
-    os.chmod(root, 0o700)
-    audio = root / "sample.wav"
-    with wave.open(str(audio), "wb") as output:
-        output.setparams((1, 2, 16000, 0, "NONE", "not compressed"))
-        output.writeframes(b"\0\0" * 3200)
-    yield root, audio
-    shutil.rmtree(root)
+    # Keep socket paths short and artifacts outside the checkout on both CI and macOS.
+    checkout = Path(__file__).resolve().parents[3]
+    workspace = checkout.parent.parent if checkout.parent.name == ".worktrees" else checkout.parent
+    parent = workspace / "runtime/live-019"
+    parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="w", dir=parent) as directory:
+        root = Path(directory)
+        os.chmod(root, 0o700)
+        audio = root / "sample.wav"
+        with wave.open(str(audio), "wb") as output:
+            output.setparams((1, 2, 16000, 0, "NONE", "not compressed"))
+            output.writeframes(b"\0\0" * 3200)
+        yield root, audio
 
 
 def req(**updates):

@@ -75,6 +75,7 @@ CAPTURE_SCOPE = [
 ]
 SCOPES = {
     "LIVE-019": [
+        "services/backend/tests/test_local_asr_worker.py",
         ".github/workflows/checks.yml",
         "scripts/checks/",
         "docs/operations/github-ci.md",

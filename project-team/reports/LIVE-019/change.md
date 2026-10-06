@@ -20,3 +20,7 @@ ARC 独立任务 01a0ff89-4e64-7242-a012-92850d916a87 于 2026-10-06 复核固�
 ## 边界与回滚
 
 不代表腾讯云/本地真实模型、抖音/视频号实平台验证通过。不向CI注入生产密钥；不上传运行日志、原片或数据库。保留历史PR，本轮未处理。异常时 revert 此任务提交；不通过删除测试/continue-on-error使CI变绿。
+
+## 完整套件发现的第二处路径耦合
+
+首轮远端 run 37467970897：333 passed、20 errors；错误全部是 test_local_asr_worker.py 的 paths 夹具硬编码 Mac runtime 目录不存在。将该单文件测试夹具登记进范围，按当前 checkout（包括 .worktrees）推导 workspace/runtime/live-019，使用 TemporaryDirectory 自动清理自己创建的目录。继续运行全部20项真实 Unix Socket 测试，无跳过、无模型下载、生产 ASR 实现不变。该修复需新 head 独立复核，首版批准不冒充后续批准。

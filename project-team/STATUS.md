@@ -24,7 +24,8 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-020 | CAP-01 | integrated_limited | PR11/main4dcab61；执行器/列表/就绪及独立361通过，真实平台及出站隔离待验 |
 | LIVE-021 | FE-01 | integrated_limited | PR12/mainf0a6ee6；真实页面接线与手动本地转写通过，真实来源尚未开放 |
 | LIVE-023 | ARC/QA | done | PR14已合并ddcfb974；独立70通过与最终CI通过；抖音限定配置就绪，真实源解析失败另见LIVE-024 |
-| LIVE-024 | ARC/ENG/QA | review | 676c439独立109通过；真实一次复验source_empty_response，无媒体；正常浏览器/会话待确认，PR15收尾 |
+| LIVE-024 | ARC/ENG/QA | done | PR15合并52bfde6；独立109通过、CI通过；原真实空响应保留，后续会话/地址条件见LIVE-025 |
+| LIVE-025 | ARC/BE/FE/QA | in_review | 工作区平台接入设置与受策略约束的选流；9e9c80e独立Review通过(150+差异34)，PR16 CI/本地交接中；真实新房间只返回HTTP，尚无录制 |
 | LIVE-022 | ARC/QA | in_review | 隔离本机361独立通过；浏览器/原生receiver/串行本地ASR已验，首次ASR停止异常保留跟进 |
 
 待决策：评分标准；后续多场景标注样本、真实云配置与预算。已授权的本轮公开本地样本实测完成，不等于新增云调用授权。

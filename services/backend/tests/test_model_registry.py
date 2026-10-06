@@ -201,3 +201,37 @@ def test_declared_protocol_capability_and_local_url_validation(registry, capabil
     )
     with pytest.raises(ProviderConfigError):
         load_model_config(root, environment="test", environ={})
+
+
+def test_lan_ollama_and_embedding_device_deep_merge_preserves_siblings(registry):
+    root, _ = registry
+    (root / "models.yaml").write_text("""revision: lan-merge
+models:
+  chat_local:
+    capability: llm
+    route: {protocol: ollama, model: selected-chat, base_url: 'http://127.0.0.1:11434'}
+  embed_local:
+    capability: embedding
+    route: {protocol: huggingface, model: selected-embedding}
+    parameters: {device: cpu, model_path: models/embedding-selected}
+aliases:
+  llm.default: chat_local
+  embedding.default: embed_local
+""")
+    (root / "local.yaml").write_text("""models:
+  chat_local:
+    route: {base_url: 'http://192.168.1.100:11434'}
+  embed_local:
+    parameters: {device: mps}
+""")
+    registry = ModelRegistry(load_model_config(root, environment="test", environ={}))
+    chat, embedding = registry.get("llm.default"), registry.get("embedding.default")
+    assert chat.route.base_url == "http://192.168.1.100:11434"
+    assert chat.route.model == "selected-chat"
+    assert chat.route.protocol == "ollama"
+    assert embedding.parameters.device == "mps"
+    assert embedding.parameters.model_path == "models/embedding-selected"
+    assert embedding.route.model == "selected-embedding"
+    for name in ("llm.default", "embedding.default"):
+        with pytest.raises(ProviderConfigError, match="not_executable"):
+            registry.resolve(name, allow_network=True)

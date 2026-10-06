@@ -56,3 +56,7 @@ export function safeReason(code: string | null) {
   }
   return code ? reasons[code] || '连接未通过检查，请管理员核对配置或服务状态。' : ''
 }
+
+export function validTimeout(seconds: number) {
+  return Number.isInteger(seconds) && seconds >= 1 && seconds <= 120
+}

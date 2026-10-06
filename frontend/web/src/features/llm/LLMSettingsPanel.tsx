@@ -7,6 +7,7 @@ import {
   savePayload,
   safeReason,
   statusText,
+  validTimeout,
   type Draft,
   type LLMSettings,
 } from './settings'
@@ -152,8 +153,7 @@ function Editor({ session, expired }: { session: Session; expired: () => void })
     draft &&
     !!draft.base_url.trim() &&
     !!draft.model.trim() &&
-    Number.isFinite(draft.timeout_seconds) &&
-    draft.timeout_seconds > 0 &&
+    validTimeout(draft.timeout_seconds) &&
     (!key || !!key.trim())
   return (
     <>
@@ -199,9 +199,14 @@ function Editor({ session, expired }: { session: Session; expired: () => void })
               <input
                 type="number"
                 min={1}
+                max={120}
+                step={1}
+                aria-describedby="llm-timeout-help"
+                aria-invalid={!validTimeout(draft.timeout_seconds)}
                 value={draft.timeout_seconds}
                 onChange={(e) => setDraft({ ...draft, timeout_seconds: Number(e.target.value) })}
               />
+              <small id="llm-timeout-help">请输入 1–120 的整数秒数。</small>
             </label>
             <label className="field">
               API 密钥

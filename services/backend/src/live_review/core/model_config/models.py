@@ -1,5 +1,6 @@
 """Immutable public registry contracts; mutable YAML maps are normalized into tuples."""
 
+from ipaddress import ip_address, ip_network
 from typing import Literal
 from urllib.parse import urlsplit
 
@@ -27,6 +28,20 @@ class ModelParameters(FrozenModel):
         ):
             raise ValueError("invalid_model_path")
         return value
+
+
+def private_endpoint(host):
+    """Declaration-only allowlist; never resolve DNS or connect to validate a host."""
+    if host == "localhost":
+        return True
+    try:
+        address = ip_address(host)
+    except ValueError:
+        return False
+    return address.is_loopback or any(
+        address in ip_network(network)
+        for network in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7")
+    )
 
 
 class DeclaredRoute(FrozenModel):
@@ -65,8 +80,8 @@ class DeclaredRoute(FrozenModel):
             or ".." in parsed.path.split("/")
         ):
             raise ValueError("invalid_declared_endpoint")
-        if parsed.scheme == "http" and parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
-            raise ValueError("plaintext_endpoint_must_be_loopback")
+        if parsed.scheme == "http" and not private_endpoint(parsed.hostname):
+            raise ValueError("plaintext_endpoint_must_be_private")
         if parsed.port is not None and not 1 <= parsed.port <= 65535:
             raise ValueError("invalid_port")
         return self

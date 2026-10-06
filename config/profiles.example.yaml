@@ -20,6 +20,7 @@ models:
       enabled: false
       protocol: ollama
       model: your-local-chat-model
+      # 声明可覆盖为局域网地址，例如 http://192.168.1.100:11434；不会主动连接。
       base_url: http://127.0.0.1:11434
     parameters:
       temperature: 0.2

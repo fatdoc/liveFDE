@@ -9,3 +9,5 @@ Owner /root/be_live004a；base74df3b1；branchfeat/LIVE-006B-registry；worktree
 BE接口load_model_config/LoadedModelConfig.source_locator、ModelRegistry.get/validate_references/snapshot/resolve、restore_snapshot已同步；jobs接线及旧v1真实回归由其独立子任务完成。CLI环境可信与源定位选择由接线层校验，本模块不把YAML环境当可信。详细使用见docs/ai/model-registry.md及config/profiles.example.yaml。
 
 局域网声明修订：Ollama非执行HTTP描述放宽到localhost/loopback/RFC1918私有IP/IPv6 ULA，不解析DNS、不联网；URL凭据/query/fragment限制保持，ASR HTTPS规则完全未改。新增明确深merge回归：基础127.0.0.1→local192.168.1.100，embedding cpu→mps，同时保留model与model_path兄弟字段；两描述resolve仍拒。原38项+新增1项=39项；连同legacy37项共76项通过。
+
+独立QA发现低层base_url内嵌userinfo可被上层null覆盖后绕过最终URL校验；已在每层merge之前拒base_url的userinfo/query/fragment，并扩展client_secret等_secret/_password/_token明文键。新增5个覆盖回归，固定错误不回显QA_SENTINEL。当前44项新配置测试+37legacy=81项通过，Ruff通过，待最新head独立复审。

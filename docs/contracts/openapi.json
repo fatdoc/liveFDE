@@ -2976,6 +2976,32 @@
             "type": "string",
             "format": "uuid",
             "title": "Session Id"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 14400.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "max_bytes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 17179869184.0,
+                "minimum": 1048576.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Bytes"
           }
         },
         "additionalProperties": false,

@@ -1,0 +1,7 @@
+import {useEffect} from 'react'
+import {useEditor,EditorContent} from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import {Bold,Italic,List,ListOrdered,Undo2,Redo2} from 'lucide-react'
+import {IconButton} from './UI'
+export function RichEditor({html,onChange}:{html:string;onChange:(v:string)=>void}){const editor=useEditor({extensions:[StarterKit],content:html,editorProps:{attributes:{'aria-label':'我的适配稿',class:'rich-content'}},onUpdate:({editor})=>onChange(editor.getHTML())});useEffect(()=>{if(editor&&editor.getHTML()!==html)editor.commands.setContent(html,{emitUpdate:false})},[html,editor]);if(!editor)return null
+return <div className="rich-editor"><div className="editor-toolbar"><span>正文</span><i/><IconButton label="加粗" onClick={()=>editor.chain().focus().toggleBold().run()}><Bold size={17}/></IconButton><IconButton label="斜体" onClick={()=>editor.chain().focus().toggleItalic().run()}><Italic size={17}/></IconButton><i/><IconButton label="项目列表" onClick={()=>editor.chain().focus().toggleBulletList().run()}><List size={18}/></IconButton><IconButton label="编号列表" onClick={()=>editor.chain().focus().toggleOrderedList().run()}><ListOrdered size={18}/></IconButton><div className="toolbar-spacer"/><IconButton label="撤销" onClick={()=>editor.chain().focus().undo().run()}><Undo2 size={17}/></IconButton><IconButton label="重做" onClick={()=>editor.chain().focus().redo().run()}><Redo2 size={17}/></IconButton></div><EditorContent editor={editor}/></div>}

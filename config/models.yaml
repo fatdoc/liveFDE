@@ -1,0 +1,16 @@
+# 基础配置：没有默认供应商，也不自动启用网络。
+schema_version: 2
+revision: registry-v2
+media:
+  segment_seconds: 300
+  max_duration_seconds: 14400
+models:
+  asr_unconfigured:
+    capability: asr
+    route: {enabled: false, protocol: disabled}
+  llm_unconfigured:
+    capability: llm
+    route: {enabled: false, protocol: disabled}
+aliases:
+  asr.default: asr_unconfigured
+  llm.default: llm_unconfigured

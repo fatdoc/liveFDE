@@ -1,0 +1,18 @@
+# 复制到同目录local.yaml（gitignored）后修改；此文件不会自动加载。
+# 多模型并存，alias选择默认项；enabled=false只是准备profile，不授权调用。
+models:
+  my_audio:
+    capability: asr
+    route:
+      enabled: false
+      protocol: openai_compatible
+      operation: audio_transcriptions
+      provider: your_vendor
+      model: your-audio-model
+      base_url: https://example.invalid/v1
+      key_env: YOUR_ASR_API_KEY
+      timeout_seconds: 60
+      max_requests: 100
+      max_cost_usd: 1.0
+aliases:
+  asr.default: my_audio

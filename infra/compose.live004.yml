@@ -1,0 +1,15 @@
+name: live-fde-004
+services:
+  postgres:
+    image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+    environment:
+      POSTGRES_USER: live004_admin
+      POSTGRES_DB: live004_control
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?private env required}
+    ports: ["127.0.0.1:15440:5432"]
+    volumes: ["${LIVE_RUNTIME:?workspace runtime required}/postgres:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U live004_admin -d live004_control"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

@@ -1,0 +1,105 @@
+[
+  {
+    "alembic": "upgrade head successful; no business revisions"
+  },
+  {
+    "path": "/health/live",
+    "expected": 200,
+    "body": {
+      "status": "alive"
+    }
+  },
+  {
+    "path": "/health/ready",
+    "expected": 200,
+    "body": {
+      "status": "ready",
+      "checks": {
+        "database": "up",
+        "broker": "up"
+      }
+    }
+  },
+  {
+    "worker": "pong"
+  },
+  {
+    "mode": "preflight_only",
+    "checks": {
+      "database": "up",
+      "broker": "up"
+    }
+  },
+  {
+    "path": "/health/ready",
+    "expected": 200,
+    "body": {
+      "status": "ready",
+      "checks": {
+        "database": "up",
+        "broker": "up"
+      }
+    }
+  },
+  {
+    "worker": "pong"
+  },
+  {
+    "path": "/health/live",
+    "expected": 200,
+    "body": {
+      "status": "alive"
+    }
+  },
+  {
+    "path": "/health/ready",
+    "expected": 503,
+    "body": {
+      "status": "not_ready",
+      "checks": {
+        "database": "down",
+        "broker": "up"
+      }
+    }
+  },
+  {
+    "path": "/health/ready",
+    "expected": 200,
+    "body": {
+      "status": "ready",
+      "checks": {
+        "database": "up",
+        "broker": "up"
+      }
+    }
+  },
+  {
+    "path": "/health/live",
+    "expected": 200,
+    "body": {
+      "status": "alive"
+    }
+  },
+  {
+    "path": "/health/ready",
+    "expected": 503,
+    "body": {
+      "status": "not_ready",
+      "checks": {
+        "database": "up",
+        "broker": "down"
+      }
+    }
+  },
+  {
+    "path": "/health/ready",
+    "expected": 200,
+    "body": {
+      "status": "ready",
+      "checks": {
+        "database": "up",
+        "broker": "up"
+      }
+    }
+  }
+]

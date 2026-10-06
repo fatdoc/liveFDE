@@ -1,0 +1,11 @@
+{
+  "synthetic": true,
+  "port": 8194,
+  "checks": [
+    "cookie/admin/session survive API restart and final migration",
+    "real WAV upload/finalize/association/range/auth/restart bytes match",
+    "logout revokes persisted cookie"
+  ],
+  "fresh_A_to_B_to_C_upgrade": true,
+  "material_sha256": "c726d333dd159a31423f3480dbb1c5c4a9dfcd30efe1f7e12ade390dc92e8908"
+}

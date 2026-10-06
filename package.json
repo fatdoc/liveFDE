@@ -1,0 +1,10 @@
+{
+  "name": "live-review-workbench",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "npm --prefix frontend/web run dev",
+    "build": "npm --prefix frontend/web run build",
+    "test:sites": "npm --prefix frontend/web run test:sites"
+  }
+}

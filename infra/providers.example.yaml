@@ -1,0 +1,48 @@
+# 直播系统｜模型配置填写模板（打开本文件即可按注释填写）
+# 本文件不含真实密钥，也不会发起模型请求。
+# 先复制到工作区 runtime/live-006/providers.yaml，再修改自己的副本。
+# 第一步：填写下方 ASR 的 provider、model、base_url。
+# 第二步：key_env 填“保存密钥的环境变量名称”，真实密钥不写进 YAML。
+# 第三步：确认样本、请求次数、时长和费用预算后，再启用并由操作员明确授权。
+# 当前 enabled:false 保持关闭；示例数字和占位地址不是调用授权。
+# 完整填写及终端密钥步骤：app/docs/ai/provider-configuration.md「先填写这几项」。
+
+schema_version: 1                 # 配置格式版本，保持 1，不用改。
+revision: unconfigured-v2         # 你的配置版本名；修改配置时可改成自己的版本号。
+
+media:
+  segment_seconds: 300            # 每段音频 300 秒（5分钟）；通常保持默认。
+  ffmpeg_timeout_seconds: 600     # 单次抽音处理最多等待 600 秒。
+  ffprobe_timeout_seconds: 30     # 读取视频基本信息最多等待 30 秒。
+  sample_rate: 16000              # 输出音频采样率，当前固定 16000，不用改。
+  channels: 1                    # 输出单声道，当前固定 1，不用改。
+  max_duration_seconds: 14400     # 每个任务允许的媒体/音频时长上限，示例为4小时。
+
+providers:
+  # ASR = 把音频转成文字，并返回文字在录像中的时间位置。
+  asr:
+    enabled: false               # false=关闭；填完也先保持false，真实调用前另行确认。
+    protocol: openai_compatible   # 接口协议，不表示已选择OpenAI厂商；此项保持不变。
+    operation: audio_transcriptions # 音频转写操作，此项保持不变。
+    provider: your_vendor        # 【填写】给供应商起英文标识，如 my_asr；小写字母/数字/_/-。
+    model: your-audio-model       # 【填写】供应商提供的语音转写模型ID，不是聊天模型名。
+    base_url: https://example.invalid/v1 # 【填写】供应商API基础地址；当前是无效占位地址。
+    # base_url须HTTPS（默认443端口）。程序会自动追加 /audio/transcriptions，勿重复填写。
+    # 必须确认该服务/模型支持 verbose_json 和 segment时间戳；仅兼容聊天接口不够。
+    key_env: LIVE_ASR_API_KEY     # 【密钥位置】这里填变量名，不是密钥本身。可保留这个名字。
+    # 真实密钥放在运行程序的终端环境变量 LIVE_ASR_API_KEY 中。
+    # 仅把密钥写到一个.env文件不会自动生效：当前operator不自动加载任意.env文件。
+    timeout_seconds: 60          # 一次转写请求的等待期限，示例60秒。
+    max_requests: 100             # 每个任务允许的最多请求数；通常每段一次。示例不是授权。
+    max_cost_usd: 1.0             # 每个任务声明的美元预算，示例1美元不是实际费用或授权。
+    # 当前没有供应商价格/账单核算，金额字段不能精确保证不超费；请求数和时长有硬限制。
+
+  # 文本总结模型：预留配置位置，目前尚未实现执行，请保持关闭。
+  text:
+    enabled: false
+    protocol: disabled
+
+  # 画面理解模型：预留配置位置，目前尚未实现执行，请保持关闭。
+  vision:
+    enabled: false
+    protocol: disabled

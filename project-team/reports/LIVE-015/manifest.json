@@ -1,0 +1,244 @@
+{
+  "base_sha": "77875bfbda6420056adb5f0098b7f0d88b62ee7f",
+  "code_sha": "e88f681c931e21d7378844437e35f996f728040b",
+  "code_tree": "b7c4eb105ae8cb1c890feaf1ae753454e17780d1",
+  "reviewed_author_sha": "e78014b5f84461b3775d1ad246201445c5a6376c",
+  "scope": "Default-disabled capture foundation only. Subsequent closure documents are outside this immutable code manifest. Real-platform acceptance remains pending.",
+  "files": [
+    {
+      "path": "config/capture-policy.example.yaml",
+      "bytes": 623,
+      "sha256": "bc629e23e21b706af2e552ee25de67b3c313e69893e208bf45e325e7eaee3b88"
+    },
+    {
+      "path": "docs/README.md",
+      "bytes": 2170,
+      "sha256": "bb5b87fdd41d3b99bb44b9bbbc4068c4244fc062e314d2666f8bf9b21a239c9c"
+    },
+    {
+      "path": "docs/capture.md",
+      "bytes": 16406,
+      "sha256": "0c81076b6122ae0aa872157b798faa9ac9b348dad00e14cca81d82fa75324c1f"
+    },
+    {
+      "path": "docs/contracts/implementation-status.md",
+      "bytes": 5757,
+      "sha256": "70881a614f4f16bec928d3c44547dc46279489ef760db850fb2a2e8c3b3b1e7e"
+    },
+    {
+      "path": "docs/contracts/openapi.json",
+      "bytes": 68994,
+      "sha256": "2522c71e0221ef65ca2dc848823469b5eb200cbeb451b413c6ead4fef376ec26"
+    },
+    {
+      "path": "project-team/STATUS.md",
+      "bytes": 5256,
+      "sha256": "1d7e8aaa811f12ca0b4d636431dea1847e8fd14d09df49511002bbb2f7d209a7"
+    },
+    {
+      "path": "project-team/access/RESOURCE-LOCKS.md",
+      "bytes": 11528,
+      "sha256": "38efd35beed43d71b9c11797e50085f35724d7bda74c7c9431fa675f0c12e66e"
+    },
+    {
+      "path": "project-team/reports/LIVE-015/DouyinLiveRecorder-LICENSE.txt",
+      "bytes": 1062,
+      "sha256": "66769bc39760cfc912ab318c6f08694948363b5485550934d2e50710e0227adc"
+    },
+    {
+      "path": "project-team/reports/LIVE-015/arc-review.md",
+      "bytes": 4857,
+      "sha256": "5db9ac466336feba5863d5c31237dac17e2f28f0d54b9985043b1026de4bf886"
+    },
+    {
+      "path": "project-team/reports/LIVE-015/change.md",
+      "bytes": 8605,
+      "sha256": "b9e285a5bbf4a960e69e7eb45270023acf490a4a37aadfad2aa72b986afcfc76"
+    },
+    {
+      "path": "project-team/reports/LIVE-015/files.txt",
+      "bytes": 2075,
+      "sha256": "2c6bdd21b3b127998a97ed3e2d63063c73fbffedb9d4705bcbd03aa87f6fca19"
+    },
+    {
+      "path": "project-team/reports/LIVE-015/integration.md",
+      "bytes": 3444,
+      "sha256": "7786b21c093a79ebd7357c1d32eb8e18bee2d112401172fe573dbccc9eec6641"
+    },
+    {
+      "path": "project-team/reports/LIVE-015/upstream-dependencies.json",
+      "bytes": 1267,
+      "sha256": "c8bad3ebd36269e315fc0bf1cc4d2f8eb2be176fcd85d0806fa17302e7fe982d"
+    },
+    {
+      "path": "project-team/reports/LIVE-015/verification.json",
+      "bytes": 2234,
+      "sha256": "0650e6ae572c53f9d6c3ff658cfff91d74d84cadc988b8d094a753d75f1725b8"
+    },
+    {
+      "path": "project-team/reports/LIVE-015/wechat-finder-dlna-LICENSE.txt",
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "project-team/tasks/LIVE-015.md",
+      "bytes": 5105,
+      "sha256": "4fadbd67cc125451acd06cf0c79a0656d813573a6acc1377e320a1d788cebbba"
+    },
+    {
+      "path": "scripts/checks/live015_acceptance.py",
+      "bytes": 2690,
+      "sha256": "0134bf2602ec3726fd6806ee173cc6b1c1af32f7e64b7317d8889534b66e72d7"
+    },
+    {
+      "path": "scripts/checks/live015_environment.py",
+      "bytes": 3163,
+      "sha256": "e333dc2f02fc8207a211b7bcc0065259df1c7ceaba978dee8ac7df5f5d3523cb"
+    },
+    {
+      "path": "scripts/checks/test_live015_environment.py",
+      "bytes": 3089,
+      "sha256": "3e2faccedaa3a21d45fefcfbc585ee0d698697d2bfeb2e7f2f79caa5a347272c"
+    },
+    {
+      "path": "services/backend/migrations/env.py",
+      "bytes": 1205,
+      "sha256": "a8a5954d25d76cd5121ecb91e228dab12271ad1d0e593c15a14ba742853e7b66"
+    },
+    {
+      "path": "services/backend/migrations/versions/0006_capture.py",
+      "bytes": 1371,
+      "sha256": "e1e6be3b9bd25bfc5f74d74dcc0f2a7a0502b6af0e68f9e5d58b528e926a2879"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/capture/contracts.py",
+      "bytes": 1814,
+      "sha256": "c9b66e7958bcaebcacea8328b0734cecd48ce23f2314816da1446463da58d9da"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/capture/douyin_bridge.py",
+      "bytes": 2929,
+      "sha256": "4be9e09b10b98dd6f4a00275c3500c13636e07e86db7e106e138e0f1ba7cb206"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/capture/hls.py",
+      "bytes": 5963,
+      "sha256": "217df58bfad73fff735002c040d8b3ffc6f5e170ad89854ff81e9c0832e4b2fb"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/capture/policy.py",
+      "bytes": 2816,
+      "sha256": "eb16eb874722c1a720b800223c70d390d2051852796b879a5097cdb76626b128"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/capture/providers.py",
+      "bytes": 6012,
+      "sha256": "81d0619709e87f91352463caf10676aac7b58d42b5928b2f2289f229baac114d"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/capture/recording.py",
+      "bytes": 6792,
+      "sha256": "5d00ce195ca26bfb2671b49092eca6af699d33f3649b072ecb0cc59fd6de5f86"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/capture/relay.py",
+      "bytes": 7173,
+      "sha256": "8588a358513320885321457efb3cab1207c83fd7fed28ebea9a7ffafad0e3869"
+    },
+    {
+      "path": "services/backend/src/live_review/main.py",
+      "bytes": 1918,
+      "sha256": "f4c649ce41cb83e6d414236367c90d11e8f5d92f0b63b54a1f7b3f419b4639ad"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/capture/authorization.py",
+      "bytes": 1231,
+      "sha256": "3bba5de7683832a8bab7bd92ebf12347177263f5116872460b3b1799faf2dc54"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/capture/files.py",
+      "bytes": 1764,
+      "sha256": "440064e72ce8cc6f83669aade2e0fbc267fd34befc36e416194a1a4ead460733"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/capture/ingestion.py",
+      "bytes": 4976,
+      "sha256": "5f8661ee6d91cea5982f2ddd977fa0b26620a131414bbd395e4feaf9e9a3d56a"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/capture/models.py",
+      "bytes": 1907,
+      "sha256": "d46c1b8034cafef8510e3571c98e54e2a474668e763d6afab274a2dc5c58caf2"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/capture/router.py",
+      "bytes": 3429,
+      "sha256": "19d9b938295829921f1ced34fe747d2e0e996f73ccc587d71b2209162b8d6200"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/capture/schemas.py",
+      "bytes": 820,
+      "sha256": "5afb3a74c953a478370c0245b9d87e0cf7f8d3a50168239d32bb294e663df304"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/capture/service.py",
+      "bytes": 4522,
+      "sha256": "a03ce21600b45e0b1ce09633dd573adc7aea084c57bb7550167c62c10ccc3def"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/materials/association.py",
+      "bytes": 1760,
+      "sha256": "b23e4b0c168a02ff16d3e2b0c88e838bf56ca503433dc080088754c9bb76fd7c"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/materials/router.py",
+      "bytes": 6129,
+      "sha256": "d385d130544b044cf99512e7312166f7afdd246dde7624d159cc2046259f4873"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/capture_helper.py",
+      "bytes": 4721,
+      "sha256": "91cd2eac21cd204c7a439c89b21b147130e40ebad4def7c8a43f65c1b675d25a"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/capture_jobs.py",
+      "bytes": 5140,
+      "sha256": "902358a508d7d9991d1a2030f6bda510f6345fef959212378498ec8ddcee14ab"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/capture_operator.py",
+      "bytes": 1270,
+      "sha256": "e7d6598c7c6aad81f978a6a641a2f674f6a98a6db119c2bb59d9db4eed497ce5"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/handlers.py",
+      "bytes": 3175,
+      "sha256": "b534d3d5caa18ed24b7a5877ade4e1dd2087dfd3c934ae282165dbeabfebef0b"
+    },
+    {
+      "path": "services/backend/tests/capture_fixture.py",
+      "bytes": 3531,
+      "sha256": "88d89ebee3dd1ff6694ff42d2bce1677095f6b068537f5da343d195f93ad69c5"
+    },
+    {
+      "path": "services/backend/tests/test_capture_api.py",
+      "bytes": 9568,
+      "sha256": "7f3f2a01c8c5e9782042d85e9a241b4d7164e5dd7f42026712ae8c19009c3ffd"
+    },
+    {
+      "path": "services/backend/tests/test_capture_import.py",
+      "bytes": 11853,
+      "sha256": "c56543f00c10c62d6905554a852d77f3d36f224610c556b911742bd29e4ccf59"
+    },
+    {
+      "path": "services/backend/tests/test_capture_providers.py",
+      "bytes": 3247,
+      "sha256": "b6b35f5beb5d5211c28e9891d090db3a4a6a3fbec5513bb32e59d1dca943f8ca"
+    },
+    {
+      "path": "services/backend/tests/test_capture_recording.py",
+      "bytes": 11719,
+      "sha256": "ae794ae52abb653b54a24e45a90b9c10004af1af1605c5312cfefb1492f84f5c"
+    }
+  ]
+}

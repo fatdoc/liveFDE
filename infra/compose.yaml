@@ -1,0 +1,28 @@
+name: live-fde-002
+services:
+  postgres:
+    image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+    environment:
+      POSTGRES_USER: live002
+      POSTGRES_DB: live002
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?private env required}
+    ports: ["127.0.0.1:15432:5432"]
+    volumes: ["${LIVE_RUNTIME:?absolute workspace runtime required}/postgres:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U live002 -d live002"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  rabbitmq:
+    image: rabbitmq:4.1.5-management
+    hostname: live-fde-002-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: live002
+      RABBITMQ_DEFAULT_PASS: ${MQ_PASSWORD:?private env required}
+    ports: ["127.0.0.1:5673:5672", "127.0.0.1:15672:15672"]
+    volumes: ["${LIVE_RUNTIME:?absolute workspace runtime required}/rabbitmq:/var/lib/rabbitmq"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20

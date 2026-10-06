@@ -1,0 +1,32 @@
+# 本轮网关示例：公开通用profile可并入models.yaml；本机路径/device在local.yaml覆盖。
+# 不自动加载。只用服务器LIVE_MODEL_CONFIG_DIR指定的目录；真实key永远不写YAML。
+schema_version: 2
+revision: asr-gateway-v1
+media:
+  max_duration_seconds: 600
+  segment_seconds: 300
+models:
+  local_funasr:
+    capability: asr
+    route:
+      protocol: local_funasr
+      enabled: false
+      model: Fun-ASR-Nano-2512
+      model_root: /absolute/private/model-directory
+      worker_socket: /absolute/private/asr.sock
+      cache_idle_seconds: 60
+      device: cpu
+      punctuation_model: ct-punc
+  tencent_asr:
+    capability: asr
+    route:
+      protocol: tencent_asr
+      enabled: false
+      model: 16k_zh
+      stream_model: 16k_zh_en_speaker_2.0
+      secret_id_env: TENCENT_SECRET_ID
+      key_env: TENCENT_SECRET_KEY
+      app_id_env: TENCENT_APP_ID
+aliases:
+  asr.local: local_funasr
+  asr.tencent: tencent_asr

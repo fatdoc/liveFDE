@@ -1,0 +1,4 @@
+# 预发布环境覆盖：继承models.yaml，仓库默认所有模型disabled。
+# 不读取开发local.yaml及隐式.env；私有env必须显式指定且权限600。
+# 所有synthetic fixture配置均禁止；这里不放密钥，也不授权网络调用。
+{}

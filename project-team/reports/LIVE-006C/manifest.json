@@ -1,0 +1,463 @@
+{
+  "base_sha": "840d46182c3637bc95032751c463f57ef95b1b7e",
+  "code_sha": "751c331e834823021db6ba85bda410e5bd1fd04a",
+  "code_tree": "b1f19ae8f4b3117545b22d841c8a34abf6c2c6d3",
+  "scope": "All changed files through reviewed code commit; subsequent closure-only reports are outside this immutable code manifest.",
+  "files": [
+    {
+      "path": "config/asr-policy.example.yaml",
+      "bytes": 528,
+      "sha256": "84f85c4878ed8a3ee59a38efea2cdf5ba3a50223c5be9973f2fd2149c217d1e1"
+    },
+    {
+      "path": "config/asr.example.yaml",
+      "bytes": 952,
+      "sha256": "4995aaf0ff659f9af3a3336a2bf1e241ce3a429c6a6f52205520870e1072f297"
+    },
+    {
+      "path": "docs/asr-local.md",
+      "bytes": 6683,
+      "sha256": "c0e8f5d038d34c895b5912744c88c26a535b21062cabefb8909edb48b78dd426"
+    },
+    {
+      "path": "docs/asr-tencent.md",
+      "bytes": 5126,
+      "sha256": "a4bd0c5c9aa2f26add620555fc3d740f56e0a3d4570ab9441945e6106709db43"
+    },
+    {
+      "path": "docs/asr-worker.md",
+      "bytes": 6615,
+      "sha256": "686cf8baaf00a1087008d968d2dea261721e8bda2e84c7c21dd7184b7b07f2d0"
+    },
+    {
+      "path": "docs/asr.md",
+      "bytes": 7551,
+      "sha256": "79e3e9af4977d3e06f77d07a8c3130c9da3c11024cee17f5de69409c6ef26134"
+    },
+    {
+      "path": "docs/contracts/implementation-status.md",
+      "bytes": 5295,
+      "sha256": "a2a0b6d78210afae8d0c7bc956525587000d9da7120267903c902e69c4b6ddef"
+    },
+    {
+      "path": "docs/contracts/openapi.json",
+      "bytes": 62307,
+      "sha256": "137679d7c270a5522b914d5a5dc7949aa23e26acdd0600e7ec73bc146af222e8"
+    },
+    {
+      "path": "frontend/web/src/api/client.ts",
+      "bytes": 1712,
+      "sha256": "68561ee2efb50b7dbeaddef24c9ae7e18733826b6f17cba51160c12fc796a244"
+    },
+    {
+      "path": "frontend/web/src/auth/AdminSession.tsx",
+      "bytes": 2576,
+      "sha256": "797f59d08843b17824de8b000b30c9ec2b48b36e4f4d86570f72ff1978604af6"
+    },
+    {
+      "path": "frontend/web/src/features/asr/ASRSettingsPanel.tsx",
+      "bytes": 7690,
+      "sha256": "1b28fef6d7bde16558a11d22ae058732a51447317bb2a240067c82105933fb3d"
+    },
+    {
+      "path": "frontend/web/src/features/asr/TranscriptionTrial.tsx",
+      "bytes": 10433,
+      "sha256": "97b6a47409346bacc3134f5dac78e85000014330fefa1fba35b0cf03e9ce0134"
+    },
+    {
+      "path": "frontend/web/src/features/asr/asr.css",
+      "bytes": 2187,
+      "sha256": "448a569d42a84f9d3909c096ee000ebe9c65801beae579c29746d910a06e19cb"
+    },
+    {
+      "path": "frontend/web/src/features/asr/types.ts",
+      "bytes": 1257,
+      "sha256": "b91cdee9465e430c9c73e1ba47979168e589b519a9507dadcaeaff35bb3dfd50"
+    },
+    {
+      "path": "frontend/web/src/pages/Settings.tsx",
+      "bytes": 3789,
+      "sha256": "43bc8843c2d2a94aae39103ace4758a5bfce7cc3525e29a6c99c206bba414674"
+    },
+    {
+      "path": "frontend/web/vite.config.mjs",
+      "bytes": 476,
+      "sha256": "a19368b65595e6d51f863024b5c3cb09eca64d0e7178ad696ff1bd2592436070"
+    },
+    {
+      "path": "infra/compose.live006c.yml",
+      "bytes": 538,
+      "sha256": "8216d4373a6dc089a5a2793ca875a6d4047df1a357ef6b3d15fdb38f28b81fea"
+    },
+    {
+      "path": "project-team/STATUS.md",
+      "bytes": 3410,
+      "sha256": "c36c767e206c22157913e179357e4c96d851c89b385bcc95781aaadf32fe7291"
+    },
+    {
+      "path": "project-team/access/RESOURCE-LOCKS.md",
+      "bytes": 9612,
+      "sha256": "e20463a56838e394113a740ebcd865850c71febbda8c32c112a18d4991daf667"
+    },
+    {
+      "path": "project-team/reports/LIVE-006C/frontend-author.md",
+      "bytes": 5523,
+      "sha256": "d54c38e7ca06525c02ef7bd874f79c709270943f8756e9769496ab027e8345a8"
+    },
+    {
+      "path": "project-team/reports/LIVE-006C/local-worker.md",
+      "bytes": 3499,
+      "sha256": "66b7fab5ebd34f235b89e2586ca40ae12dc4ae69424f2abcfd8b9e0c4d5848c5"
+    },
+    {
+      "path": "project-team/reports/LIVE-006C/local.md",
+      "bytes": 8237,
+      "sha256": "01345f2097807f320168717bc0cc1520b73236f863f38c5fdbd6153b5975a4c8"
+    },
+    {
+      "path": "project-team/reports/LIVE-006C/quality-matrix.md",
+      "bytes": 3634,
+      "sha256": "71b8e6ff78b693f1f6c3556ae5478382e9c25dc2c32c879fd28df41e95471d48"
+    },
+    {
+      "path": "project-team/reports/LIVE-006C/stream.md",
+      "bytes": 3819,
+      "sha256": "7b99402e0e48207383f47dac206229c0e62681f0d457ae78ac33d3791c6c3dd7"
+    },
+    {
+      "path": "project-team/reports/LIVE-006C/tencent.md",
+      "bytes": 1530,
+      "sha256": "ea4d954f72cb7e3ddab4d34e9274efe621788022671a078b5aeacc404ff3888d"
+    },
+    {
+      "path": "project-team/tasks/LIVE-006C.md",
+      "bytes": 3004,
+      "sha256": "f895cf202533e2e55f4b79923125cabd61b8582293325cd427e10728c08af149"
+    },
+    {
+      "path": "scripts/checks/live006c_acceptance.py",
+      "bytes": 2003,
+      "sha256": "100bbb0806e371eeee125e15d134681c2203b0723c1ae6922d117baa6d00872d"
+    },
+    {
+      "path": "scripts/checks/live006c_environment.py",
+      "bytes": 4716,
+      "sha256": "ad3f025792dc107d147a4b0d97d5641e2f0d9fb06781b7c024980d1d93f99693"
+    },
+    {
+      "path": "scripts/checks/live006c_preview.py",
+      "bytes": 3862,
+      "sha256": "e07e09121c7c512d708f22a61c78459bfecb229ce88d5d69771753f00e83e231"
+    },
+    {
+      "path": "scripts/checks/live006c_runtime.py",
+      "bytes": 6051,
+      "sha256": "37fb8ed996b7f0dda0a82cd6291e63d57026fe53a7f9c274501dc3639fddd000"
+    },
+    {
+      "path": "scripts/checks/live006c_smoke.py",
+      "bytes": 6744,
+      "sha256": "fa8e7296ae32f2852ac7cecb502d41b3138eb5a81e891048e176c5cd47fad7d9"
+    },
+    {
+      "path": "scripts/checks/repository.py",
+      "bytes": 12355,
+      "sha256": "814f0a44a2722824a2d2909233661eb430ff81241eb1ccffbf289d76c269a332"
+    },
+    {
+      "path": "services/backend/migrations/env.py",
+      "bytes": 1126,
+      "sha256": "655f0dffb107e00b61a38db54d51d69fa8ed288484945fb8bc74e0f15abda977"
+    },
+    {
+      "path": "services/backend/migrations/versions/0005_asr_settings.py",
+      "bytes": 469,
+      "sha256": "f715fd565e3fd6d3bdd4534c3482d4c21eb0d0fa79a592c823f56ca05889ec78"
+    },
+    {
+      "path": "services/backend/pyproject.toml",
+      "bytes": 857,
+      "sha256": "f651782c7cf7534f97dd3d012bf8fefa0a9ad587f9c319c15a9b3cbc1cd21e33"
+    },
+    {
+      "path": "services/backend/src/live_review/core/config.py",
+      "bytes": 2492,
+      "sha256": "48b4453bd0d785df70084221db5a80eaf69dd2383324951cd73653fad5424d07"
+    },
+    {
+      "path": "services/backend/src/live_review/core/model_config/__init__.py",
+      "bytes": 7449,
+      "sha256": "5d4408342c891734ad2e567e565bac49085a1c4671a8733be6dcc687c9ab30dc"
+    },
+    {
+      "path": "services/backend/src/live_review/core/model_config/asr_routes.py",
+      "bytes": 2487,
+      "sha256": "f357b1eb977ef827e3f04362550da744246b07a444f911d2835302d78717087f"
+    },
+    {
+      "path": "services/backend/src/live_review/core/model_config/models.py",
+      "bytes": 6869,
+      "sha256": "c90c715553013c36f423614e002e486c059fcea75d8470e7df5f00a8ecf5398f"
+    },
+    {
+      "path": "services/backend/src/live_review/core/model_registry.py",
+      "bytes": 4248,
+      "sha256": "cf918f319ae4cd2f4be992f7310989c5be0ce63ee4718699d9163e55773af2b5"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/contracts.py",
+      "bytes": 3960,
+      "sha256": "f17cdeb8648cf683bc966aac89114f7e03217dcaeaa3984c5e05a7df3fa6773f"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/factory.py",
+      "bytes": 2692,
+      "sha256": "265a00e435367eab7d52598793eda94061e49b32805b76a19ec0c8dc92418018"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/__init__.py",
+      "bytes": 258,
+      "sha256": "6e8ef249567af4c2ac695c1557820f32286c6cb92cb766d904c2b86418510784"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/cache.py",
+      "bytes": 2508,
+      "sha256": "5b36e6ad817f061744c78b1e3a86541fc93035124fbea6e0d2249bf78a8bf496"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/config.py",
+      "bytes": 1215,
+      "sha256": "998dd0ab980a49d8be4d9c2254ee092ac3b20a997f0b99357e03fef5cc7efbfc"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/locking.py",
+      "bytes": 970,
+      "sha256": "145796f971a2d26305657d1838edaf2b6a038c89b517fe3470189ea5557f8cb5"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/models.py",
+      "bytes": 4741,
+      "sha256": "1044061a42d5d8db50412f2bb2a5e73625d935b8826f48c4b61580548e177cc8"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/observations.py",
+      "bytes": 6352,
+      "sha256": "8bd16a64f037e7b2f7dcb7c6b23006f5d371543e83a21f515d8bb601351cf7ae"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/provider.py",
+      "bytes": 7493,
+      "sha256": "249fd9afa23b1080b2568fb2cc34ee99789fe15ede7471f11fc039bc1ce9b295"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/provision.py",
+      "bytes": 5424,
+      "sha256": "65ed7cf7c4192f65c10b7157b8c312c4f0d38ace146bd13e6b400ebd1af4611c"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/requirements.in",
+      "bytes": 271,
+      "sha256": "6394699e961d1b167f18d8d98d84f363a6a41a25911900b5b500f92381188eab"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/requirements.txt",
+      "bytes": 5610,
+      "sha256": "a0d53310fb89bf28890907de9f3b57ee1ec9cc298a96569e5df4dc4992139681"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local/smoke.py",
+      "bytes": 3536,
+      "sha256": "7c7d56af330e8d40ce2e83ad566ecbf324882f6bb5f549f22a44bdb822064e52"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local_worker/__init__.py",
+      "bytes": 75,
+      "sha256": "94d180bd59e9c12a7debdff19f6fa94284a29efbbc0a1d7ddab704516c8d27f9"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local_worker/client.py",
+      "bytes": 9299,
+      "sha256": "c1e6533da11158c1dcd30257a63583255a50e12d1ca01406173f9a7139456d9f"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local_worker/protocol.py",
+      "bytes": 3150,
+      "sha256": "1ee2e8acec5e635786c91a6797d0a94b59c28b70890a2589338b4a47698efed6"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/local_worker/server.py",
+      "bytes": 11885,
+      "sha256": "33ca8262ed792556756635b25b8f62460c2236f8e12e94345452757596e9754f"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/service.py",
+      "bytes": 3745,
+      "sha256": "fe623d60613d30ebb94f414e1f84992dc58e4ba305595ae7263c1ac9411d51df"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/tencent/__init__.py",
+      "bytes": 1418,
+      "sha256": "997994f822a8417d3b768f7cfe84a7ee1080dafc585d2ab611367dba7a9d1ac8"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/tencent/config.py",
+      "bytes": 2347,
+      "sha256": "244501c8e422211e368605c2a04bf3b59ee4b4475722ab4ac4e7e7f069c092df"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/tencent/file.py",
+      "bytes": 6098,
+      "sha256": "95c2b745bbb6a7aacdc6d4cfe7338fab2d142a2fd7423eadb37addcf5c8b0f49"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/tencent/realtime.py",
+      "bytes": 10136,
+      "sha256": "a2c3b100f2d77f636fd685182eb611191c551ca837742e0de5ad8f71a1595ada"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/tencent/results.py",
+      "bytes": 2967,
+      "sha256": "d109fb0c133e231e47f804aee24be48bf9a14871ac01bc8e00ff84e74da9b832"
+    },
+    {
+      "path": "services/backend/src/live_review/integrations/asr_gateway/tencent/signing.py",
+      "bytes": 1840,
+      "sha256": "117ca958c6d1126eb82aedb5aeac03820b110714a3c3c4f4fe281dbcad533030"
+    },
+    {
+      "path": "services/backend/src/live_review/main.py",
+      "bytes": 1811,
+      "sha256": "1387b9c38db37105cc7537912889a466c2b34aac039d349bee95de5013e765f7"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/asr/models.py",
+      "bytes": 611,
+      "sha256": "68ea5acff6dae66426324b2d4a69b3ce366fab36d876f35653a1aebb05a52280"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/asr/policy.py",
+      "bytes": 1705,
+      "sha256": "bbe1eb2dbd2d2259b28fea91ff1e407dd0452fdcc800ef89415242af5275ca01"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/asr/router.py",
+      "bytes": 3762,
+      "sha256": "cff68e6e859ff8c4a866d3f4c00d16dbaa206587b21f6e07368dfad640ed4bee"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/asr/schemas.py",
+      "bytes": 1353,
+      "sha256": "e59458a29dfb0aaf7f40bdd041a40ea08e58c8c74ef0f5de5870663dc4d2c87a"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/asr/service.py",
+      "bytes": 4649,
+      "sha256": "41408bb9ac3c67333b735b56fbc5046895213d6c410b00cc6d288f42a8d43e23"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/asr/stream.py",
+      "bytes": 11866,
+      "sha256": "4b0761254f516146961dba7c0be1b6e1ec64bd68695a13f1d7409d953a383bff"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/jobs/execution.py",
+      "bytes": 7033,
+      "sha256": "f6d6ba6eac64731856a3d297891b9136f52879d12b107ab55ca32328047bc71c"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/jobs/service.py",
+      "bytes": 6317,
+      "sha256": "69cc1b7c26747062eec0c4812bdb59097f95089b13203b0f00bd1dec7f587b0d"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/materials/schemas.py",
+      "bytes": 2197,
+      "sha256": "047ff84ab145bdb1747b4b53f249e99cd9b5e8e3c333a2ba08f906724023a948"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/materials/service.py",
+      "bytes": 5457,
+      "sha256": "fff33f3f5dafad400ec4ff8c5dce6f9a7b866373f42a0972d02c690ca2332bae"
+    },
+    {
+      "path": "services/backend/src/live_review/modules/materials/validation.py",
+      "bytes": 4170,
+      "sha256": "e8b669c1f710bd95bec2761f9a3cfb97fec53c3902518e16d6af4222e26da50c"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/asr_jobs.py",
+      "bytes": 5170,
+      "sha256": "52d52c848e02d2b5c3b61a97a3917a8e90ec07804a0934a6fbc4cf0810ee27d1"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/asr_recording.py",
+      "bytes": 2844,
+      "sha256": "3c85db69bb2a8ab23704be2220424febd32721c114d54fce1e2d56d91769398c"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/asr_stop.py",
+      "bytes": 884,
+      "sha256": "874c82d41778c76627b4644d648397b863e859fcfadb163374877ba4e563c93e"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/handler_process.py",
+      "bytes": 5337,
+      "sha256": "9f9caf78767d3201fc73ecab275dbd40d6a07dabcdd5a2b2888dab094b6d9e56"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/handlers.py",
+      "bytes": 2992,
+      "sha256": "e1983c76a028508450aa886ad6c62052b72c92e6d90e02dc8e6630cf0b5530bd"
+    },
+    {
+      "path": "services/backend/src/live_review/workers/local_asr_server.py",
+      "bytes": 1973,
+      "sha256": "44e0a43ecd0ffebcb7fa82aa3584975cb814ea804b40e78cd120f4a47f96b790"
+    },
+    {
+      "path": "services/backend/tests/test_asr_api.py",
+      "bytes": 8703,
+      "sha256": "be152b796fbf7ba985f5e713d71ce7a58447fd8273c69750562139d540579b49"
+    },
+    {
+      "path": "services/backend/tests/test_asr_formats.py",
+      "bytes": 1273,
+      "sha256": "2989345c95f11a696b12852f59cda978845dad6c5727bde7f9e332f085a8ae4b"
+    },
+    {
+      "path": "services/backend/tests/test_asr_gateway.py",
+      "bytes": 8571,
+      "sha256": "f75cc08af0324834ecaf44370fefc8b2ed9c919c27689c0fefde850c009bf3b8"
+    },
+    {
+      "path": "services/backend/tests/test_asr_local.py",
+      "bytes": 14155,
+      "sha256": "1ffaa3099eef922041fa2bc7b31d8751c13e123491b3e561672604ac3e602663"
+    },
+    {
+      "path": "services/backend/tests/test_asr_recording.py",
+      "bytes": 4138,
+      "sha256": "14e13b03a9bf1c85ffbb7b6a4a409ee6f165e5e1fe9b0c2cc54585059380201e"
+    },
+    {
+      "path": "services/backend/tests/test_asr_stream.py",
+      "bytes": 12670,
+      "sha256": "e41eabba25443458ff302bb500338472c8d300898da8142243a078c41afdba76"
+    },
+    {
+      "path": "services/backend/tests/test_asr_tencent.py",
+      "bytes": 14674,
+      "sha256": "1a7c27e1a58648523f01c74038f70c46d8708b033c3f5651f47175974770e98a"
+    },
+    {
+      "path": "services/backend/tests/test_local_asr_worker.py",
+      "bytes": 18616,
+      "sha256": "026f37c5e883a492270e0da76519dd6ada94c2cf991398e5d30e8e7afd7d74b6"
+    },
+    {
+      "path": "services/backend/uv.lock",
+      "bytes": 97575,
+      "sha256": "ef0792c3bfd52f9a03843f74599d65b8ec33957051bbe5a2c802bab86b6536da"
+    }
+  ]
+}

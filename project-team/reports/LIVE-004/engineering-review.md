@@ -1,0 +1,6 @@
+# LIVE-004 工程支持独立Review
+Reviewer ARC-01，作者子代理eng_live004。最终批准源37ee63b84e3012dfc2edce9071a07528ce871ef7，base da128af；串行main集成见Git日志。
+
+初审发现P1：Docker/Compose进程继承环境覆盖可绕过固定路径检查，要求作者修复。复审ac0088d→37ee63b确认在容器操作前拒绝继承Docker/Compose/runtime/password，并将校验后的本地unix endpoint和配置固定给子进程。重复初始化不drop，不覆盖已有凭证；已有容器校验project与bind路径。
+
+ARC独立执行 unittest discover scripts/checks：8项通过，含20项环境覆盖与5种endpoint反例；阅读各任务scope及字母子任务解析，未放宽为所有backend路径。作者真实五库独立连接/跨库拒绝/重复初始化保留证据见engineering.md，本人未将作者执行写为独立实跑。代码审核批准此工程提交，不代表业务模块验收。

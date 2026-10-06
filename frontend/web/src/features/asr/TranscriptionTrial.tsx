@@ -12,7 +12,7 @@ export function TranscriptionTrial({settings, csrf, expired, dirty}: {settings: 
   const [grant, setGrant] = useState(false), [requests, setRequests] = useState('1'), [cost, setCost] = useState('')
   const cloudPossible = settings.privacy === 'cloud_allowed' && (settings.provider === 'tencent' || settings.allow_cloud_fallback)
   const needsCloud = settings.provider === 'tencent'
-  const validBudget = Number.isInteger(Number(requests)) && Number(requests) > 0 && Number(requests) <= 10000 && Number.isFinite(Number(cost)) && Number(cost) > 0 && Number(cost) <= 1000
+  const validBudget = Number.isInteger(Number(requests)) && Number(requests) > 0 && Number(requests) <= 10 && Number.isFinite(Number(cost)) && Number(cost) > 0 && Number(cost) <= 100
   const active = !!result && running(result.job)
   useEffect(() => {setGrant(false)}, [settings.revision])
   useEffect(() => {
@@ -57,7 +57,8 @@ export function TranscriptionTrial({settings, csrf, expired, dirty}: {settings: 
   return <section className="asr-section"><h3>试用转写</h3><p className="muted">使用已保存的设置上传到本系统服务器。仅本地处理时不会发送给云服务。离开此页或退出登录不会取消服务器任务，请保留任务编号。</p>
     {dirty && <p className="asr-warning">请先保存或放弃设置草稿，再开始试用。</p>}
     <label className="field">选择音频或视频<input type="file" accept=".mp4,.wav,.mp3,.m4a,.aac,video/mp4,audio/wav,audio/mpeg,audio/mp4,audio/aac" disabled={busy || active} onChange={e => {setFile(e.target.files?.[0] ?? null); setError(''); setGrant(false)}}/></label>
-    {cloudPossible && <fieldset className="asr-cloud" disabled={busy || active}><legend>本次云端授权</legend><label className="asr-option"><input type="checkbox" checked={grant} onChange={e => setGrant(e.target.checked)}/><span>我授权本次任务将音频发送给腾讯云，并接受服务费用<small>授权仅用于这一次提交；切换服务或保存设置不代表授权。</small></span></label>{grant && <div className="asr-budget"><label className="field">最多请求次数<input type="number" min="1" max="10000" step="1" value={requests} onChange={e => setRequests(e.target.value)}/></label><label className="field">金额预算（美元）<input type="number" min="0.01" max="1000" step="0.01" value={cost} onChange={e => setCost(e.target.value)}/></label><small>金额为授权声明，系统尚未核算供应商实际账单。</small></div>}</fieldset>}
+    {cloudPossible && <p className="asr-warning">当前腾讯云文件转写仅支持规范化后的 WAV 不超过 5 MB（16 kHz、单声道、16 位时约 156 秒）。限制针对转换后的音频，不是原 MP3/M4A/视频文件大小；长录音云端转写尚未接入，请使用本地服务。</p>}
+    {cloudPossible && <fieldset className="asr-cloud" disabled={busy || active}><legend>本次云端授权</legend><label className="asr-option"><input type="checkbox" checked={grant} onChange={e => setGrant(e.target.checked)}/><span>我授权本次任务将音频发送给腾讯云，并接受服务费用<small>授权仅用于这一次提交；切换服务或保存设置不代表授权。</small></span></label>{grant && <div className="asr-budget"><label className="field">最多请求次数<input type="number" min="1" max="10" step="1" value={requests} onChange={e => setRequests(e.target.value)}/></label><label className="field">金额预算（美元）<input type="number" min="0.01" max="100" step="0.01" value={cost} onChange={e => setCost(e.target.value)}/></label><small>金额为授权声明，系统尚未核算供应商实际账单。</small></div>}</fieldset>}
     {settings.allow_cloud_fallback && !grant && <p className="muted">本次未授权云端，本地失败不会自动转云端。</p>}
     <Button primary disabled={uncertain || !file || dirty || busy || active || (needsCloud && !grant) || (grant && !validBudget)} onClick={start}>{busy ? phase : '上传并开始本次转写'}</Button>
     {uncertain && <div className="asr-warning" role="alert"><p>转写提交结果未知，服务器可能已创建任务。请由管理员核查任务记录；再次提交可能重复计费。</p><Button onClick={() => {setUncertain(false); setGrant(false)}}>我已核查，允许重新提交</Button></div>}

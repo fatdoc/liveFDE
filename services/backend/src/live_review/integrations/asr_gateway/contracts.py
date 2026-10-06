@@ -49,9 +49,20 @@ class ASRRequest(Contract):
     request_id: str
 
 
+class ASRMetadata(Contract):
+    complete: bool
+    source: Literal["local", "cloud"]
+    timestamp_sources: tuple[str, ...]
+    speaker_sources: tuple[str, ...]
+    emotion_sources: tuple[str, ...]
+
+
 class ASRResult(Contract):
     provider: str
     model: str
+    text: str = ""
+    language: str | None = None
+    metadata: ASRMetadata | None = None
     segments: tuple[ASRSegment, ...]
     complete: bool
     duration_ms: int = Field(ge=0)
@@ -59,6 +70,22 @@ class ASRResult(Contract):
     warnings: tuple[str, ...] = ()
     synthetic: bool = False
     source: Literal["local", "cloud"]
+
+    @model_validator(mode="after")
+    def public_summary(self):
+        object.__setattr__(self, "text", "".join(segment.text for segment in self.segments))
+        object.__setattr__(
+            self,
+            "metadata",
+            ASRMetadata(
+                complete=self.complete,
+                source=self.source,
+                timestamp_sources=tuple(sorted({s.timestamp_source for s in self.segments})),
+                speaker_sources=tuple(sorted({s.speaker_source for s in self.segments})),
+                emotion_sources=tuple(sorted({s.emotion_source for s in self.segments})),
+            ),
+        )
+        return self
 
 
 class ASREvent(Contract):

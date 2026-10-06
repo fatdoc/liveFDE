@@ -10,7 +10,14 @@ class UploadInput(BaseModel):
     filename: str = Field(min_length=1, max_length=255)
     byte_size: int = Field(gt=0, strict=True)
     media_type: Literal[
-        "video/mp4", "audio/wav", "audio/x-wav", "audio/mpeg", "text/plain", "application/pdf"
+        "video/mp4",
+        "audio/wav",
+        "audio/x-wav",
+        "audio/mpeg",
+        "audio/mp4",
+        "audio/aac",
+        "text/plain",
+        "application/pdf",
     ]
     purpose: Literal["session_media", "transcript", "reference_pdf"]
     sha256: str | None = Field(default=None, pattern="^[0-9a-f]{64}$")

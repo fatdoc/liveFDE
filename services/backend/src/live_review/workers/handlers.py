@@ -10,6 +10,10 @@ class HandlerUnavailable(Exception):
 
 
 def resolve(name, settings):
+    if name == "asr.gateway":
+        from live_review.workers.asr_jobs import run_stage
+
+        return lambda context: run_stage(context, settings)
     if name in {"media.extract", "media.asr"}:
         from live_review.workers.media_jobs import run_stage
 

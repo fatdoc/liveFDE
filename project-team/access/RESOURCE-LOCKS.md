@@ -63,3 +63,7 @@ CFG /root/be_live004a 独占 .worktrees/live-006b-config 的core/model_config、
 006B作者已交还live006b数据库使用权；QA新建live006b_qa_a29eec20dd6d4541b6015701137d2918独立库，32项验收通过后亦交还。ARC主集成仅新建live006b_suite_<UUID>库，实际库名随runtime/live-006b/integration各target.json登记。所有旧库与证据保留。
 
 LIVE-006B收尾：CFG/JOBS开发写入结束，clean worktree只读保留。QA最终v1/v2烟测成功后已交还15470锁，无在跑worker/FFmpeg；PG与所有测试库保留。代码706f28e独立QA/PM验收通过；ARC本次纯文档提交完成后释放main index独占，后续任务需重新登记。
+
+## LIVE-006C（base840d461）
+
+分工与工作副本见tasks/LIVE-006C.md。LOCAL独占gateway/local与本地依赖/缓存，TENCENT独占gateway/tencent，UI独占frontend/web本轮设置/试用；ARC独占共用contracts/factory、registry扩展、modules/asr、0005迁移、worker接线、pyproject/lock及环境/验收。独立QA需非本轮作者。新PG15480、API8196、UI5196、runtime/live-006c，各资源启动前探端口，不动旧006B/5188。主index仅ARC串行；旧库/worktree只读保留。

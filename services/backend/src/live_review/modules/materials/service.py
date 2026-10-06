@@ -38,7 +38,14 @@ def create_upload(db: Session, admin, payload: UploadInput, key: str, settings):
     allowed = {
         "transcript": {"text/plain"},
         "reference_pdf": {"application/pdf"},
-        "session_media": {"video/mp4", "audio/wav", "audio/x-wav", "audio/mpeg"},
+        "session_media": {
+            "video/mp4",
+            "audio/wav",
+            "audio/x-wav",
+            "audio/mpeg",
+            "audio/mp4",
+            "audio/aac",
+        },
     }
     if payload.media_type not in allowed[payload.purpose]:
         raise ApiError(415, "unsupported_format", "材料用途与声明格式不符")

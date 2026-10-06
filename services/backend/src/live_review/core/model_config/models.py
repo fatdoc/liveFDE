@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator, model_validator
 
+from live_review.core.model_config.asr_routes import LocalASRRoute, TencentASRRoute
 from live_review.core.provider_config import FrozenModel, MediaConfig, ProviderRoute
 
 Capability = Literal["asr", "llm", "vision", "embedding", "reranker", "detection"]
@@ -91,11 +92,13 @@ class DeclaredRoute(FrozenModel):
 class ModelDescriptor(FrozenModel):
     name: str = Field(pattern=r"^[a-z][a-z0-9_.-]{0,63}$")
     capability: Capability
-    route: ProviderRoute | DeclaredRoute
+    route: ProviderRoute | DeclaredRoute | LocalASRRoute | TencentASRRoute
     parameters: ModelParameters = Field(default_factory=ModelParameters)
 
     @model_validator(mode="after")
     def protocol_matches_capability(self):
+        if isinstance(self.route, (LocalASRRoute, TencentASRRoute)) and self.capability != "asr":
+            raise ValueError("gateway_route_requires_asr")
         if isinstance(self.route, DeclaredRoute):
             allowed = {
                 "huggingface": {"llm", "embedding", "reranker", "vision"},

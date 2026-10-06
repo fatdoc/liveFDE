@@ -7,6 +7,7 @@ from live_review.core.config import get_settings
 from live_review.core.database import build_engine
 from live_review.core.errors import install_errors
 from live_review.core.health import dependencies_ready
+from live_review.modules.asr.router import router as asr_router
 from live_review.modules.identity.router import router as identity_router
 from live_review.modules.jobs.router import router as jobs_router
 from live_review.modules.materials.router import router as materials_router
@@ -26,6 +27,7 @@ app = FastAPI(title="Live Review Foundation", version="0.1.0", lifespan=lifespan
 
 install_errors(app)
 app.include_router(identity_router)
+app.include_router(asr_router)
 app.include_router(jobs_router)
 app.include_router(streamers_router)
 app.include_router(sessions_router)

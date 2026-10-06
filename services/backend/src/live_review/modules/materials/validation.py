@@ -56,9 +56,11 @@ def validate_file(
             "audio/wav": "wav",
             "audio/x-wav": "wav",
             "audio/mpeg": "mp3",
+            "audio/mp4": "mp4",
+            "audio/aac": "aac",
         }
         if media_type not in allowed:
-            raise ApiError(415, "unsupported_format", "直播材料仅支持MP4/WAV/MP3")
+            raise ApiError(415, "unsupported_format", "直播材料仅支持MP4/WAV/MP3/M4A/AAC")
         try:
             result = subprocess.run(
                 [
@@ -68,7 +70,7 @@ def validate_file(
                     "-protocol_whitelist",
                     "file,pipe",
                     "-f",
-                    "mov" if media_type == "video/mp4" else allowed[media_type],
+                    "mov" if media_type in {"video/mp4", "audio/mp4"} else allowed[media_type],
                     "-show_format",
                     "-show_streams",
                     "-of",

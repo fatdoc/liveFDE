@@ -41,6 +41,36 @@ BAD_SUFFIX = {
     ".onnx",
 }
 SCOPES = {
+    "LIVE-006C-LOCAL": [
+        "services/backend/src/live_review/integrations/asr_gateway/local/",
+        "services/backend/tests/test_asr_local.py",
+        "docs/asr-local.md",
+        "project-team/reports/LIVE-006C/local.md",
+    ],
+    "LIVE-006C-TENCENT": [
+        "services/backend/src/live_review/integrations/asr_gateway/tencent/",
+        "services/backend/tests/test_asr_tencent.py",
+        "docs/asr-tencent.md",
+        "project-team/reports/LIVE-006C/tencent.md",
+    ],
+    "LIVE-006C-UI": [
+        "frontend/web/",
+        "docs/asr-ui.md",
+        "project-team/reports/LIVE-006C/frontend-author.md",
+    ],
+    "LIVE-006C-WS": [
+        "services/backend/src/live_review/modules/asr/stream.py",
+        "services/backend/tests/test_asr_stream.py",
+        "project-team/reports/LIVE-006C/stream.md",
+    ],
+    "LIVE-006C": [
+        "services/backend/",
+        "scripts/checks/",
+        "infra/compose.live006c.yml",
+        "config/asr.example.yaml",
+        "docs/",
+        "project-team/",
+    ],
     "LIVE-006B-CFG": [
         "services/backend/src/live_review/core/model_config/",
         "services/backend/src/live_review/core/model_registry.py",

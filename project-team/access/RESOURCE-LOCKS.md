@@ -79,3 +79,10 @@ LIVE-006B收尾：CFG/JOBS开发写入结束，clean worktree只读保留。QA�
 拟资源API8197/助手8198/PG15490/live015，ARC登记时无TCP监听，未声称启动；CAP启动前复核并登记实际值/独立测试库。运行产物只在runtime/live-015；旧预览与旧库不动。磁盘复核约7.1GiB空闲，下载/录制须先做空间预算与受控停止，不能清理他人缓存或重下ASR权重。
 
 015基础有限集成：作者e78014b冻结并保留只读，ARC独立352后端通过；main集成专项39及工程39通过。CAP实现写锁随本阶段交还，后续修改需重新登记并复审。PG15490和各独立测试库保留；8197/8198最终TCP无监听，不自动开启真实采集。5196/8196/15480仍监听，旧006C不动。ARC收尾提交后释放main本阶段index独占。端到端出站隔离复核/真实平台待验，015～017不标done；本阶段磁盘复核15GiB空闲，不清理其他产物。
+
+
+## LIVE-020/021/022 前端真实采集轮次
+
+base a680ff7；CAP独占.worktrees/LIVE-020-capture的capture模块、workers/capture_executor等和限定jobs/execution.py与workers/dispatcher.py过滤接缝；FE子代理/root/eng_live001独占.worktrees/LIVE-021-frontend的前端src/必要测试及Vite代理。ARC只在.worktrees/LIVE-022-integration持有scope、live020环境/验收脚本、任务/契约/报告与最终串行集成，不并写作者源码。精确路径见对应任务卡和repository.py。main暂不改动，PR合并再同步。
+
+拟新原生PG15500、API8199、UI5199，runtime/live-020；启动前检查端口/目录/DB身份，不能迁移旧库。旧5196/8196/15480及capture015资源保留；本机不使用Docker。实际媒体/模型/私有配置都不入Git，用户暂不操作手机。真实来源试录需最终就绪审查，普通合成联调不冒充平台验收。

@@ -2,21 +2,27 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError, message, request } from '../../api/client'
 import { Button, Badge } from '../../components/UI'
+import { formatTimestamp, seekProblem, timestampOrigin } from './transcriptionTimeline'
 import type { ASRSettings, Job, Transcription } from '../asr/types'
 export function MaterialTranscription({
   materialId,
   csrf,
   scope,
+  durationSeconds,
+  onSeek,
 }: {
   materialId: string
   csrf: string
   scope: string
+  durationSeconds: number | null
+  onSeek: (start: number, end: number) => void
 }) {
   const [settings, setSettings] = useState<ASRSettings | null>(null),
     [data, setData] = useState<Transcription | null>(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [jobId, setJobId] = useState(''),
+    [boundJobId, setBoundJobId] = useState(''),
     [query, setQuery] = useState(0),
     [uncertain, setUncertain] = useState(false)
   const lock = useRef(false),
@@ -85,6 +91,7 @@ export function MaterialTranscription({
       sessionStorage.setItem(storageKey, job.id)
       setUncertain(false)
       setData({ job, result: null })
+      setBoundJobId(job.id)
       setJobId(job.id)
     } catch (e) {
       if (e instanceof ApiError && e.status < 500) {
@@ -164,15 +171,45 @@ export function MaterialTranscription({
                     ? '完整转写结果'
                     : '部分转写结果'}
               </p>
-              {data.result.segments.map((s) => (
-                <p key={s.id}>
-                  <small>
-                    {s.start_ms === null ? '时间未知' : `${(s.start_ms / 1000).toFixed(1)} 秒`}
-                  </small>
-                  <br />
-                  {s.text}
-                </p>
-              ))}
+              <p className="muted">
+                {data.result.source === 'local' ? '本地识别' : '云端识别'} · {data.result.provider}{' '}
+                · {data.result.model}
+                <br />
+                转写完整度只描述本份材料，不代表采集覆盖了整场直播。点击时间只定位，不自动播放。
+              </p>
+              {data.result.segments.map((s) => {
+                const problem =
+                  !boundJobId || data.job.id !== boundJobId || jobId !== boundJobId
+                    ? '任务与当前材料的归属未确认，仅展示结果，不能定位'
+                    : seekProblem(s.start_ms, s.end_ms, durationSeconds)
+                return (
+                  <article key={s.id} className="asr-section">
+                    <Button
+                      disabled={!!problem}
+                      title={problem ?? '定位当前材料'}
+                      onClick={() => {
+                        if (!problem && !seekProblem(s.start_ms, s.end_ms, durationSeconds))
+                          onSeek(s.start_ms!, s.end_ms!)
+                      }}
+                    >
+                      {formatTimestamp(s.start_ms)} — {formatTimestamp(s.end_ms)}
+                    </Button>
+                    <p className="muted">
+                      {timestampOrigin(
+                        s as typeof s & { timestamp_source?: unknown },
+                        data.result!.metadata,
+                      )}
+                      {problem && (
+                        <>
+                          <br />
+                          {problem}
+                        </>
+                      )}
+                    </p>
+                    <p>{s.text}</p>
+                  </article>
+                )
+              })}
               {!data.result.segments.length && <p>{data.result.text}</p>}
             </>
           )}

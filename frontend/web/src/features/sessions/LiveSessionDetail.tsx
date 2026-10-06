@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminSession, type Session } from '../../auth/AdminSession'
 import { request, message, ApiError } from '../../api/client'
 import { PageHeader, Empty, Button } from '../../components/UI'
 import { CapturePanel } from '../capture/CapturePanel'
+import { seekProblem } from './transcriptionTimeline'
 import { MaterialTranscription } from './MaterialTranscription'
 import { platformName, type LiveSession, type Page, type Material } from './types'
 import '../asr/asr.css'
@@ -75,42 +76,7 @@ function Detail({ id, auth, expired }: { id: string; auth: Session; expired: () 
             {!materials.length ? (
               <Empty title="尚无录制材料" description="采集结束并成功导入后，录像会出现在这里。" />
             ) : (
-              materials.map((m) => (
-                <article className="asr-section" key={m.material_id}>
-                  <h3>{m.filename}</h3>
-                  <p className="muted">{(m.size_bytes / 1024 / 1024).toFixed(1)} MB</p>
-                  {m.media_type.startsWith('video/') ? (
-                    <video
-                      style={{ width: '100%', maxHeight: 480 }}
-                      controls
-                      preload="metadata"
-                      src={`/api/v1/materials/${m.material_id}/content`}
-                    />
-                  ) : m.media_type.startsWith('audio/') ? (
-                    <audio
-                      controls
-                      preload="metadata"
-                      src={`/api/v1/materials/${m.material_id}/content`}
-                    />
-                  ) : null}
-                  <p>
-                    <a
-                      className="text-link"
-                      href={`/api/v1/materials/${m.material_id}/content`}
-                      download={m.filename}
-                    >
-                      下载原材料
-                    </a>
-                  </p>
-                  {/^(audio|video)\//.test(m.media_type) && (
-                    <MaterialTranscription
-                      materialId={m.material_id}
-                      csrf={auth.csrf_token}
-                      scope={auth.user.workspace_id}
-                    />
-                  )}
-                </article>
-              ))
+              materials.map((m) => <MaterialCard key={m.material_id} material={m} auth={auth} />)
             )}
           </section>
           <section className="asr-section">
@@ -124,5 +90,86 @@ function Detail({ id, auth, expired }: { id: string; auth: Session; expired: () 
         !error && <p role="status">正在读取场次…</p>
       )}
     </>
+  )
+}
+
+function MaterialCard({ material: m, auth }: { material: Material; auth: Session }) {
+  const player = useRef<HTMLMediaElement | null>(null)
+  const [duration, setDuration] = useState<number | null>(null),
+    [notice, setNotice] = useState('')
+  const metadata = () => {
+    const media = player.current
+    setDuration(
+      media && !media.error && media.readyState >= 1 && Number.isFinite(media.duration)
+        ? media.duration
+        : null,
+    )
+  }
+  function seek(start: number, end: number) {
+    const media = player.current
+    const problem = seekProblem(
+      start,
+      end,
+      media && !media.error && media.readyState >= 1 ? media.duration : null,
+    )
+    if (!media || problem) {
+      setNotice(problem ?? '播放器尚未就绪')
+      return
+    }
+    try {
+      media.currentTime = start / 1000
+      setNotice('已定位当前材料，请按需播放。')
+    } catch {
+      setNotice('播放器暂时无法定位，请等待材料加载后重试。')
+    }
+  }
+  const mediaProps = {
+    controls: true,
+    preload: 'metadata',
+    src: `/api/v1/materials/${m.material_id}/content`,
+    onLoadedMetadata: metadata,
+    onDurationChange: metadata,
+    onEmptied: () => setDuration(null),
+    onError: () => {
+      setDuration(null)
+      setNotice('材料暂时无法播放，不能定位。')
+    },
+  }
+  return (
+    <article className="asr-section" aria-label={`材料：${m.filename}`}>
+      <h3>{m.filename}</h3>
+      <p className="muted">{(m.size_bytes / 1024 / 1024).toFixed(1)} MB</p>
+      {m.media_type.startsWith('video/') ? (
+        <video
+          {...mediaProps}
+          ref={(node) => {
+            player.current = node
+          }}
+          style={{ width: '100%', maxHeight: 480 }}
+        />
+      ) : m.media_type.startsWith('audio/') ? (
+        <audio
+          {...mediaProps}
+          ref={(node) => {
+            player.current = node
+          }}
+        />
+      ) : null}
+      {notice && <p role="status">{notice}</p>}
+      <p>
+        <a className="text-link" href={mediaProps.src} download={m.filename}>
+          下载原材料
+        </a>
+      </p>
+      {/^(audio|video)\//.test(m.media_type) && (
+        <MaterialTranscription
+          materialId={m.material_id}
+          csrf={auth.csrf_token}
+          scope={auth.user.workspace_id}
+          durationSeconds={duration}
+          onSeek={seek}
+        />
+      )}
+    </article>
   )
 }

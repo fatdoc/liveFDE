@@ -14,7 +14,7 @@ from live_review.modules.jobs.execution import (
 )
 from live_review.modules.jobs.models import JobStage
 from live_review.modules.jobs.service import safe_error, stages_for, unknown_calls
-from live_review.workers.handler_process import StopUnconfirmed, execute_handler
+from live_review.workers.handler_process import ASRHandlerFailed, StopUnconfirmed, execute_handler
 from live_review.workers.handlers import HandlerUnavailable
 
 
@@ -98,7 +98,13 @@ def run_job(engine, settings, job_id, attempt):
                 for stage in stages_for(db, job_id):
                     if stage.status == "running" or (canceled and stage.status == "pending"):
                         stage.status = "canceled" if canceled else "failed"
-                        stage.reason = "cancel_confirmed" if canceled else code
+                        stage.reason = (
+                            "cancel_confirmed"
+                            if canceled
+                            else error.code
+                            if code == "stage_failed" and isinstance(error, ASRHandlerFailed)
+                            else code
+                        )
                 job.revision += 1
                 job.lease_token, job.lease_until = None, None
                 db.commit()

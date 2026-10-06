@@ -4,9 +4,9 @@ import {ApiError, message, request} from '../../api/client'
 import type {ASRSettings, Job, Transcription} from './types'
 const labels: Record<Job['status'], string> = {queued: '等待处理', running: '正在转写', succeeded: '处理完成', failed: '处理失败', cancel_requested: '等待取消', canceled: '已取消'}
 const warningGuidance: Record<string, string> = {
-  timestamps_are_vad_or_vad_window_boundaries_not_word_alignment: '时间戳表示检测到的语音区间边界，不是逐字对齐时间。',
+  timestamps_are_vad_or_vad_window_boundaries_not_word_alignment: '时间戳表示语音检测区间或切分窗口的边界，不是逐字对齐时间。',
   model_confidence_unavailable: '当前模型未提供置信度，不能据此显示准确率。',
-  nano_native_punctuation: '标点由 Nano 模型原生生成。',
+  nano_native_punctuation: 'Nano会生成原生标点；启用标点恢复时还会进一步处理。',
   'bounded_window_asr_not_token_realtime;window_edges_may_split_words': '当前结果按固定时间窗口增量生成，不是逐词实时识别；窗口边界可能切开词句。',
 }
 const running = (job: Job) => ['queued', 'running', 'cancel_requested'].includes(job.status)

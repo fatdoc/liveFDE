@@ -67,9 +67,13 @@ def finish(context, root, directory, result=None, code=None, canceled=False):
     with Session(context.engine) as db:
         job = locked(db, context.job_id, context.token)
         stage = db.get(JobStage, context.stage_id)
-        uncertain = unknown_calls(db, job.id)
+        uncertain = unknown_calls(db, job.id) or code == "worker_stop_unconfirmed"
         if uncertain:
-            code = "call_result_unknown"
+            code = (
+                "worker_stop_unconfirmed"
+                if code == "worker_stop_unconfirmed"
+                else "call_result_unknown"
+            )
             for intent in db.scalars(
                 select(CallIntent).where(CallIntent.job_id == job.id, CallIntent.state == "intent")
             ):
@@ -147,15 +151,19 @@ async def run_stream(ws, context, gateway, request, max_seconds):
             await asyncio.sleep(min(1, context.lease_seconds / 3))
 
     async def consume():
-        async for event in gateway.transcribe_stream(chunks(), request):
-            if event.type == "error":
-                raise ASRError(event.code or "stream_provider_error", unknown=True)
-            if event.type == "completed":
-                if not state["ended"] or event.result is None:
-                    raise ASRError("stream_early_completion", unknown=True)
-                return event.result
-            await send(event.model_dump(mode="json"))
-        raise ASRError("stream_result_unknown", unknown=True)
+        iterator = gateway.transcribe_stream(chunks(), request)
+        try:
+            async for event in iterator:
+                if event.type == "error":
+                    raise ASRError(event.code or "stream_provider_error", unknown=True)
+                if event.type == "completed":
+                    if not state["ended"] or event.result is None:
+                        raise ASRError("stream_early_completion", unknown=True)
+                    return event.result
+                await send(event.model_dump(mode="json"))
+            raise ASRError("stream_result_unknown", unknown=True)
+        finally:
+            await iterator.aclose()
 
     receiver, keeper, consumer = [asyncio.create_task(fn()) for fn in (receive, heartbeat, consume)]
     tasks = {receiver, keeper, consumer}
@@ -170,7 +178,12 @@ async def run_stream(ws, context, gateway, request, max_seconds):
     finally:
         for task in tasks:
             task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
+        outcomes = await asyncio.gather(*tasks, return_exceptions=True)
+        if any(
+            isinstance(error, ASRError) and error.code == "worker_stop_unconfirmed"
+            for error in outcomes
+        ):
+            raise ASRError("worker_stop_unconfirmed", unknown=True)
 
 
 @router.websocket("/stream")
@@ -225,7 +238,7 @@ async def stream(ws: WebSocket):
             CloudRecorder(context, settings.storage_root, directory + "/calls"),
         )
         duration = min(MAX_STREAM_SECONDS, registry.loaded.public.media.max_duration_seconds)
-        request = request_for(payload, job_id, duration)
+        request = request_for(payload, f"{job_id}:1", duration)
         await ws.send_json(
             {"type": "started", "job_id": str(job_id), "max_duration_seconds": duration}
         )

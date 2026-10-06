@@ -49,6 +49,7 @@ class DeclaredRoute(FrozenModel):
 
     protocol: Literal["huggingface", "ollama", "yolo"]
     enabled: bool = False
+    timeout_seconds: int = Field(default=60, ge=1, le=600)
     provider: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_-]{0,63}$")
     model: str = Field(min_length=1, max_length=128)
     base_url: str | None = Field(default=None, max_length=512)

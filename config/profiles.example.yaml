@@ -19,6 +19,7 @@ models:
     route:
       enabled: false
       protocol: ollama
+      timeout_seconds: 60
       model: your-local-chat-model
       # 声明可覆盖为局域网地址，例如 http://192.168.1.100:11434；不会主动连接。
       base_url: http://127.0.0.1:11434
@@ -29,6 +30,7 @@ models:
     route:
       enabled: false
       protocol: huggingface
+      timeout_seconds: 60
       model: your-org/your-embedding-model
     parameters:
       device: cpu
@@ -38,6 +40,7 @@ models:
     route:
       enabled: false
       protocol: huggingface
+      timeout_seconds: 60
       model: your-org/your-reranker-model
     parameters:
       device: cuda:0
@@ -47,6 +50,7 @@ models:
     route:
       enabled: false
       protocol: yolo
+      timeout_seconds: 60
       model: your-detector-model
     parameters:
       device: cpu

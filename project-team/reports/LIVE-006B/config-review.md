@@ -27,3 +27,11 @@ frozen模型/tuple保存公开全量配置，完整指纹含所有模型/参数/
 另审PM要求的LAN声明增量309a3f6：Ollama HTTP仅localhost、loopback、RFC1918及IPv6 ULA地址字面量；不解析DNS、不建连接。独立范围探针确认192.168/10/172.16/fd00允许，8.8.8.8/169.254.169.254/172.32/普通域名拒绝。深层覆盖仅Ollama base_url与embedding device的回归保留模型/protocol/model_path兄弟字段，resolve仍unsupported，未下载权重。
 
 该批准仅CFG模块及注册声明范围，V1/V2实际任务兼容、正式入口、PG和根验收driver仍需后续组合QA；不承诺真实模型可用性或计费。
+
+## 环境模板追加批准
+
+批准纯模板/说明增量 `a83fc7c9a7c94f54418bbcb5e7a5960581f7cbb0`（父8605455）。新增test/staging/production空覆盖与共享profile说明，无源码行为变化。独立实际加载四环境均disabled，staging/production无local/dotenv定位。此前81项源码批准仍有效，无需重复同一套。
+
+## timeout 最终增量批准
+
+批准最新CFG SHA `a2753fb26401f24de864ac24296aaf24a5e29d44`，tree `2f2c372806ef2baf6b82738d688a6752bcac4a57`（父a83fc7c）。DeclaredRoute增加继承strict模型的int timeout_seconds，1–600/default60；共享示例/文档同步，未添加执行路径。新增6非法值与1全量快照未选模型timeout漂移回归；QA亲跑88项全部通过0.44s（51新+37legacy），Ruff/diff通过，工作树clean。源码增量仅声明字段；ASR已有超时行为和V1未改，无网络/下载/DB操作。

@@ -6,6 +6,8 @@
 
 由低到高：内置未配置默认 → config/models.yaml → config/environments/<受信任环境>.yaml → 开发config/local.yaml → 白名单环境变量。字典递归合并；列表整体替换；null是明确值而非删除指令，类型不允许null就报错。输入字典不被修改。每层先做secret字段和YAML安全检查，低层明文密钥不能靠高层覆盖来洗掉。
 
+团队通用profile（model、protocol、key_env引用等）应放config/models.yaml；本机local.yaml主要覆盖IP、device、model_path等差异。个人试配可以先完整放local，确定后再将非敏感公共定义提升到models.yaml。development/test/staging/production四个环境模板均已提供，空覆盖{}表示继承基础配置，仓库基础默认全部disabled。
+
 开发者可复制config/local.example.yaml为config/local.yaml；完整多模型说明在config/profiles.example.yaml，示例文件不会自动加载。它展示兼容ASR、本地Ollama LLM、HuggingFace embedding/reranker、YOLO检测的非激活profile；名称均为占位，不代表已选模型。
 
 环境映射：dev/development→development；test→test；staging→staging；prod/production→production。环境由服务端选择，YAML不得定义environment覆盖。production/staging既不自动读开发local也不自动读.env，显式local也拒绝；仅可显式指定绝对、无符号链接、普通文件、600权限的私有dotenv。开发隐式.env位于config目录的父目录，即默认app/.env；dev/test同样要求600。
@@ -46,7 +48,7 @@ restored = restore_snapshot(captured.model_dump(mode='json'))
 
 get支持alias或具名模型name，返回不可变ModelDescriptor；名字不存在明确失败，不找备用模型。aliases前缀必须匹配目标capability。所有嵌套对象frozen，models/aliases为tuple；model_dump返回独立JSON数据，不泄露内部可变容器。
 
-ASR route保留旧ProviderRoute严格规则：disabled、offline_fixture、openai_compatible+audio_transcriptions。provider/model/base_url/key_env/timeout/请求预算等与006一致。非ASR还可声明typed DeclaredRoute：huggingface用于llm/embedding/reranker/vision；ollama用于llm/embedding，HTTP允许localhost、loopback、RFC1918局域网私有IP和IPv6 ULA（例如192.168.1.100:11434）；其他地址必须HTTPS，校验不做DNS或网络请求；yolo用于vision/detection。本地声明无需key或付费预算，无自动下载/连接，resolve一律model_capability_not_executable。
+ASR route保留旧ProviderRoute严格规则：disabled、offline_fixture、openai_compatible+audio_transcriptions。provider/model/base_url/key_env/timeout/请求预算等与006一致。非ASR还可声明typed DeclaredRoute：huggingface用于llm/embedding/reranker/vision；ollama用于llm/embedding，HTTP允许localhost、loopback、RFC1918局域网私有IP和IPv6 ULA（例如192.168.1.100:11434）；其他地址必须HTTPS，校验不做DNS或网络请求；yolo用于vision/detection。DeclaredRoute统一提供timeout_seconds，严格整数1–600秒、默认60，与ASR ProviderRoute一致；目前仅声明并计入快照，不代表本地模型已执行。 本地声明无需key或付费预算，无自动下载/连接，resolve一律model_capability_not_executable。
 
 parameters是具名强类型对象：temperature有限0–2且仅LLM；confidence有限0–1且仅vision/detection；device限定cpu/mps/cuda/cuda:N；model_path为未执行本地声明，不允许变量、URL或..逃逸。ASR现有adapter不消费这些额外参数，因此ASR非空parameters直接拒绝，不能悄悄忽略。16k mono等已实现媒体约束仍沿用MediaConfig。
 

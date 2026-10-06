@@ -19,7 +19,6 @@ class ParserFailure(Exception):
 async def resolve(data):
     try:
         import httpx
-
         from src import spider, stream
     except ImportError:
         return {"error": "provider_dependencies_missing"}

@@ -228,3 +228,96 @@ def test_known_response_cache_does_not_reinvoke_provider(jobs, tmp_path):
         segment, tmp_path / "a.wav"
     )
     assert provider.calls == 1
+
+
+def test_preexisting_v1_job_payload_runs_without_registry_migration(media_job):
+    from live_review.core.provider_config import load_config, snapshot
+    from live_review.modules.jobs.service import create_job
+
+    _, engine, settings, root, config, fixture, admin = media_job
+    # Persist the original LIVE-006 payload shape directly, never call the new submit bridge.
+    (config.parent / ".env").write_text("LIVE_MODEL_ASR_DEFAULT=unregistered\n")
+    with Session(engine) as db:
+        material = db.scalar(select(Material).where(Material.workspace_id == admin.workspace_id))
+        blob = db.get(Blob, material.blob_id)
+        payload = {
+            "kind": "media_transcription_v1",
+            "material_id": str(material.id),
+            "source_sha256": blob.sha256,
+            "source_size_bytes": blob.size_bytes,
+            "provider_snapshot": snapshot(load_config(config)).model_dump(mode="json"),
+            "provider_config_path": str(config),
+            "allow_network": False,
+            "fixture_payload": fixture,
+            "storage_fingerprint": hashlib.sha256(str(root).encode()).hexdigest(),
+        }
+        job = create_job(
+            db,
+            admin.workspace_id,
+            admin.id,
+            [
+                {"name": "extract", "handler": "media.extract"},
+                {"name": "asr", "handler": "media.asr"},
+            ],
+            payload,
+        )
+        uid = job.id
+        db.commit()
+    run_job(engine, settings, uid, 1)
+    with Session(engine) as db:
+        job = db.get(Job, uid)
+        assert job.status == "succeeded", job.error
+        assert job.input_data == payload
+        assert "provider_config_locator" not in job.input_data
+        assert job.input_data["provider_snapshot"]["snapshot_version"] == 1
+
+
+def test_v2_registry_job_and_retry_keep_known_paid_results(media_job, tmp_path):
+    from test_media_registry_jobs import registry_files
+
+    create, engine, settings, root, _, fixture, admin = media_job
+    config_dir = registry_files(tmp_path)
+    uid = create(config_path=None, config_dir=config_dir)
+    run_job(engine, settings, uid, 1)
+    with Session(engine) as db:
+        job = db.get(Job, uid)
+        assert job.status == "succeeded", job.error
+        assert job.input_data["kind"] == "media_transcription_v2"
+        assert job.input_data["provider_snapshot"]["snapshot_version"] == 2
+        assert job.input_data["model_id"] == "asr.default"
+        assert "provider_config_path" not in job.input_data
+        assert "api_key" not in json.dumps(job.input_data)
+    fixture["segments"]["1"] = {"fail": True}
+    failed_id = create(fixture, config_path=None, config_dir=config_dir)
+    run_job(engine, settings, failed_id, 1)
+    with Session(engine) as db:
+        job = db.get(Job, failed_id)
+        assert job.status == "failed"
+        previous_extraction = stages_for(db, failed_id)[0].artifact
+        retry_job(db, failed_id, admin, uuid4().hex, job.revision, "asr")
+    run_job(engine, settings, failed_id, 2)
+    with Session(engine) as db:
+        assert db.get(Job, failed_id).status == "failed"
+        assert stages_for(db, failed_id)[0].artifact == previous_extraction
+        assert len(db.scalars(select(CallIntent).where(CallIntent.job_id == failed_id)).all()) == 3
+
+
+def test_v2_changed_unselected_model_blocks_stage_before_any_call(media_job, tmp_path):
+    from test_media_registry_jobs import registry_files
+
+    create, engine, settings, _, _, _, _ = media_job
+    config_dir = registry_files(tmp_path)
+    uid = create(config_path=None, config_dir=config_dir)
+    path = config_dir / "models.yaml"
+    path.write_text(
+        path.read_text().replace(
+            "models:\n",
+            "models:\n  llm_unconfigured:\n"
+            "    capability: llm\n    route: {}\n    parameters: {temperature: 0.5}\n",
+        )
+    )
+    run_job(engine, settings, uid, 1)
+    with Session(engine) as db:
+        assert db.get(Job, uid).status == "failed"
+        assert not db.scalars(select(CallIntent).where(CallIntent.job_id == uid)).all()
+        assert not any(stage.artifact for stage in stages_for(db, uid))

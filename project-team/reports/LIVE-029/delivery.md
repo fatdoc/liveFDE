@@ -14,7 +14,7 @@ FE最终9bdfb58非作者批准：真实Edge使用全拦截合成API，独立核�
 
 BE初版22e365c作者采集/材料198项与新增专项13项通过；非作者64项原生PG通过，包括真实FFmpeg65秒合成A/V→闭合→材料导入。65秒是本地快速读取的媒体时轴，不是2小时真实平台墙钟稳定性。ARC组合97项/工程42项与前端构建通过。各组重叠不累加。
 
-独立审查另发现发布前copy/fsync完成后取消仍可能生成available材料，已保留反例并交作者修复；在复核关闭前不批准部署。最终精确SHA、CI与运行页面证据以runtime/live-029/closure.json为准，本报告当前不表示已部署。
+独立审查另发现发布前copy/fsync完成后取消仍可能生成available材料，修复为复制后、材料commit前以及媒体/清单fsync后强制权威检查，不受进度节流影响。最终组合a52b60cbeb356438603121df63b64e652ce2575d获非作者工程批准：68项capture/material和原反例通过，额外commit前Canceled/LostLease两例确认已flush材料回滚；ASR/FE目录树与已批版本相同。两项P1均关闭，见runtime/live-029/qa-fixed-review.md。最终精确SHA、CI与运行页面证据以runtime/live-029/closure.json为准；部署验收独立于代码测试。
 
 ## 运行边界
 

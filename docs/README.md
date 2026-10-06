@@ -23,4 +23,6 @@
 
 [统一ASR操作与边界](asr.md) · [本地模型](asr-local.md) · [常驻worker](asr-worker.md) · [腾讯协议](asr-tencent.md) · [LIVE-006C验收](../project-team/reports/LIVE-006C/change.md)。
 
+[统一采集操作](capture.md) · [采集独立审查与有限集成边界](../project-team/reports/LIVE-015/arc-review.md)：默认关闭，真实平台接入及安全复核待验收。
+
 [业务契约草案](contracts/README.md) · [后端工程操作](operations/backend-foundation.md)。草案不等于已实现API；身份/场次/材料的实际范围与OpenAPI见contracts/implementation-status.md，工程和业务验证见任务报告。

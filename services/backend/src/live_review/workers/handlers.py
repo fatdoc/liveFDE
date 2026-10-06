@@ -10,6 +10,10 @@ class HandlerUnavailable(Exception):
 
 
 def resolve(name, settings):
+    if name in {"capture.record", "capture.import"}:
+        from live_review.workers.capture_jobs import run_stage
+
+        return lambda context: run_stage(context, settings, name)
     if name == "asr.gateway":
         from live_review.workers.asr_jobs import run_stage
 

@@ -1,0 +1,13 @@
+schema_version: 1
+enabled: false
+# Copy to capture-policy.yaml in LIVE_MODEL_CONFIG_DIR; local values in capture.local.yaml.
+# root: /absolute/workspace/runtime/live-015/captures
+# douyin_python: /absolute/workspace/runtime/live-015/douyin-venv/bin/python
+# douyin_checkout: /absolute/workspace/runtime/live-015/upstream/DouyinLiveRecorder
+# finder_executable: /absolute/workspace/runtime/live-015/finder-venv/bin/wechat-finder-dlna
+finder_name: FDE Capture
+finder_port: 8198
+max_seconds: 14400
+max_bytes: 500000000
+min_free_bytes: 1073741824
+# Cookies are read only from LIVE_CAPTURE_DOUYIN_COOKIE; never store them here.

@@ -77,3 +77,5 @@ LIVE-006B收尾：CFG/JOBS开发写入结束，clean worktree只读保留。QA�
 当前共享源码唯一作者为CAP，仅在其副本修改：main.py、core/config.py捕获字段、workers/handlers.py捕获注册、modules/materials必要接缝、backend pyproject.toml/uv.lock、migrations/env.py和唯一新增0006_capture.py（down_revision=0005_asr_settings）。ARC不并写这些代码，持有main index/台账/结构门禁与最终串行集成；CAP按具体新增路径另行协调，旧身份/ASR等测试不在默认写范围。代码集成前独立Review绑定SHA；本次登记核对不等于采集代码验收。
 
 拟资源API8197/助手8198/PG15490/live015，ARC登记时无TCP监听，未声称启动；CAP启动前复核并登记实际值/独立测试库。运行产物只在runtime/live-015；旧预览与旧库不动。磁盘复核约7.1GiB空闲，下载/录制须先做空间预算与受控停止，不能清理他人缓存或重下ASR权重。
+
+015基础有限集成：作者e78014b冻结并保留只读，ARC独立352后端通过；main集成专项39及工程39通过。CAP实现写锁随本阶段交还，后续修改需重新登记并复审。PG15490和各独立测试库保留；8197/8198最终TCP无监听，不自动开启真实采集。5196/8196/15480仍监听，旧006C不动。ARC收尾提交后释放main本阶段index独占。端到端出站隔离复核/真实平台待验，015～017不标done；本阶段磁盘复核15GiB空闲，不清理其他产物。

@@ -3,7 +3,6 @@ from uuid import UUID
 from fastapi import APIRouter, Header, Query, Request, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
 
 from live_review.core.auth import CurrentAdmin, Database, MutationAdmin
 from live_review.core.errors import ApiError
@@ -122,47 +121,12 @@ def associate(
     admin: MutationAdmin,
     db: Database,
 ):
-    session = db.scalar(
-        select(LiveSession).where(
-            LiveSession.id == session_id, LiveSession.workspace_id == admin.workspace_id
-        )
-    )
-    if session is None:
-        raise ApiError(404, "not_found", "场次不存在")
-    material, _ = get_material(db, payload.material_id, admin)
-    if material.purpose == "reference_pdf" and payload.role != "reference":
-        raise ApiError(422, "reference_only", "PDF仅能作为参考资料关联")
-    relation = SessionMaterial(
-        workspace_id=admin.workspace_id,
-        session_id=session_id,
-        material_id=payload.material_id,
-        role=payload.role,
-    )
-    try:
-        with db.begin_nested():
-            db.add(relation)
-            db.flush()
-        already = False
-    except IntegrityError:
-        relation = db.scalar(
-            select(SessionMaterial).where(
-                SessionMaterial.workspace_id == admin.workspace_id,
-                SessionMaterial.session_id == session_id,
-                SessionMaterial.material_id == payload.material_id,
-                SessionMaterial.role == payload.role,
-            )
-        )
-        if relation is None:
-            raise
-        already = True
+    from live_review.modules.materials.association import associate_material
+
+    result = associate_material(db, admin, session_id, payload)
+    if result["already_linked"]:
         response.status_code = 200
-    db.commit()
-    return {
-        "session_id": str(session_id),
-        "material_id": str(payload.material_id),
-        "role": payload.role,
-        "already_linked": already,
-    }
+    return result
 
 
 @router.get("/sessions/{session_id}/materials", response_model=SessionMaterialsPage)

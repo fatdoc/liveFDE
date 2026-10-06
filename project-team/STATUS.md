@@ -1,6 +1,6 @@
 # 当前事实与任务
 更新：2026-10-06，非自动监控。
-已有 React Demo、CPB 审计、规范、Python工程基础和业务契约草案。LIVE-004身份/场次/材料已验；LIVE-006C的ASR设置/试用已接真实后端，真实本地文件与窗口流转写闭环已验。其余页面仍Demo；报告、评分与平台采集未实现。
+已有 React Demo、CPB 审计、规范、Python工程基础和业务契约草案。LIVE-004身份/场次/材料已验；LIVE-006C的ASR设置/试用已接真实后端，真实本地文件与窗口流转写闭环已验。其余页面仍Demo；报告、评分未实现。LIVE-015～017采集基础代码完成有限技术验收并集成，默认关闭，真实平台接入待验收。
 Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0f；无 remote。前端 frontend/web，旧 CPB 已归档；独立技术/浏览器验收通过，试验 worktree 已验证并移除。
 
 | 任务 | owner | 状态 | 依赖 |
@@ -14,9 +14,9 @@ Git：app/.git，main 已有首次基线 13665739fb29d8aa70a9e78d32bce3d58c81bd0
 | LIVE-006B | CFG/BE/ARC | done | 集成706f28e；独立组合QA及PM最终验收通过；204后端tests零跳过、36工程checks及v1/v2烟测；真实调用0 |
 | LIVE-006C | LOCAL/TENCENT/UI/ARC | done | 代码751c331；独立QA及PM按基础版范围通过；313后端0skip、36工程、真实本地2file/WS及页面上传；腾讯真实调用和质量缺口见报告 |
 | LIVE-007～014 | 见计划 | backlog | docs/05 |
-| LIVE-015 | CAP-01 | in_progress | 用户明确提前启动；统一采集基础与抖音适配，任务卡LIVE-015 |
-| LIVE-016 | CAP-01 | in_progress | 与015同一capture分支，视频号投屏接入调研/实现；真实投屏待操作证据 |
-| LIVE-017 | CAP-01 | in_progress | 与015/016统一导入、去重及场次/ASR接缝，首版录后手动转写 |
+| LIVE-015 | CAP-01 | in_progress | 基础代码已集成且默认关闭；e78014b独立352项通过；真实抖音及出站隔离复核待验 |
+| LIVE-016 | CAP-01 | in_progress | 本机DLNA接入基础已集成，接收端停止；真实手机/视频号待验 |
+| LIVE-017 | CAP-01 | in_progress | 导入/去重/场次关联及手动ASR入口经合成媒体验证；真实平台到ASR闭环待验，非done |
 
 待决策：远程组织/仓库/可见性；评分标准；后续多场景标注样本、真实云配置与预算。已授权的本轮公开本地样本实测完成，不等于新增云调用授权。
 版本/端口/DB 隔离由 LIVE-002 探针登记；不抢占已有预览。

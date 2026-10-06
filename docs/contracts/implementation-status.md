@@ -1,4 +1,4 @@
-# 已实现接口与设计边界（LIVE-004～006C）
+# 已实现接口与设计边界（LIVE-004～017基础）
 
 已实现管理员身份、主播/场次、材料；LIVE-005增加任务与恢复基础设施，最终验收状态见任务看板。LIVE-006C将现有React的ASR设置/登录/试用接到后端，其余页面仍演示数据。正式身份/场次/材料schema以Python模块和从FastAPI导出的openapi.json为准。draft.schema.json仍仅描述后续分析/报告/审核等设计及合成样例，不是另一个生产schema。
 
@@ -13,8 +13,9 @@
 | /api/v1/jobs/{id}、/{id}/retry、/{id}/cancel | 持久任务状态与安全错误、带revision的失败阶段重试及幂等、取消请求与执行停止分开 |
 | /api/v1/asr/settings、/health、/transcriptions、/transcriptions/{id} | 工作区持久设置/revision、就绪、真实本地文件任务与结果；腾讯真实调用待凭证/预算 |
 | WS /api/v1/asr/stream | 鉴权PCM流、partial/final/completed、安全结束与不可重放；WS不在OpenAPI paths中 |
+| /api/v1/capture/health、/probe、/runs、/runs/{id}、/stop、/import | 统一采集基础、状态与停止、已关闭媒体导入及场次关联；默认关闭，仅完成本地合成验收，真实平台/手机及出站隔离复核待完成 |
 
-未实现：ASR以外的workspace settings/preferences、dashboard聚合、业务分析入口、报告、资产审核、学习库、备播及导出、正式评分、平台采集。没有多角色RBAC；管理员是唯一产品角色，主播是业务对象。
+未实现：ASR以外的workspace settings/preferences、dashboard聚合、业务分析入口、报告、资产审核、学习库、备播及导出、正式评分。平台采集仅基础代码已实现并默认关闭，不代表抖音/视频号真实接入已验收；当前不启动试录。没有多角色RBAC；管理员是唯一产品角色，主播是业务对象。
 
 上传说明：当前允许MP4/WAV/MP3/M4A/AAC（后两种由LIVE-006C加入，ffprobe真实解析且禁止网络协议）、UTF-8纯文本（上限10MiB）、未加密可解析PDF（上限20MiB），总体上限可配置，默认512MiB。没有续传，失败可整文件重试；expired返回410。客户端原始文件名仅展示，不作为磁盘路径。LIVE-006由操作员显式提交抽音/转写；上传不自动开始分析，任何材料均不自动成为主播原话证据。临时失败文件保留便于恢复，自动过期清理尚未实现，必须单独安排保留策略。
 

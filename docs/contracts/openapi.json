@@ -81,6 +81,226 @@
         }
       }
     },
+    "/api/v1/capture/health": {
+      "get": {
+        "tags": [
+          "capture"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_v1_capture_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/capture/probe": {
+      "post": {
+        "tags": [
+          "capture"
+        ],
+        "summary": "Probe",
+        "operationId": "probe_api_v1_capture_probe_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProbeInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/capture/runs": {
+      "post": {
+        "tags": [
+          "capture"
+        ],
+        "summary": "Start",
+        "operationId": "start_api_v1_capture_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/capture/runs/{run_id}": {
+      "get": {
+        "tags": [
+          "capture"
+        ],
+        "summary": "Status",
+        "operationId": "status_api_v1_capture_runs__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/capture/runs/{run_id}/stop": {
+      "post": {
+        "tags": [
+          "capture"
+        ],
+        "summary": "Stop",
+        "operationId": "stop_api_v1_capture_runs__run_id__stop_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/capture/runs/{run_id}/import": {
+      "post": {
+        "tags": [
+          "capture"
+        ],
+        "summary": "Import Run",
+        "operationId": "import_run_api_v1_capture_runs__run_id__import_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/asr/settings": {
       "get": {
         "tags": [
@@ -1630,6 +1850,30 @@
         ],
         "title": "MaterialOutput"
       },
+      "ProbeInput": {
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "douyin",
+              "wechat"
+            ],
+            "title": "Platform"
+          },
+          "source_ref": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Source Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "platform",
+          "source_ref"
+        ],
+        "title": "ProbeInput"
+      },
       "ReceiveOutput": {
         "properties": {
           "upload_id": {
@@ -2162,6 +2406,36 @@
           "revision"
         ],
         "title": "SettingsOutput"
+      },
+      "StartInput": {
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "douyin",
+              "wechat"
+            ],
+            "title": "Platform"
+          },
+          "source_ref": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Source Ref"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "platform",
+          "source_ref",
+          "session_id"
+        ],
+        "title": "StartInput"
       },
       "StepOutput": {
         "properties": {

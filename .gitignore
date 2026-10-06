@@ -32,3 +32,9 @@ dist/
 playwright-report/
 test-results/
 .DS_Store
+
+# LIVE-006B machine-only AI overrides (shared examples stay tracked)
+/config/local.yaml
+/config/local.yml
+/config/**/*.local.yaml
+/config/**/*.local.yml

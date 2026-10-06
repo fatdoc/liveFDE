@@ -14,6 +14,9 @@ class PolicyTests(unittest.TestCase):
             "LIVE-004C",
             "LIVE-004-ENG",
             "LIVE-004",
+            "LIVE-006B",
+            "LIVE-006B-CFG",
+            "LIVE-006B-JOBS",
         ):
             self.assertEqual(task_for_branch(f"feat/{task}-implementation"), task)
         for branch in (
@@ -49,12 +52,17 @@ class PolicyTests(unittest.TestCase):
         for path in [
             "unknown/a.py",
             "infra/.env",
+            "config/local.yaml",
+            "config/user.local.yaml",
             "services/backend/runtime/a",
             "docs/movie.mp4",
             "frontend/old/a.ts",
         ]:
             self.assertTrue(path_errors(path), path)
         self.assertFalse(path_errors("infra/.env.example"))
+        self.assertFalse(path_errors(".env.example"))
+        self.assertFalse(path_errors("config/models.yaml"))
+        self.assertFalse(path_errors("config/local.example.yaml"))
         self.assertFalse(path_errors("services/backend/src/live_review/modules/models.py"))
 
     def test_rename_checks_source_and_destination(self):

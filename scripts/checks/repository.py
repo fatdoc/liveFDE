@@ -5,9 +5,10 @@ import pathlib
 import re
 import subprocess
 
-ROOTS = {".github", "frontend", "services", "infra", "scripts", "docs", "project-team"}
+ROOTS = {".github", "frontend", "services", "infra", "scripts", "docs", "project-team", "config"}
 FILES = {
     ".gitignore",
+    ".env.example",
     ".dockerignore",
     "AGENTS.md",
     "README.md",
@@ -40,6 +41,44 @@ BAD_SUFFIX = {
     ".onnx",
 }
 SCOPES = {
+    "LIVE-006B-CFG": [
+        "services/backend/src/live_review/core/model_config/",
+        "services/backend/src/live_review/core/model_registry.py",
+        "services/backend/tests/test_model_config.py",
+        "services/backend/tests/test_model_registry.py",
+        "config/",
+        ".env.example",
+        "docs/ai/model-registry.md",
+        "project-team/reports/LIVE-006B/config.md",
+    ],
+    "LIVE-006B-JOBS": [
+        "services/backend/src/live_review/workers/media_jobs.py",
+        "services/backend/src/live_review/workers/media_operator.py",
+        "services/backend/src/live_review/workers/media_configuration.py",
+        "services/backend/src/live_review/integrations/asr/factory.py",
+        "services/backend/src/live_review/integrations/asr/__init__.py",
+        "services/backend/tests/test_media_jobs.py",
+        "services/backend/tests/test_media_registry_jobs.py",
+        "docs/ai/media-jobs.md",
+        "project-team/reports/LIVE-006B/jobs.md",
+    ],
+    "LIVE-006B": [
+        ".gitignore",
+        "scripts/checks/repository.py",
+        "scripts/checks/test_repository.py",
+        "scripts/checks/live006b_environment.py",
+        "scripts/checks/live006b_acceptance.py",
+        "scripts/checks/test_live006b_environment.py",
+        "infra/compose.live006b.yml",
+        "docs/04-directory-contract.md",
+        "docs/ai/configuration-refactor.md",
+        "docs/ai/provider-configuration.md",
+        "docs/ai/live006-acceptance.md",
+        "project-team/STATUS.md",
+        "project-team/access/RESOURCE-LOCKS.md",
+        "project-team/tasks/LIVE-006B.md",
+        "project-team/reports/LIVE-006B/",
+    ],
     "LIVE-006-CFG": [
         "services/backend/src/live_review/core/provider_config.py",
         "services/backend/pyproject.toml",
@@ -214,6 +253,11 @@ def path_errors(name):
         errors.append("runtime/binary/credential artifact")
     if any(part.startswith(".env") and not part.endswith(".example") for part in path.parts):
         errors.append("private environment")
+    if name.startswith("config/") and (
+        path.name in {"local.yaml", "local.yml"}
+        or path.name.endswith((".local.yaml", ".local.yml"))
+    ):
+        errors.append("private local model override")
     if name.startswith("services/") and not name.startswith("services/backend/"):
         errors.append("unknown service")
     if name.startswith("frontend/") and not name.startswith("frontend/web/"):

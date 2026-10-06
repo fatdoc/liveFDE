@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import os
+import re
 import socket
 import wave
 from contextlib import suppress
@@ -21,6 +22,30 @@ class LocalWorkerServer:
         self.server, self.identity = None, None
         self.connections = set()
         self.inference = asyncio.Lock()
+        # Never evict tombstones: a late RPC must not revive a canceled request.
+        self.requests = {}
+
+    async def cancel_request(self, request_id):
+        if not isinstance(request_id, str) or not re.fullmatch(
+            r"[A-Za-z0-9_.:-]{1,128}", request_id
+        ):
+            raise ASRError("worker_request_id_invalid")
+        entry = self.requests.get(request_id)
+        if entry is None:
+            if len(self.requests) >= 4096:
+                raise ASRError("worker_stop_unconfirmed", unknown=True)
+            stopped = asyncio.Event()
+            stopped.set()
+            self.requests[request_id] = {"stopped": stopped, "task": None, "canceled": True}
+            return
+        if not entry["canceled"]:
+            entry["canceled"] = True
+            if not entry["stopped"].is_set():
+                entry["task"].cancel()
+        try:
+            await asyncio.wait_for(entry["stopped"].wait(), 5)
+        except TimeoutError:
+            raise ASRError("worker_stop_unconfirmed", unknown=True) from None
 
     async def start(self):
         path = socket_path(self.path, existing=False)
@@ -95,6 +120,7 @@ class LocalWorkerServer:
         current = asyncio.current_task()
         self.connections.add(current)
         tasks = []
+        error_code, entry = None, None
         try:
             if len(self.connections) > 8:
                 raise ASRError("worker_busy")
@@ -102,11 +128,17 @@ class LocalWorkerServer:
             if initial.get("fingerprint") != self.fingerprint:
                 raise ASRError("worker_config_mismatch")
             op = initial.get("op")
-            fields = {"op", "fingerprint"} | (set() if op == "health" else {"request"})
+            fields = {"op", "fingerprint"} | (
+                set() if op == "health" else {"request_id"} if op == "cancel" else {"request"}
+            )
             if op == "file":
                 fields.add("path")
-            if op not in {"file", "stream", "health"} or set(initial) != fields:
+            if op not in {"file", "stream", "health", "cancel"} or set(initial) != fields:
                 raise ASRError("worker_protocol_invalid")
+            if op == "cancel":
+                await self.cancel_request(initial["request_id"])
+                await write(writer, {"type": "cancel_status", "stopped": True})
+                return
             if op == "health":
                 result = await asyncio.wait_for(self.provider.health(), 5)
                 await write(writer, {"type": "health", "data": result.model_dump(mode="json")})
@@ -114,6 +146,15 @@ class LocalWorkerServer:
             request = ASRRequest.model_validate(initial["request"])
             if request.allow_network or request.privacy != "local_only":
                 raise ASRError("worker_local_only_required")
+            request_id = request.request_id
+            if not re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", request_id):
+                raise ASRError("worker_request_id_invalid")
+            if request_id in self.requests:
+                raise ASRError("worker_request_reused")
+            if len(self.requests) >= 4096:
+                raise ASRError("worker_busy")
+            entry = {"stopped": asyncio.Event(), "task": current, "canceled": False}
+            self.requests[request_id] = entry
             path = self.audio_path(initial.get("path"), request) if op == "file" else None
             queue = asyncio.Queue(maxsize=16)
             ended = False
@@ -199,14 +240,25 @@ class LocalWorkerServer:
         except (EOFError, ConnectionError, asyncio.CancelledError):
             pass
         except Exception as error:
-            code = "worker_timeout" if isinstance(error, TimeoutError) else safe_code(error)
-            with suppress(Exception):
-                await write(writer, {"type": "error", "code": code})
+            error_code = "worker_timeout" if isinstance(error, TimeoutError) else safe_code(error)
         finally:
             for task in tasks:
                 task.cancel()
             # Do not release serial inference or unload resident models before native work stops.
-            await asyncio.gather(*tasks, return_exceptions=True)
+            cleanup = asyncio.gather(*tasks, return_exceptions=True)
+            while not cleanup.done():
+                try:
+                    await asyncio.shield(cleanup)
+                except asyncio.CancelledError:
+                    continue
+            if entry is not None:
+                entry["stopped"].set()
+                entry["task"] = None
+            with suppress(Exception):
+                if error_code:
+                    await write(writer, {"type": "error", "code": error_code})
+                # Sole proof of stop: all inference tasks finished and released their locks.
+                await write(writer, {"type": "stopped"})
             writer.close()
             with suppress(Exception):
                 await writer.wait_closed()

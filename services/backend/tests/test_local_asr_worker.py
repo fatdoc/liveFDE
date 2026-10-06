@@ -104,7 +104,11 @@ def paths():
 
 
 def req(**updates):
-    return ASRRequest(request_id="synthetic", max_duration_seconds=2, **updates)
+    from uuid import uuid4
+
+    return ASRRequest(
+        request_id=updates.pop("request_id", uuid4().hex), max_duration_seconds=2, **updates
+    )
 
 
 def test_file_health_and_single_provider_instance_reused(paths):
@@ -308,5 +312,161 @@ def test_shutdown_waits_for_inference_cleanup_and_unloads(paths):
         with pytest.raises(ASRError):
             await pending
         assert unloaded == [True] and not (root / "s").exists()
+
+    asyncio.run(run())
+
+
+def test_cancel_ack_waits_for_cleanup_before_return(paths):
+    root, audio = paths
+
+    async def run():
+        config, provider = Config(model_root=root), Synthetic()
+        provider.block = True
+        server = await LocalWorkerServer(root / "s", config, root, provider).start()
+        try:
+            pending = asyncio.create_task(
+                LocalWorkerProvider(root / "s", config).transcribe_file(audio, req())
+            )
+            await provider.started.wait()
+            pending.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await pending
+            assert provider.cleaned.is_set() and provider.active == 0
+        finally:
+            await server.close()
+
+    asyncio.run(run())
+
+
+def test_cancel_timeout_is_unknown_not_confirmed(paths, monkeypatch):
+    from live_review.integrations.asr_gateway.local_worker import client as implementation
+
+    monkeypatch.setattr(implementation, "STOP_TIMEOUT_SECONDS", 0.01)
+    root, audio = paths
+
+    async def run():
+        config, provider = Config(model_root=root), Synthetic()
+        provider.block = True
+        server = await LocalWorkerServer(root / "s", config, root, provider).start()
+        try:
+            pending = asyncio.create_task(
+                LocalWorkerProvider(root / "s", config).transcribe_file(audio, req())
+            )
+            await provider.started.wait()
+            pending.cancel()
+            with pytest.raises(ASRError, match="worker_stop_unconfirmed") as error:
+                await pending
+            assert error.value.unknown and provider.active == 1
+            await provider.cleaned.wait()
+        finally:
+            await server.close()
+
+    asyncio.run(run())
+
+
+def test_external_cancel_active_and_late_tombstone(paths):
+    root, audio = paths
+
+    async def run():
+        config, provider = Config(model_root=root), Synthetic()
+        provider.block = True
+        server = await LocalWorkerServer(root / "s", config, root, provider).start()
+        try:
+            client = LocalWorkerProvider(root / "s", config)
+            pending = asyncio.create_task(client.transcribe_file(audio, req(request_id="job:1")))
+            await provider.started.wait()
+            await client.cancel_and_wait("job:1")
+            assert provider.cleaned.is_set() and provider.active == 0
+            with pytest.raises(ASRError, match="worker_canceled"):
+                await pending
+            await client.cancel_and_wait("job:1")  # idempotent confirmed stop
+            await client.cancel_and_wait("late:1")
+            provider.block = False
+            with pytest.raises(ASRError, match="worker_request_reused"):
+                await client.transcribe_file(audio, req(request_id="late:1"))
+            assert provider.calls == 1
+            assert (await client.transcribe_file(audio, req(request_id="job:2"))).complete
+            await client.cancel_and_wait("job:2")  # completed request is already stopped
+        finally:
+            await server.close()
+
+    asyncio.run(run())
+
+
+def test_external_cancel_without_worker_is_unconfirmed(paths):
+    root, _ = paths
+
+    async def run():
+        with pytest.raises(ASRError, match="worker_stop_unconfirmed") as error:
+            await LocalWorkerProvider(root / "missing", Config(model_root=root)).cancel_and_wait(
+                "job:1"
+            )
+        assert error.value.unknown
+
+    asyncio.run(run())
+
+
+def test_external_cancel_queued_request_does_not_run_it(paths):
+    root, audio = paths
+
+    async def run():
+        config, provider = Config(model_root=root), Synthetic()
+        provider.block = True
+        server = await LocalWorkerServer(root / "s", config, root, provider).start()
+        try:
+            client = LocalWorkerProvider(root / "s", config)
+            first = asyncio.create_task(client.transcribe_file(audio, req(request_id="first:1")))
+            await provider.started.wait()
+            second = asyncio.create_task(client.transcribe_file(audio, req(request_id="queued:1")))
+            while "queued:1" not in server.requests:
+                await asyncio.sleep(0)
+            await client.cancel_and_wait("queued:1")
+            with pytest.raises(ASRError, match="worker_canceled"):
+                await second
+            assert provider.calls == 1 and provider.active == 1
+            await client.cancel_and_wait("first:1")
+            with pytest.raises(ASRError, match="worker_canceled"):
+                await first
+        finally:
+            await server.close()
+
+    asyncio.run(run())
+
+
+def test_stream_cancel_waits_for_native_cleanup_ack(paths):
+    root, audio = paths
+
+    class BlockingStream(Synthetic):
+        async def transcribe_stream(self, chunks, request):
+            async for _ in chunks:
+                result = await self.transcribe_file(audio, request)
+                yield ASREvent(type="completed", result=result)
+
+    async def chunks():
+        yield b"\0\0" * 3200
+        await asyncio.sleep(30)
+
+    async def run():
+        config, provider = Config(model_root=root), BlockingStream()
+        provider.block = True
+        server = await LocalWorkerServer(root / "s", config, root, provider).start()
+        try:
+
+            async def collect():
+                return [
+                    e
+                    async for e in LocalWorkerProvider(root / "s", config).transcribe_stream(
+                        chunks(), req()
+                    )
+                ]
+
+            pending = asyncio.create_task(collect())
+            await provider.started.wait()
+            pending.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await pending
+            assert provider.cleaned.is_set() and provider.active == 0
+        finally:
+            await server.close()
 
     asyncio.run(run())

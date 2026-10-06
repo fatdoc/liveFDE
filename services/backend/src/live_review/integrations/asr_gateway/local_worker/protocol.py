@@ -12,6 +12,10 @@ MAX_FRAME = 128 * 1024
 MAX_CHUNK = 64 * 1024
 SAFE_CODES = frozenset(
     {
+        "worker_canceled",
+        "worker_stop_unconfirmed",
+        "worker_request_reused",
+        "worker_request_id_invalid",
         "worker_protocol_invalid",
         "worker_config_mismatch",
         "worker_path_rejected",

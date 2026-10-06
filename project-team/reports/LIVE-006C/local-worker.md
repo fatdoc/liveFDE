@@ -9,3 +9,9 @@
 模型runtime真实provider、60秒缓存卸载、真实模型推理性能、根factory接线尚需root+LOCAL组合验证；合成测试只证明RPC、同provider实例复用与取消串行边界。结果单帧最大128KiB，过大安全失败；不能宣称无限长度转写。文档docs/asr-worker.md记录部署、协议和容量限制。作者不自批，等待独立QA。
 
 回滚：撤销本提交与root相应factory引用；没有数据库迁移。停止显式worker后模型卸载，现有原始音频保留。
+
+## 取消语义修正（本次增量）
+
+830a2db的client close socket只能触发server清理，不能证明已停，原取消证据范围不足。本增量增加stopped ACK、5秒等待/worker_stop_unconfirmed unknown、外部cancel_and_wait(job:attempt)、迟到tombstone/重复ID拒绝。server清理ack在所有任务和模型锁结束之后；重复取消不会中断清理等待。19项Unix tests通过，覆盖file/stream本地取消、停止未确认、外部active/queued/not-connected/finished取消及迟到请求。状态最多4096条且不逐出，仅本进程有效；跨重启业务幂等由root Job保持。
+
+同一提交含stream.py窄增量：job:1、显式aclose、传播gather内worker_stop_unconfirmed，未知停止终态failed；test fixture先持久save revision1再start。19项真实PG WS测试通过（独立原测试库，23.34s）。root还需005父进程在强杀子进程后外部cancel_and_wait，gateway/recorder层aclosing，及worker_stop_unconfirmed禁retry。未改这些共享路径，不声称它们已集成。依赖5143069在本树为e6cb912，仅用于取得现有stream文件，不重复交付。

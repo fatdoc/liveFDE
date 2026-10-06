@@ -19,3 +19,5 @@ provider partial/final透传ASREvent；completed先把结果write_json、引用�
 ARC已确认需修改共享execution.recover_expired：stream无原音，进程崩溃时不可重新queued/建Outbox；应failed/stream_not_replayable，未知账本优先保留unknown。本作者依赖版本未含该共享修复，组合验收必须确认它及main路由注册。未验证真实提供商、浏览器麦克风编码、正式云计费或完整产品流程；作者不能批准自身实现，等待独立QA绑定提交SHA。
 
 回滚：撤销本子任务提交与ARC对应router注册；无新迁移。已有stream job仍保留记录，不能恢复原音或重试。
+
+取消增量：请求ID采用job:1；consume显式aclose，清理gather不再吞worker_stop_unconfirmed，finish对此写failed而非canceled。19项真实PG WS测试通过；fixture先保存workspace revision1，符合必须先PUT设置的规则。共享gateway/recorder的aclosing及005监督停止确认由ARC集成，不在本报告冒充已完成。

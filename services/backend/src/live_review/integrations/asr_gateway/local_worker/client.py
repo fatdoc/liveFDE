@@ -7,13 +7,42 @@ from contextlib import suppress
 from ..contracts import ASRError, ASREvent, ASRHealth, ASRResult
 from .protocol import MAX_CHUNK, MAX_FRAME, fingerprint, read, safe_code, socket_path, write
 
+STOP_TIMEOUT_SECONDS = 5
+
+
+async def confirm_stopped(reader, writer, *, send_cancel=True):
+    """Keep the channel open until server cleanup is acknowledged, or mark it unconfirmed."""
+
+    async def exchange():
+        async with asyncio.timeout(STOP_TIMEOUT_SECONDS):
+            if send_cancel:
+                with suppress(ConnectionError):
+                    await write(writer, {"type": "cancel"})
+            while True:
+                message = await read(reader)
+                if message == {"type": "stopped"}:
+                    return
+
+    cleanup = asyncio.create_task(exchange())
+    try:
+        while True:
+            try:
+                await asyncio.shield(cleanup)
+                return
+            except asyncio.CancelledError:
+                # Repeated caller cancellation must not turn an unverified stop into success.
+                if cleanup.done():
+                    raise ASRError("worker_stop_unconfirmed", unknown=True) from None
+    except Exception:
+        raise ASRError("worker_stop_unconfirmed", unknown=True) from None
+
 
 class LocalWorkerProvider:
     def __init__(self, socket_path, config):
         self.socket_path, self.config = socket_path, config
         self.fingerprint = fingerprint(config)
 
-    async def _connect(self, op, request=None, path=None):
+    async def _connect(self, op, request=None, path=None, request_id=None):
         if request and (request.allow_network or request.privacy != "local_only"):
             raise ASRError("worker_local_only_required")
         try:
@@ -28,23 +57,28 @@ class LocalWorkerProvider:
             payload["request"] = request.model_dump(mode="json")
         if path is not None:
             payload["path"] = str(path)
+        if request_id is not None:
+            payload["request_id"] = request_id
         try:
             await write(writer, payload)
             return reader, writer
         except BaseException:
-            writer.close()
-            with suppress(Exception):
-                await writer.wait_closed()
+            try:
+                if request:
+                    await confirm_stopped(reader, writer)
+            finally:
+                writer.close()
+                with suppress(Exception):
+                    await writer.wait_closed()
             raise
 
     async def _response(self, reader):
         value = await read(reader)
-        if value.get("type") == "error":
-            raise ASRError(safe_code(ASRError(value.get("code"))))
         return value
 
     async def _single(self, op, request=None, path=None):
-        writer = None
+        reader, writer = None, None
+        terminal, stopped = False, False
         try:
             timeout = (
                 5
@@ -54,6 +88,12 @@ class LocalWorkerProvider:
             async with asyncio.timeout(timeout):
                 reader, writer = await self._connect(op, request, path)
                 value = await self._response(reader)
+                terminal = value.get("type") in {"result", "error"}
+                if value == {"type": "stopped"}:
+                    stopped = True
+                    raise ASRError("worker_canceled")
+                if value.get("type") == "error":
+                    raise ASRError(safe_code(ASRError(value.get("code"))))
                 if value.get("type") != ("health" if op == "health" else "result"):
                     raise ASRError("worker_response_invalid")
                 model = ASRHealth if op == "health" else ASRResult
@@ -71,7 +111,28 @@ class LocalWorkerProvider:
             raise ASRError("worker_response_invalid") from None
         finally:
             if writer:
-                writer.close()  # EOF is a cancellation signal; server waits for inference cleanup.
+                try:
+                    if request and not stopped:
+                        await confirm_stopped(reader, writer, send_cancel=not terminal)
+                finally:
+                    writer.close()
+                    with suppress(Exception):
+                        await writer.wait_closed()
+
+    async def cancel_and_wait(self, request_id):
+        """External supervisor cancellation; also fences a not-yet-connected request ID."""
+        writer = None
+        try:
+            async with asyncio.timeout(STOP_TIMEOUT_SECONDS + 1):
+                reader, writer = await self._connect("cancel", request_id=request_id)
+                response = await read(reader)
+                if response != {"type": "cancel_status", "stopped": True}:
+                    raise ASRError("worker_stop_unconfirmed", unknown=True)
+        except BaseException:
+            raise ASRError("worker_stop_unconfirmed", unknown=True) from None
+        finally:
+            if writer:
+                writer.close()
                 with suppress(Exception):
                     await writer.wait_closed()
 
@@ -83,6 +144,7 @@ class LocalWorkerProvider:
 
     async def transcribe_stream(self, chunks, request):
         writer, sender, receiver = None, None, None
+        stopped = False
         try:
             async with asyncio.timeout(
                 request.max_duration_seconds + self.config.lock_timeout_seconds + 120
@@ -111,6 +173,13 @@ class LocalWorkerProvider:
                         await sender
                     value = await receiver
                     receiver = None
+                    if value == {"type": "stopped"}:
+                        stopped = True
+                        raise ASRError("worker_canceled")
+                    if value.get("type") == "error":
+                        await confirm_stopped(reader, writer, send_cancel=False)
+                        stopped = True
+                        raise ASRError(safe_code(ASRError(value.get("code"))))
                     if value.get("type") != "event":
                         raise ASRError("worker_response_invalid")
                     event = ASREvent.model_validate(value["data"])
@@ -120,9 +189,8 @@ class LocalWorkerProvider:
                         event = event.model_copy(update={"code": safe_code(ASRError(event.code))})
                     if event.type in {"completed", "error"}:
                         await sender
-                        writer.close()
-                        with suppress(Exception):
-                            await writer.wait_closed()
+                        await confirm_stopped(reader, writer, send_cancel=False)
+                        stopped = True
                         yield event
                         return
                     yield event
@@ -136,8 +204,12 @@ class LocalWorkerProvider:
             tasks = [task for task in (sender, receiver) if task is not None]
             for task in tasks:
                 task.cancel()
-            if writer:
-                writer.close()
-                with suppress(Exception):
-                    await writer.wait_closed()
             await asyncio.gather(*tasks, return_exceptions=True)
+            if writer:
+                try:
+                    if not stopped:
+                        await confirm_stopped(reader, writer)
+                finally:
+                    writer.close()
+                    with suppress(Exception):
+                        await writer.wait_closed()

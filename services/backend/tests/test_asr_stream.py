@@ -6,15 +6,16 @@ from uuid import UUID
 
 import pytest
 from jobs_fixture import jobs as jobs
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 from starlette.websockets import WebSocketDisconnect
 
 from live_review.integrations.asr_gateway.contracts import ASRError, ASREvent, ASRResult, ASRSegment
 from live_review.main import app
 from live_review.modules.asr import stream
-from live_review.modules.asr.schemas import SettingsOutput
-from live_review.modules.asr.service import authorization
+from live_review.modules.asr.models import ASRSettings
+from live_review.modules.asr.schemas import SettingsInput, SettingsOutput
+from live_review.modules.asr.service import authorization, save_settings
 from live_review.modules.jobs.models import CallIntent, Job, JobStage, Outbox
 
 PATH = "/api/v1/asr/stream"
@@ -26,11 +27,13 @@ def setup(jobs, monkeypatch):
     client, headers, admin, _, engine, settings = jobs
     if not any(getattr(route, "path", None) == PATH for route in app.routes):
         app.include_router(stream.router)
+    with Session(engine) as db:
+        save_settings(db, admin.workspace_id, SettingsInput(expected_revision=0))
     state = {"calls": 0, "mode": "success", "cloud": False, "fallback": False}
 
     def prepare(db, actor, config, data):
         prefs = SettingsOutput(
-            revision=0,
+            revision=1,
             provider="tencent" if state["cloud"] else "local",
             privacy="cloud_allowed" if state["cloud"] else "local_only",
             allow_cloud_fallback=state["fallback"],
@@ -58,6 +61,12 @@ def setup(jobs, monkeypatch):
         async def events(self, chunks, request):
             state["calls"] += 1
             data = b""
+            if state["mode"] == "stop_unconfirmed":
+                try:
+                    async for _ in chunks:
+                        pass
+                finally:
+                    raise ASRError("worker_stop_unconfirmed", unknown=True)
             async for chunk in chunks:
                 data += chunk
                 if state["mode"] == "unknown":
@@ -93,11 +102,14 @@ def setup(jobs, monkeypatch):
     Gateway.transcribe_stream = route
     monkeypatch.setattr(stream, "prepare", prepare)
     monkeypatch.setattr(stream, "ASRGateway", Gateway)
-    return client, headers, admin, engine, state
+    yield client, headers, admin, engine, state
+    with Session(engine) as db:
+        db.execute(delete(ASRSettings).where(ASRSettings.workspace_id == admin.workspace_id))
+        db.commit()
 
 
 def start(headers, **extra):
-    return {"type": "start", "csrf_token": headers["X-CSRF-Token"], "expected_revision": 0, **extra}
+    return {"type": "start", "csrf_token": headers["X-CSRF-Token"], "expected_revision": 1, **extra}
 
 
 def wait_terminal(engine, job_id):
@@ -270,3 +282,22 @@ def test_cloud_cancel_keeps_unknown_intent(setup):
         assert (
             db.scalar(select(CallIntent).where(CallIntent.job_id == identifier)).state == "unknown"
         )
+
+
+def test_cancel_with_unconfirmed_worker_stop_is_failed(setup):
+    client, headers, _, engine, state = setup
+    state["mode"] = "stop_unconfirmed"
+    with client.websocket_connect(PATH, headers=ORIGIN) as ws:
+        ws.send_json(start(headers))
+        identifier = UUID(ws.receive_json()["job_id"])
+        # Ensure the provider is awaiting PCM before asking the supervisor to cancel.
+        for _ in range(100):
+            if state["calls"]:
+                break
+            time.sleep(0.01)
+        ws.send_json({"type": "cancel"})
+        error = ws.receive_json()
+        assert error["code"] == "worker_stop_unconfirmed"
+    with Session(engine) as db:
+        job = db.get(Job, identifier)
+        assert job.status == "failed" and job.error["code"] == "worker_stop_unconfirmed"

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ApiError, request, message } from '../../api/client'
 import { RecordingLimits } from './RecordingLimits'
-import { recordingChoiceValid } from './captureLimitPolicy'
+import { recordingChoiceValid, readableBytes, readableDuration } from './captureLimitPolicy'
 import { Button, Badge } from '../../components/UI'
 import type { LiveSession } from '../sessions/types'
 import { isActive, runLabel, type CaptureHealth, type CaptureRun } from './types'
@@ -238,12 +238,12 @@ export function CapturePanel({
         </p>
         {run.recording_limits && (
           <p className="muted">
-            本次上限 {run.recording_limits.max_seconds} 秒 / {run.recording_limits.max_bytes} 字节
+            本次上限 {readableDuration(run.recording_limits.max_seconds)} / {readableBytes(run.recording_limits.max_bytes)}
           </p>
         )}
         {(run.recorded_bytes != null || run.elapsed_seconds != null) && (
           <p className="muted">
-            已封装材料：{run.elapsed_seconds ?? '未提供'} 秒 · {run.recorded_bytes ?? '未提供'} 字节
+            已封装材料：{run.elapsed_seconds == null ? '未提供' : readableDuration(run.elapsed_seconds)} · {run.recorded_bytes == null ? '未提供' : readableBytes(run.recorded_bytes)}
           </p>
         )}
         {run.error_code && (
@@ -280,7 +280,7 @@ export function CapturePanel({
         <p className="muted">
           配置已就绪，可测试录制；真实直播源尚待验证。
           {health?.limits &&
-            ` 单次最多 ${health.limits.max_seconds} 秒 / ${Math.round(health.limits.max_bytes / 1000000)} MB。`}
+            ` 单次最多 ${readableDuration(health.limits.max_seconds)} / ${readableBytes(health.limits.max_bytes)}。`}
         </p>
       )}
       {!ready && (

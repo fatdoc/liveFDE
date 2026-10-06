@@ -205,3 +205,110 @@ def test_parent_process_decodes_diagnostic_but_stop_failure_takes_precedence(
     if stop_confirmed:
         assert error.value.code == "local_vad_result_invalid"
     assert "private stop detail" not in str(error.value)
+
+
+def shutdown_race_child(connection, parent_pid, cleanup_failure):
+    import time
+
+    class DelayedClose:
+        def __getattr__(self, name):
+            return getattr(connection, name)
+
+        def close(self):
+            connection.close()
+            # Old guardian deterministically observes this local close as parent EOF.
+            time.sleep(0.2)
+
+    def dispose():
+        if cleanup_failure:
+            raise RuntimeError("synthetic cleanup failure")
+
+    handler_process.build_engine = lambda _: SimpleNamespace(dispose=dispose)
+    handler_process.Context = lambda *args: None
+
+    def fail(context):
+        raise ASRError("local_asr_empty_for_speech")
+
+    handler_process.resolve = lambda *args: fail
+    try:
+        handler_process._child(
+            DelayedClose(),
+            parent_pid,
+            SimpleNamespace(job_lease_seconds=10),
+            None,
+            None,
+            None,
+            "fixture",
+        )
+    except RuntimeError:
+        if not cleanup_failure:
+            raise
+
+
+@pytest.mark.parametrize("cleanup_failure", [False, True])
+def test_normal_child_close_stops_guardian_even_when_cleanup_raises(cleanup_failure):
+    factory = multiprocessing.get_context("spawn")
+    parent, child = factory.Pipe()
+    process = factory.Process(
+        target=shutdown_race_child, args=(child, os.getpid(), cleanup_failure)
+    )
+    process.start()
+    child.close()
+    try:
+        parent.send("alive")
+        assert parent.poll(5)
+        assert parent.recv() == ("asr_failed", "local_asr_empty_for_speech")
+        process.join(5)
+        assert process.exitcode == 0
+    finally:
+        if process.is_alive():
+            process.kill()
+            process.join(5)
+        parent.close()
+
+
+def guarded_running_child(connection, parent_pid, lease):
+    import time
+
+    handler_process.build_engine = lambda _: SimpleNamespace(dispose=lambda: None)
+    handler_process.Context = lambda *args: None
+
+    def blocking(context):
+        connection.send(("synthetic_running", None))
+        time.sleep(30)
+        return {}
+
+    handler_process.resolve = lambda *args: blocking
+    handler_process._child(
+        connection,
+        parent_pid,
+        SimpleNamespace(job_lease_seconds=lease),
+        None,
+        None,
+        None,
+        "fixture",
+    )
+
+
+@pytest.mark.parametrize("lost", ["parent_eof", "heartbeat_timeout"])
+def test_active_child_still_kills_process_group_when_parent_is_lost(lost):
+    import signal
+
+    factory = multiprocessing.get_context("spawn")
+    parent, child = factory.Pipe()
+    lease = 10 if lost == "parent_eof" else 0.2
+    process = factory.Process(target=guarded_running_child, args=(child, os.getpid(), lease))
+    process.start()
+    child.close()
+    try:
+        assert parent.poll(5)
+        assert parent.recv() == ("synthetic_running", None)
+        if lost == "parent_eof":
+            parent.close()
+        process.join(5)
+        assert process.exitcode == -signal.SIGKILL
+    finally:
+        if process.is_alive():
+            process.kill()
+            process.join(5)
+        parent.close()

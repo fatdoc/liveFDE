@@ -17,3 +17,6 @@ PUT {expected_revision,base_url,model,timeout_seconds,api_key?:string}，省略k
 ModelRegistry仍不将llm标为分析可执行。新增仅diagnostic适配器，固定chat/completions最小合成内容，max_tokens有界/stream=false，一次POST；响应结构及usage有界验证，未知请求不重放。时间限制须覆盖DNS/TCP/TLS/响应，HTTPS验证证书与域名且连接固定公共IP。
 
 验收：隔离workspace、鉴权/CSRF、revision并发、secret不回显/不入日志、保存零网络、未知结果不重试、SSRF/HTTP例外/redirect/timeout/响应体上限、真实Edge保存/刷新/密钥状态与合成UI；独立固定SHA+CI通过再串行部署。用户真实端点/密钥仅运行私密文件，不写公开测试/fixture。ARC部署确认空闲保全配置，不重录/ASR；最终一次真实合成连接测试在已审运行版本，记录真实结果和限制，无自动重试。
+
+## CI暴露的监护线程退出竞态
+最终CI37511570163在LIVE027真实spawn测试中出现安全错误码已发送但正常退出被SIGKILL；_child正常close pipe与父失联watchdog竞态。追加handler_process.py及test_asr_error_reporting.py最小范围：正常完成显式结束/join监护线程再close，不削弱父失联/租约超时终止。需PM技术范围确认后实现、固定SHA独立Review与真实spawn回归；不改变真实模型授权，不以放宽exitcode测试掩盖问题。

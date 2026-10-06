@@ -98,6 +98,8 @@ CAPTURE_UI_FRONTEND_SCOPE = [
 ]
 SCOPES = {
     "LIVE-028": [
+        "services/backend/src/live_review/workers/handler_process.py",
+        "services/backend/tests/test_asr_error_reporting.py",
         "scripts/checks/repository.py",
         "project-team/tasks/LIVE-028.md",
         "project-team/reports/LIVE-028/",

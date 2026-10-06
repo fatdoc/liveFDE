@@ -159,3 +159,45 @@ def test_parameter_bounds_and_capability_are_validated(registry, params):
     (root / "local.yaml").write_text(f"models: {{llm_unconfigured: {{parameters: {params}}}}}")
     with pytest.raises(ProviderConfigError):
         load_model_config(root, environment="test", environ={})
+
+
+def test_local_protocol_profiles_can_be_declared_but_never_execute(registry):
+    from pathlib import Path
+
+    root, _ = registry
+    example = Path(__file__).resolve().parents[3] / "config/profiles.example.yaml"
+    (root / "local.yaml").write_text(example.read_text())
+    loaded = load_model_config(root, environment="test", environ={})
+    registry = ModelRegistry(loaded)
+    assert registry.get("embedding.default").route.model == "your-org/your-embedding-model"
+    assert registry.get("llm.default").route.base_url == "http://127.0.0.1:11434"
+    for name in ("llm.default", "embedding.default", "reranker.default", "detection.default"):
+        with pytest.raises(ProviderConfigError, match="not_executable"):
+            registry.resolve(name, allow_network=True)
+    assert (
+        restore_snapshot(json.loads(registry.snapshot().model_dump_json())) == registry.snapshot()
+    )
+
+
+@pytest.mark.parametrize(
+    "capability,protocol,url",
+    [
+        ("asr", "huggingface", None),
+        ("reranker", "ollama", "http://localhost:11434"),
+        ("llm", "ollama", "http://example.invalid:11434"),
+        ("llm", "ollama", "http://user:secret@localhost:11434"),
+        ("embedding", "huggingface", "https://example.invalid"),
+    ],
+)
+def test_declared_protocol_capability_and_local_url_validation(registry, capability, protocol, url):
+    import yaml
+
+    root, _ = registry
+    route = {"protocol": protocol, "model": "placeholder"}
+    if url:
+        route["base_url"] = url
+    (root / "local.yaml").write_text(
+        yaml.safe_dump({"models": {"future": {"capability": capability, "route": route}}})
+    )
+    with pytest.raises(ProviderConfigError):
+        load_model_config(root, environment="test", environ={})

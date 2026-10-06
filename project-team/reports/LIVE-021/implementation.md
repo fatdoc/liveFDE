@@ -32,3 +32,6 @@
 ## 资源与复测
 UI http://127.0.0.1:5199，启动命令：LIVE_API_PROXY_TARGET=http://127.0.0.1:8199 npm --prefix frontend/web run dev -- --host 127.0.0.1 --port 5199 --strictPort。
 浏览器契约测试需该UI运行，使用 playwright-cli -s=live021 run-code --filename frontend/web/tests/capture-browser-contract.js；脚本仅mock API，不能用于判定供应商连通性。截图保存在工作区 runtime/live-021-qa/，不入Git。
+
+## ARC Review 修正
+对明确4xx拒绝清除pending与旧幂等键，允许改正输入；网络/5xx结果未知继续保留原key。合成测试增加422拒绝→输入可编辑→新key提交→网络未知→同key重试；实际9项通过、capturePosts=3，asrPosts=1，TypeScript/Vite构建再次通过。

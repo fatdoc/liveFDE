@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { request, message } from '../../api/client'
+import { ApiError, request, message } from '../../api/client'
 import { Button, Badge } from '../../components/UI'
 import type { LiveSession } from '../sessions/types'
 import { isActive, runLabel, type CaptureHealth, type CaptureRun } from './types'
@@ -118,6 +118,12 @@ export function CapturePanel({
       setPending(null)
       setRetry((x) => x + 1)
     } catch (e) {
+      // A 4xx is an explicit rejection. Unknown network/5xx results keep the
+      // exact request and key so a retry can recover an already-created run.
+      if (e instanceof ApiError && e.status >= 400 && e.status < 500) {
+        sessionStorage.removeItem(storageKey)
+        setPending(null)
+      }
       setError(message(e))
     } finally {
       lock.current = false

@@ -87,7 +87,7 @@ async def receive(request: Request, db, admin, upload_id, *, tick=None):
     return {"upload_id": str(upload_id), "status": "uploaded", "received_size": count}
 
 
-def finalize(request: Request, db, admin, upload_id, *, tick=None):
+def finalize(request: Request, db, admin, upload_id, *, tick=None, publish_tick=None):
     settings = request.app.state.settings
     storage = LocalStorage(settings.storage_root)
     upload, token = claim(db, upload_id, admin, "finalizing", settings)
@@ -114,6 +114,10 @@ def finalize(request: Request, db, admin, upload_id, *, tick=None):
         candidate = storage.promote_copy(
             source, token, **({"tick": pulse} if tick is not None else {})
         )
+        # Do not use the throttled lease pulse at publication boundaries.
+        checkpoint = publish_tick if publish_tick is not None else tick
+        if checkpoint is not None:
+            checkpoint()
         current = locked_lease(db, upload_id, admin, token)
         query = select(Blob).where(Blob.workspace_id == admin.workspace_id, Blob.sha256 == digest)
         blob = db.scalar(query)
@@ -149,6 +153,8 @@ def finalize(request: Request, db, admin, upload_id, *, tick=None):
         current.deduplicated = deduplicated
         current.lease_token = None
         current.lease_until = None
+        if checkpoint is not None:
+            checkpoint()
         db.commit()
         # No deletion before commit: rollback/restart may need the uploaded bytes.
         # Cleanup failure cannot turn a successful finalization into failed state.

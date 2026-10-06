@@ -21,13 +21,15 @@ def utcnow():
     return datetime.now(UTC).isoformat()
 
 
-def atomic_json(path, value):
+def atomic_json(path, value, *, before_publish=None):
     temporary = path.with_suffix(".tmp")
     with temporary.open("x") as stream:
         os.chmod(temporary, 0o600)
         json.dump(value, stream, ensure_ascii=False)
         stream.flush()
         os.fsync(stream.fileno())
+    if before_publish is not None:
+        before_publish()
     os.replace(temporary, path)
     fd = os.open(path.parent, os.O_RDONLY)
     try:
@@ -193,10 +195,10 @@ def record(
 
     last_close_tick = 0.0
 
-    def closing_tick():
+    def closing_tick(*, force=False):
         nonlocal last_close_tick
         current = time.monotonic()
-        if current - last_close_tick < 1:
+        if not force and current - last_close_tick < 1:
             return
         last_close_tick = current
         try:
@@ -213,6 +215,7 @@ def record(
     digest = hash_file(target, closing_tick)
     with target.open("rb") as stream:
         os.fsync(stream.fileno())
+    closing_tick(force=True)
     final = directory / "recording.mp4"
     os.replace(target, final)
     manifest = {
@@ -232,5 +235,7 @@ def record(
         "end_reason": reason,
         "closed": True,
     }
-    atomic_json(directory / "manifest.json", manifest)
+    atomic_json(
+        directory / "manifest.json", manifest, before_publish=lambda: closing_tick(force=True)
+    )
     return manifest

@@ -272,3 +272,81 @@ def test_real_65_seconds_capture_closes_and_imports(capture_env, tmp_path, monke
     assert result["material_id"] and result["transcription_status"] == "not_requested"
     media = fixture[0].get(f"/api/v1/materials/{result['material_id']}/content")
     assert media.status_code == 200 and len(media.content) == manifest["size_bytes"]
+
+
+def test_capture_import_cancel_after_copy_cannot_publish(capture_env, av_file, monkeypatch):
+    from sqlalchemy import select
+
+    from live_review.integrations.capture.policy import load_policy
+    from live_review.modules.capture.ingestion import import_recording
+    from live_review.modules.capture.models import CaptureRun
+    from live_review.modules.jobs.execution import Canceled
+    from live_review.modules.materials.models import Material
+
+    fixture, settings, root = capture_env
+    run, _ = start_run(fixture)
+    closed_fixture(root, run, av_file)
+    canceled = [False]
+    original = LocalStorage.promote_copy
+
+    def finish_copy(self, *args, **kwargs):
+        result = original(self, *args, **kwargs)
+        canceled[0] = True
+        return result
+
+    def tick():
+        if canceled[0]:
+            raise Canceled
+
+    monkeypatch.setattr(LocalStorage, "promote_copy", finish_copy)
+    with Session(app.state.engine) as db:
+        row = db.get(CaptureRun, UUID(run["capture_run_id"]))
+        with pytest.raises(Canceled):
+            import_recording(db, fixture[2], row, settings, load_policy(settings), tick)
+        assert not db.scalars(
+            select(Material).where(Material.workspace_id == fixture[2].workspace_id)
+        ).all()
+        assert row.material_id is None
+
+
+@pytest.mark.parametrize("file", ["recording.partial.mp4", "manifest.tmp"])
+def test_recording_cancel_during_fsync_cannot_publish(tmp_path, av_file, monkeypatch, file):
+    import os
+
+    from test_capture_recording import http_source, permit_fixture
+
+    from live_review.integrations.capture import recording, relay
+    from live_review.integrations.capture.contracts import Source
+    from live_review.modules.jobs.execution import Canceled
+
+    output = tmp_path / "canceled"
+    output.mkdir()
+    canceled = [False]
+    original = os.fsync
+
+    def fsync(fd):
+        result = original(fd)
+        watched = output / file
+        if watched.exists() and os.fstat(fd).st_ino == watched.stat().st_ino:
+            canceled[0] = True
+        return result
+
+    def tick():
+        if canceled[0]:
+            raise Canceled
+
+    monkeypatch.setattr(os, "fsync", fsync)
+    monkeypatch.setattr(relay, "destination", permit_fixture)
+    with http_source(av_file) as url:
+        with pytest.raises(Canceled):
+            recording.record(
+                Source(True, url),
+                output,
+                CapturePolicy(min_free_bytes=1048576),
+                tick,
+                lambda _: None,
+                "wechat",
+                uuid4(),
+                "phone_cast",
+            )
+    assert canceled[0] and not (output / "manifest.json").exists()

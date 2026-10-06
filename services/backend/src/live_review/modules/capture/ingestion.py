@@ -35,10 +35,10 @@ def import_recording(db, admin, run, settings, policy, tick=lambda: None):
         )
     last_authorization = 0.0
 
-    def progress():
+    def progress(*, force=False):
         nonlocal last_authorization
         current = time.monotonic()
-        if current - last_authorization >= 1:
+        if force or current - last_authorization >= 1:
             tick()
             execution_actor(db, run)
             last_authorization = current
@@ -99,7 +99,14 @@ def import_recording(db, admin, run, settings, policy, tick=lambda: None):
             asyncio.run(receive(request, db, admin, upload_id, tick=progress))
         execution_actor(db, run)
         tick()
-        result = finalize(request, db, admin, upload_id, tick=progress)
+        result = finalize(
+            request,
+            db,
+            admin,
+            upload_id,
+            tick=progress,
+            publish_tick=lambda: progress(force=True),
+        )
         execution_actor(db, run)
         tick()
         associate_material(

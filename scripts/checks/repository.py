@@ -97,6 +97,15 @@ CAPTURE_UI_FRONTEND_SCOPE = [
     "project-team/reports/LIVE-021/",
 ]
 SCOPES = {
+    "LIVE-027": [
+        "scripts/checks/repository.py", "project-team/tasks/LIVE-027.md",
+        "project-team/reports/LIVE-027/", "project-team/STATUS.md",
+        "frontend/web/src/features/sessions/MaterialTranscription.tsx",
+        "frontend/web/src/features/sessions/LiveSessionDetail.tsx",
+        "frontend/web/src/features/sessions/transcriptionTimeline.ts",
+        "frontend/web/tests/material-transcription-timeline.mjs",
+        "frontend/web/tests/material-transcription-browser.js",
+    ],
     "LIVE-026": [
         "scripts/checks/repository.py",
         "services/backend/src/live_review/integrations/capture/douyin_bridge.py",

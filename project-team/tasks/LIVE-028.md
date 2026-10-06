@@ -11,7 +11,7 @@ ARC集成副本.worktrees/LIVE-028-llm-settings；BE/FE分别.worktrees/LIVE-028
 ## API冻结（前后端共同实现）
 
 路径/api/v1/llm/settings；GET CurrentAdmin；PUT/DELETE/POST check要求MutationAdmin与CSRF/Origin。
-GET/PUT/DELETE/check响应统一：revision:string, base_url:string, model:string, timeout_seconds:number, configured:boolean（密钥状态）, status:not_configured|unverified|checking|verified|check_failed|unknown, checked_at:string|null, last_error:string|null, usage:{prompt_tokens?:number,completion_tokens?:number,total_tokens?:number}|null, debug_http:boolean, analysis_enabled:false。不返回key、模型原始文本或原始错误。
+GET/PUT/DELETE/check响应统一：revision:string, base_url:string, model:string, timeout_seconds:number（1–120整数）, configured:boolean（密钥状态）, status:not_configured|unverified|checking|verified|check_failed|unknown, checked_at:string|null, last_error:string|null, usage:{prompt_tokens?:number,completion_tokens?:number,total_tokens?:number}|null, debug_http:boolean, analysis_enabled:false。不返回key、模型原始文本或原始错误。
 PUT {expected_revision,base_url,model,timeout_seconds,api_key?:string}，省略key保留，空白key拒绝。DELETE {expected_revision}仅清密钥，保留其他字段且失效测试。check {expected_revision,request_id:UUID}，预先持久化请求标记；同id结果缓存/未知不可自动再发，测试中的设置变化不能回填旧结果，配置变更重置测试状态。明确保存成功但未测试。新未配置默认URL/model为空、timeout60。
 
 ModelRegistry仍不将llm标为分析可执行。新增仅diagnostic适配器，固定chat/completions最小合成内容，max_tokens有界/stream=false，一次POST；响应结构及usage有界验证，未知请求不重放。时间限制须覆盖DNS/TCP/TLS/响应，HTTPS验证证书与域名且连接固定公共IP。

@@ -107,7 +107,9 @@ def test_provider_offline_is_not_parse_failure(capture_env, monkeypatch):
         stage_id = stage.id
     provider = type("Offline", (), {"acquire": lambda *a: Source(False)})()
     monkeypatch.setattr(
-        capture_jobs, "CaptureRegistry", lambda _: type("R", (), {"get": lambda *a: provider})()
+        capture_jobs,
+        "CaptureRegistry",
+        lambda _, **kwargs: type("R", (), {"get": lambda *a: provider})(),
     )
     with pytest.raises(CaptureError, match="not_live"):
         capture_jobs.run_stage(
@@ -235,7 +237,9 @@ def test_wechat_wait_url_record_import_states(capture_env, av_file, monkeypatch)
                 return Source(True, url)
 
         monkeypatch.setattr(
-            capture_jobs, "CaptureRegistry", lambda _: type("R", (), {"get": lambda *a: Phone()})()
+            capture_jobs,
+            "CaptureRegistry",
+            lambda _, **kwargs: type("R", (), {"get": lambda *a: Phone()})(),
         )
         capture_jobs.run_stage(context, settings, "capture.record")
     assert observed == ["waiting_for_cast", "url_received", "recording"]

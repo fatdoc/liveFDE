@@ -10,13 +10,16 @@ from live_review.integrations.capture.contracts import CaptureError
 from live_review.integrations.capture.policy import load_policy, require_enabled
 from live_review.integrations.capture.providers import CaptureRegistry
 from live_review.modules.capture import service
+from live_review.modules.capture.credentials import CredentialStore
 from live_review.modules.capture.executor_health import execution_health
 from live_review.modules.capture.ingestion import safe_import
+from live_review.modules.capture.platform_settings import router as settings_router
 from live_review.modules.capture.readiness import platform_conditions
 from live_review.modules.capture.schemas import ProbeInput, StartInput
 from live_review.modules.identity.models import Admin
 
 router = APIRouter(prefix="/api/v1/capture", tags=["capture"])
+router.include_router(settings_router)
 
 
 def policy_for(request):
@@ -33,6 +36,7 @@ def translate(error):
 def health(request: Request, admin: CurrentAdmin):
     try:
         policy = load_policy(request.app.state.settings)
+        credentials = CredentialStore(request.app.state.settings, admin.workspace_id).read()
         execution = execution_health(request.app.state.settings, policy)
         ffmpeg_ready = bool(shutil.which(policy.ffmpeg))
         ffprobe_ready = bool(shutil.which(policy.ffprobe))
@@ -45,7 +49,12 @@ def health(request: Request, admin: CurrentAdmin):
             "ffprobe_ready": ffprobe_ready,
             "providers": {
                 platform: platform_conditions(
-                    policy, platform, execution, ffmpeg_ready, ffprobe_ready
+                    policy,
+                    platform,
+                    execution,
+                    ffmpeg_ready,
+                    ffprobe_ready,
+                    douyin_cookie=credentials.cookie,
                 )
                 for platform in ("douyin", "wechat")
             },
@@ -60,7 +69,8 @@ def probe(data: ProbeInput, request: Request, admin: MutationAdmin):
         policy = policy_for(request)
         if data.platform not in policy.allowed_platforms:
             raise ApiError(503, "capture_platform_disabled", "当前配置未开放该平台采集")
-        provider = CaptureRegistry(policy).get(data.platform)
+        credentials = CredentialStore(request.app.state.settings, admin.workspace_id).read()
+        provider = CaptureRegistry(policy, douyin_cookie=credentials.cookie).get(data.platform)
         source = provider.probe(data.source_ref, lambda: None)
         return {
             "platform": data.platform,

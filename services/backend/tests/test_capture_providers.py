@@ -149,3 +149,23 @@ def test_douyin_communicate_timeout_is_not_overwritten(mocked_douyin, monkeypatc
     monkeypatch.setattr(providers, "communicate", timeout)
     with pytest.raises(CaptureError, match="^source_timeout$"):
         mocked_douyin.probe("https://live.douyin.com/123", lambda: None)
+
+
+def test_douyin_passes_static_policy_and_private_snapshot(mocked_douyin, monkeypatch):
+    import json
+
+    mocked_douyin.policy.https_only = True
+    mocked_douyin.policy.stream_domains = ["douyincdn.com"]
+    mocked_douyin._cookie = "synthetic=immutable"
+    monkeypatch.setenv("LIVE_SYNTHETIC_COOKIE", "synthetic=new_global")
+    observed = []
+
+    def communicate(command, tick, timeout, payload, cwd):
+        observed.append(json.loads(payload))
+        return b'{"live":false}'
+
+    monkeypatch.setattr(providers, "communicate", communicate)
+    mocked_douyin.probe("https://live.douyin.com/1", lambda: None)
+    assert observed[0]["https_only"] is True
+    assert observed[0]["stream_domains"] == ["douyincdn.com"]
+    assert observed[0]["cookie"] == "synthetic=immutable"

@@ -3,6 +3,12 @@ import {Button, Badge} from '../../components/UI'
 import {ApiError, message, request} from '../../api/client'
 import type {ASRSettings, Job, Transcription} from './types'
 const labels: Record<Job['status'], string> = {queued: '等待处理', running: '正在转写', succeeded: '处理完成', failed: '处理失败', cancel_requested: '等待取消', canceled: '已取消'}
+const warningGuidance: Record<string, string> = {
+  timestamps_are_vad_or_vad_window_boundaries_not_word_alignment: '时间戳表示检测到的语音区间边界，不是逐字对齐时间。',
+  model_confidence_unavailable: '当前模型未提供置信度，不能据此显示准确率。',
+  nano_native_punctuation: '标点由 Nano 模型原生生成。',
+  'bounded_window_asr_not_token_realtime;window_edges_may_split_words': '当前结果按固定时间窗口增量生成，不是逐词实时识别；窗口边界可能切开词句。',
+}
 const running = (job: Job) => ['queued', 'running', 'cancel_requested'].includes(job.status)
 const time = (ms: number | null) => ms === null ? '时间未知' : `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}.${String(ms % 1000).padStart(3, '0')}`
 export function TranscriptionTrial({settings, csrf, expired, dirty}: {settings: ASRSettings; csrf: string; expired: () => void; dirty: boolean}) {
@@ -66,7 +72,7 @@ export function TranscriptionTrial({settings, csrf, expired, dirty}: {settings: 
     {error && <p className="asr-error" role="alert">{error}</p>}
     {result && <div className="asr-result" aria-live="polite"><div className="asr-section-heading"><Badge tone={result.job.status === 'failed' ? 'amber' : 'teal'}>{labels[result.job.status]}</Badge>{active && !polling && <Button onClick={() => {setError(''); setPolling(true)}}>继续查询任务</Button>}</div><small>任务 {result.job.id}</small>{active && <p>{polling ? '自动更新任务状态…' : '查询已暂停，服务器任务可能仍在运行。'}</p>}<ul>{result.job.steps.map(step => <li key={step.stage}>{step.stage} · {step.status}{step.reason ? ` · ${step.reason}` : ''}</li>)}</ul>
       {result.job.error && <p className="asr-error" role="alert">任务失败：{result.job.error.code}。没有自动重试。</p>}
-      {result.result ? <><p>{result.result.source === 'local' ? '本地处理' : '云端处理'} · {result.result.provider} · {result.result.model} · {result.result.complete ? '完整结果' : '部分结果'}{result.result.synthetic ? ' · 合成测试，非真实听写' : ''}</p>{result.result.warnings.map((warning, index) => <p className="asr-warning" key={index}>{warning}</p>)}<div className="asr-transcript">{!result.result.segments.length && result.result.text && <p>{result.result.text}</p>}{result.result.segments.map(segment => <article key={segment.id}><small>{time(segment.start_ms)} — {time(segment.end_ms)} · {segment.speaker_id ? `匿名说话人 ${segment.speaker_id}` : '说话人未知'} · {segment.emotion ?? '情绪未知'}</small><p>{segment.text}</p></article>)}</div></> : !active && <p className="muted">未返回转写结果。</p>}
+      {result.result ? <><p>{result.result.source === 'local' ? '本地处理' : '云端处理'} · {result.result.provider} · {result.result.model} · {result.result.complete ? '完整结果' : '部分结果'}{result.result.synthetic ? ' · 合成测试，非真实听写' : ''}</p>{result.result.warnings.map((warning, index) => <p className="asr-warning" key={index}>{warningGuidance[warning] || '识别服务返回了附加提示，请结合状态码核对结果。'}<br/><small>状态码：{warning}</small></p>)}<div className="asr-transcript">{!result.result.segments.length && result.result.text && <p>{result.result.text}</p>}{result.result.segments.map(segment => <article key={segment.id}><small>{time(segment.start_ms)} — {time(segment.end_ms)} · {segment.speaker_id ? `匿名说话人 ${segment.speaker_id}` : '说话人未知'} · {segment.emotion ?? '情绪未知'}</small><p>{segment.text}</p></article>)}</div></> : !active && <p className="muted">未返回转写结果。</p>}
     </div>}
   </section>
 }

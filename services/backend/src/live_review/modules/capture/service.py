@@ -148,6 +148,11 @@ def list_runs(db, admin, session_id, limit=20, cursor=None):
     if cursor:
         try:
             payload = json.loads(base64.b64decode(cursor, altchars=b"-_", validate=True))
+            if not isinstance(payload, dict) or any(
+                not isinstance(payload.get(key), str)
+                for key in ("session_id", "created_at", "id")
+            ):
+                raise ValueError
             if payload["session_id"] != str(session_id):
                 raise ValueError
             boundary_time = datetime.fromisoformat(payload["created_at"])

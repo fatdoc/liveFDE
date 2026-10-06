@@ -1,6 +1,6 @@
 # 统一直播采集（LIVE-015～017）
 
-当前仅批准**默认关闭的基础代码集成**，不是抖音/视频号产品验收完成。真实平台、手机投屏、本轮真实ASR及端到端出站隔离安全复核待完成；API8197与DLNA接收端保持停止。下文为实现说明和后续操作参考，暂不执行真实来源试录。精确版本与独立证据见[技术审查](../project-team/reports/LIVE-015/arc-review.md)。
+产品默认关闭；2026-10-07本地联调已由用户授权开放抖音HTTPS限定60秒/50MB手动试录，当前8199 API与5199前端提供此入口。视频号未开放，8197与DLNA接收端保持停止。Cookie已支持工作区设置；真实解析成功不等于媒体录制验收。最近新房间候选全部HTTP，受策略拒绝，无媒体，不能宣称抖音录制闭环已通过。精确版本与独立证据见[技术审查](../project-team/reports/LIVE-015/arc-review.md)。
 
 实现位于唯一后端，不新增独立业务 Demo、队列或模型系统。当前首版支持抖音 **PC 数字直播间地址** `https://live.douyin.com/<room_id>`，不接受分享文案、短链、主页链接或签名取流地址。视频号为本机 DLNA 投屏接收，输入固定 `phone_cast`。真实平台验收状态见本轮报告，安装成功、协议测试、真实平台录制和真实 ASR 分别记录。
 
@@ -23,7 +23,7 @@
 | [DouyinLiveRecorder](https://github.com/ihmily/DouyinLiveRecorder/tree/add187f8d8c7ff7d231fcbee45cbb4f1ed247d3a) | commit `add187f8d8c7ff7d231fcbee45cbb4f1ed247d3a`，pyproject 4.0.7 | MIT | 独立 venv/进程调用 `src/spider.py:get_douyin_web_stream_data` 与 `src/stream.py:get_douyin_stream_url`；不导入其主循环/任务/录制器 |
 | [wechat-finder-dlna](https://github.com/gtoxlili/wechat-finder-dlna/tree/07271abdb5707cf8074483a33c2519b457ccc669) | commit `07271abdb5707cf8074483a33c2519b457ccc669`，0.4.3 | pyproject `GPL-3.0-or-later`，README 简写 GPL-3.0 | 单独安装原始 CLI，仅 `--protocol dlna` 接收 URL，私有 stdout 管道；不调用其 `--record` |
 
-上游完整代码只放 runtime，不复制进业务层。DLR bridge 阻止上游自动安装 Node 和日志初始化；以验证 TLS、禁代理环境/重定向、固定 `live.douyin.com` 的 HTTP 请求替换上游默认 `verify=False` 网络调用；取流 URL 的 HEAD 探测延后至受控 relay。上游缺少 status 的异常返回明确记解析失败，不按其默认值冒充未开播。自有 Cookie 仅通过指定环境变量输入子进程 stdin；不使用上游内置示例 Cookie 作为用户凭证。
+上游完整代码只放 runtime，不复制进业务层。DLR bridge 阻止上游自动安装 Node 和日志初始化；以验证 TLS、禁代理环境/重定向、固定 `live.douyin.com` 的 HTTP 请求替换上游默认 `verify=False` 网络调用；取流 URL 的 HEAD 探测延后至受控 relay。上游缺少 status 的异常返回明确记解析失败，不按其默认值冒充未开播。工作区 Cookie 从私密设置读取，经子进程 stdin 传给解析桥；工作区请求及执行器不回退环境变量，也不使用上游内置示例 Cookie。低层适配器单独使用时的旧环境变量兼容不用于产品工作区流程。
 
 Finder 支持的 AirPlay/Chromecast/加密音频功能没有全部接入本版。尤其 AirPlay 音频文件不等于完整视频；本版必须 FFprobe 同时检出视频和音频才可交付。手机与电脑同一局域网、允许 SSDP 组播；AP/访客网络隔离会导致找不到接收设备。接收端仅适用于可信局域网，不能暴露公网；上游 DLNA 服务不是有账户认证的云端采集服务。
 
@@ -155,3 +155,16 @@ health.limits返回max_seconds/max_bytes，页面显示试录上限。https_only
 DNS在独立可回收子进程执行，每次最多5秒并受录制总deadline约束；初始解析等待消费停止检查，录制总计时在Relay创建之前开始。重定向和HLS子资源同样执行域/IP/HTTPS规则及解析期限。停止/超时先回收解析子进程；未确认回收明确失败，不伪造媒体已关闭。60秒是录制预算（含初始媒体DNS），不包含之前有独立超时的房间解析及之后的停止封装/导入时间。
 
 独立静态审查与离线/本地合成回归只能支持用户自有或授权已知来源的限定短试录，不替代动态出站隔离、任意不可信媒体安全、真实平台成功或长期稳定性验收。尚无具体真实直播链接时，不发起试录。
+
+
+## 工作区平台接入设置（LIVE-025）
+
+入口：设置 → 平台接入 → 抖音。管理员将自己的浏览器 Cookie 值粘入密码输入框；保存后清空，刷新不回显。GET/PUT/DELETE `/api/v1/capture/settings/douyin` 读/存/清除；POST 同路径 `/check` 只执行一次有界解析，禁止自动录制。写操作需要当前管理员、可信Origin、CSRF及expected_revision；重复检查和版本冲突明确返回409。更新/清除与检查并行时，旧检查不能覆盖新版本。
+
+工作区设置存储在 `storage_root.parent/private/capture/<workspace_uuid>/douyin.json`，目录0700、文件0600，拒绝符号链接/异常属主/宽松权限，原子替换并fsync。这个路径不属于材料下载对象命名空间。它是操作系统权限保护的明文，不是加密保险库；部署备份必须按凭据管理，不能提交Git或打入交付包。响应、异常、任务参数和日志均不含Cookie或临时签名URL。
+
+未保存=not_configured；保存后=unverified；检查返回有效未开播状态，或开播且明确选中的URL满足静态协议/域策略时=verified。HTTP401/403归needs_update，含义为需要核对访问条件，不足以证明Cookie过期；空响应、限流、网络、结构或源策略错误归check_failed。服务就绪单独显示，状态不互相代替；历史检查仅对应记录的房间与时间，不能保证另一房间/下一次请求。检查不验证CDN连接、重定向、HLS子资源或实际可录制性，这些仍由录制阶段逐跳验证。
+
+Cookie在执行器开始解析时读取一次不可变快照；更新/清除对后续检查和未开始解析的排队任务生效。已开始解析/录制的任务保持旧快照直到结束；需要立即终止时在场次页停止任务。清除后工作区传空Cookie，绝不回落服务器全局env或上游示例。
+
+选流遵循固定DLR的非h265优先FLV规则，再考虑其明确返回的HLS/record候选，同时服从当前HTTPS与域策略。只选择已返回的合格地址，绝不把HTTP字符串改写为HTTPS。全部候选不合格时在解析/检查阶段返回https_required/domain_not_allowed/unsafe_stream_url，不进入录制。TLS、域限制、重定向和HLS逐资源检查不放宽。

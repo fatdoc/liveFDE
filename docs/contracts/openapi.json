@@ -81,6 +81,142 @@
         }
       }
     },
+    "/api/v1/capture/settings/douyin": {
+      "get": {
+        "tags": [
+          "capture",
+          "capture"
+        ],
+        "summary": "Get Settings",
+        "operationId": "get_settings_api_v1_capture_settings_douyin_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "capture",
+          "capture"
+        ],
+        "summary": "Put Settings",
+        "operationId": "put_settings_api_v1_capture_settings_douyin_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CookieInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "capture",
+          "capture"
+        ],
+        "summary": "Clear Settings",
+        "operationId": "clear_settings_api_v1_capture_settings_douyin_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/capture/settings/douyin/check": {
+      "post": {
+        "tags": [
+          "capture",
+          "capture"
+        ],
+        "summary": "Check Settings",
+        "operationId": "check_settings_api_v1_capture_settings_douyin_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/capture/health": {
       "get": {
         "tags": [
@@ -1551,6 +1687,51 @@
         ],
         "title": "CancelInput"
       },
+      "CheckInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Expected Revision"
+          },
+          "source_ref": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Source Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "source_ref"
+        ],
+        "title": "CheckInput"
+      },
+      "CookieInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Expected Revision"
+          },
+          "cookie": {
+            "type": "string",
+            "format": "password",
+            "title": "Cookie",
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "cookie"
+        ],
+        "title": "CookieInput"
+      },
       "FinalizeOutput": {
         "properties": {
           "material_id": {
@@ -1988,6 +2169,22 @@
           "from_stage"
         ],
         "title": "RetryInput"
+      },
+      "RevisionInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "RevisionInput"
       },
       "SafeError": {
         "properties": {

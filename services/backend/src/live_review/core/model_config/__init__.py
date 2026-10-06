@@ -160,7 +160,11 @@ def load_model_config(
                 for field in getattr(model, group).model_dump():
                     trace.setdefault(f"models.{model.name}.{group}.{field}", "builtin")
         trace["environment"] = "server"
-        refs = {model.route.key_env for model in public.models if model.route.key_env}
+        refs = {
+            name for model in public.models
+            for field in ("key_env", "secret_id_env", "app_id_env")
+            if (name := getattr(model.route, field, None))
+        }
         secrets = tuple(
             (name, SecretStr(combined[name])) for name in sorted(refs) if name in combined
         )

@@ -14,3 +14,7 @@
 默认local_only。出站必须cloud_allowed、逐任务授权、明确非空预算；fallback还必须allow_cloud_fallback，未知请求永不自动fallback/retry。允许所需腾讯凭证的有无检查与隔离读取，不打印/不读取无关秘密；具备完整配置预算才可各一次file/实时≤10秒smoke，不盲重试。公开本地依赖/权重下载仅本轮runtime，磁盘现18GiB，先估算、预留至少8GiB空间，初始缓存上限6GiB，不删他人文件。
 
 验收：独立PG迁移/隔离/revision冲突，真实本地smoke与可用设置页登录/保存/刷新/实际provider变化；协议MockTransport明确标记，真实云缺项明确未验证。10类矩阵与CER/DER/emotion/耗时有可靠reference才报，不编造准确率。完成需代码SHA、独立批准、PM范围验收与文件清单。
+
+PM范围补充：文件试用必须支持M4A/AAC，ARC持有materials schemas/service/validation及新tests/test_asr_formats.py，原格式校验继续保留。UI只增强本轮格式选择。
+
+TENCENT a3464b5完成后，/root/eng_live002转BE-WS独占modules/asr/stream.py、tests/test_asr_stream.py与reports/LIVE-006C/stream.md，在同副本取root共享接线依赖后实现。ARC不并写stream.py；router注册由ARC处理。

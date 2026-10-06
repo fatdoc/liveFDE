@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     job_dispatch_interval_seconds: float = Field(default=2, gt=0, allow_inf_nan=False)
     job_test_handlers: bool = False
 
+    model_config_dir: Path | None = None
+    model_config_environment: str | None = None
+    model_dotenv_path: Path | None = None
+    asr_background_runner: bool = False
+
     environment: str = "development"
     trusted_origins: list[str] = ["http://127.0.0.1:5188", "http://localhost:5188"]
     session_ttl_seconds: int = 28800
@@ -42,6 +47,8 @@ class Settings(BaseSettings):
             raise ValueError("Authentication limits must be positive")
         if self.job_lease_seconds < 1 or self.job_dispatch_interval_seconds <= 0:
             raise ValueError("Job timing must be positive")
+        if self.environment == "production" and self.asr_background_runner:
+            raise ValueError("Use the durable dispatcher in production")
         if self.environment == "production" and self.job_test_handlers:
             raise ValueError("Synthetic job handlers are forbidden in production")
         return self

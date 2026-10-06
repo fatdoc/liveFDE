@@ -97,6 +97,8 @@ class ModelRegistry:
         model = self.get(name)
         if model.capability != "asr":
             raise ProviderConfigError("model_capability_not_executable")
+        if model.route.protocol in {"local_funasr", "tencent_asr"}:
+            raise ProviderConfigError("gateway_execution_required")
         legacy = ProviderConfig(
             revision=self.loaded.public.revision,
             media=self.loaded.public.media,

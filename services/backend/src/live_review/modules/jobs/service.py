@@ -88,7 +88,8 @@ def view(db, job):
         "progress": None,
         "steps": [{"stage": s.name, "status": s.status, "reason": s.reason} for s in stages],
         "error": job.error,
-        "can_retry": job.status == "failed"
+        "can_retry": job.input_data.get("kind") != "asr_stream_v1"
+        and job.status == "failed"
         and not unknown_calls(db, job.id)
         and (job.error or {}).get("code") != "execution_stop_unconfirmed",
         "cancel_requested": job.cancel_requested,
@@ -112,7 +113,8 @@ def retry_job(db, job_id, admin, key, expected_revision, from_stage):
     if job.revision != expected_revision:
         raise ApiError(409, "revision_conflict", "任务已更新", {"current_revision": job.revision})
     if (
-        job.status != "failed"
+        job.input_data.get("kind") == "asr_stream_v1"
+        or job.status != "failed"
         or unknown_calls(db, job.id)
         or (job.error or {}).get("code") == "execution_stop_unconfirmed"
     ):

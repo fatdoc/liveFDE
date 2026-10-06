@@ -7,6 +7,7 @@ import subprocess
 
 ROOTS = {".github", "frontend", "services", "infra", "scripts", "docs", "project-team", "config"}
 FILES = {
+    "LICENSE",
     ".gitignore",
     ".env.example",
     ".dockerignore",
@@ -73,6 +74,8 @@ CAPTURE_SCOPE = [
     "project-team/reports/LIVE-017/",
 ]
 SCOPES = {
+    # One-time import of the existing product history into the user-owned remote.
+    "LIVE-018": sorted(FILES | {root + "/" for root in ROOTS}),
     "LIVE-015": CAPTURE_SCOPE,
     "LIVE-016": CAPTURE_SCOPE,
     "LIVE-017": CAPTURE_SCOPE,

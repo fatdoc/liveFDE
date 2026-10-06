@@ -15,14 +15,17 @@ class LocalASRRoute(FrozenModel):
     model: str = "Fun-ASR-Nano-2512"
     key_env: None = None
     model_root: str
+    worker_socket: str | None = None
+    cache_idle_seconds: int = Field(default=60, ge=1, le=3600)
     device: Literal["cpu", "cuda", "mps", "auto"] = "cpu"
     vad_model: str = "fsmn-vad"
     speaker_model: str = "campplus"
     emotion_model: str = "emotion2vec_plus_base"
     punctuation_model: str | None = None
-    vad_max_segment_ms: int = Field(default=15000, ge=1000, le=60000)
-    stream_window_ms: int = Field(default=5000, ge=1000, le=30000)
+    vad_max_segment_ms: int = Field(default=15000, ge=1000, le=30000)
+    stream_window_ms: int = Field(default=5000, ge=1000, le=15000)
     speaker_similarity_threshold: float = Field(default=0.65, gt=0, le=1)
+    min_speaker_duration_ms: int = Field(default=2000, ge=400, le=30000)
     max_speakers: int = Field(default=16, ge=1, le=32)
     lock_timeout_seconds: int = Field(default=300, ge=1, le=1800)
     cpu_threads: int = Field(default=4, ge=1, le=32)

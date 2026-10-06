@@ -68,6 +68,7 @@ SCOPES = {
         "scripts/checks/",
         "infra/compose.live006c.yml",
         "config/asr.example.yaml",
+        "config/asr-policy.example.yaml",
         "docs/",
         "project-team/",
     ],

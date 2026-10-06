@@ -164,3 +164,43 @@ def test_request_and_configuration_errors_never_cloud_fallback(monkeypatch, code
     with pytest.raises(ASRError):
         asyncio.run(gateway.transcribe_file(Path("unused"), ASRRequest(request_id="test")))
     assert calls == []
+
+
+def test_local_fallback_preference_without_grant_stays_local():
+    prefs = SettingsOutput(privacy="cloud_allowed", allow_cloud_fallback=True, revision=1)
+    granted = authorization(prefs, Authorization(expected_revision=1))
+    assert granted == {"allow_network": False, "max_requests": 0, "max_cost_usd": None}
+
+
+def test_yaml_workspace_defaults_layered_and_separate_snapshot(tmp_path):
+    from live_review.modules.asr.policy import load_policy, policy_snapshot
+
+    (tmp_path / "environments").mkdir()
+    (tmp_path / "asr-policy.yaml").write_text(
+        "defaults:\n  provider: tencent\n  privacy: cloud_allowed\n  speaker: true\n"
+    )
+    (tmp_path / "environments/development.asr.yaml").write_text("defaults:\n  emotion: true\n")
+    (tmp_path / "asr.local.yaml").write_text("defaults:\n  emotion: false\n")
+    settings = SimpleNamespace(
+        model_config_dir=tmp_path, environment="development", model_config_environment=None
+    )
+    defaults = load_policy(settings).defaults
+    assert defaults.provider == "tencent" and defaults.speaker and not defaults.emotion
+    before = policy_snapshot(settings)
+    (tmp_path / "asr.local.yaml").write_text("defaults:\n  emotion: true\n")
+    assert policy_snapshot(settings) != before
+    production = SimpleNamespace(
+        model_config_dir=tmp_path, environment="production", model_config_environment=None
+    )
+    assert not load_policy(production).defaults.emotion
+
+
+def test_invalid_policy_reports_safe_code(tmp_path):
+    from live_review.modules.asr.policy import load_policy
+
+    (tmp_path / "asr-policy.yaml").write_text("defaults:\n  provider: invalid-private-value\n")
+    settings = SimpleNamespace(
+        model_config_dir=tmp_path, environment="development", model_config_environment=None
+    )
+    with pytest.raises(ProviderConfigError, match="^invalid_asr_policy$"):
+        load_policy(settings)

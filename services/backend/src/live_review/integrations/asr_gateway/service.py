@@ -1,8 +1,9 @@
 """Unified gateway policy. A durable recorder is mandatory before any cloud call."""
 
+from contextlib import aclosing
+
 from live_review.integrations.asr_gateway.contracts import ASRError
 from live_review.integrations.asr_gateway.factory import create_provider
-
 
 FALLBACK_ERRORS = frozenset(
     {
@@ -76,10 +77,11 @@ class ASRGateway:
         if self.preferences.provider == "tencent":
             if self.recorder is None:
                 raise ASRError("durable_cloud_recorder_required")
-            async for event in self.recorder.stream(provider, chunks, request):
-                yield event
+            async with aclosing(self.recorder.stream(provider, chunks, request)) as events:
+                async for event in events:
+                    yield event
         else:
-            async for event in provider.transcribe_stream(
+            events = provider.transcribe_stream(
                 chunks,
                 request.model_copy(
                     update={
@@ -87,8 +89,10 @@ class ASRGateway:
                         "privacy": "local_only",
                     }
                 ),
-            ):
-                yield event
+            )
+            async with aclosing(events):
+                async for event in events:
+                    yield event
 
     async def health(self):
         # Configuration/resource inspection only, not connectivity or inference.

@@ -1,0 +1,12 @@
+# 复制为指定config目录/asr-policy.yaml；本机差异asr.local.yaml（gitignored）。
+# defaults→asr-policy.yaml→environments/<环境>.asr.yaml→开发asr.local.yaml。
+# 已经在设置页保存的workspace偏好优先于defaults；这里不放模型/密钥/路径。
+# 默认仅本地，选云不等于授权；每次请求仍须显式allow_network和预算。
+schema_version: 1
+defaults:
+  provider: local
+  privacy: local_only
+  allow_cloud_fallback: false
+  speaker: false
+  emotion: false
+  punctuation: true

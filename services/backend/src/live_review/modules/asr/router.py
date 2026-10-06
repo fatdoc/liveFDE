@@ -22,19 +22,22 @@ router = APIRouter(prefix="/api/v1/asr", tags=["asr"])
 
 
 @router.get("/settings", response_model=SettingsOutput)
-def get_settings(admin: CurrentAdmin, db: Database):
-    return settings_view(db, admin.workspace_id)
+def get_settings(request: Request, admin: CurrentAdmin, db: Database):
+    try:
+        return settings_view(db, admin.workspace_id, request.app.state.settings)
+    except ProviderConfigError as error:
+        raise ApiError(503, error.code, "识别默认设置无效，请管理员检查配置") from None
 
 
 @router.put("/settings", response_model=SettingsOutput)
-def put_settings(data: SettingsInput, admin: MutationAdmin, db: Database):
-    return save_settings(db, admin.workspace_id, data)
+def put_settings(data: SettingsInput, request: Request, admin: MutationAdmin, db: Database):
+    return save_settings(db, admin.workspace_id, data, request.app.state.settings)
 
 
 @router.get("/health")
 async def health(request: Request, admin: CurrentAdmin, db: Database):
-    preferences = settings_view(db, admin.workspace_id)
     try:
+        preferences = settings_view(db, admin.workspace_id, request.app.state.settings)
         registry = registry_for(request.app.state.settings)
     except (ASRError, ProviderConfigError) as error:
         return {"config_valid": False, "health": None, "error": error.code}

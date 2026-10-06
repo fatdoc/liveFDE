@@ -12,6 +12,7 @@ from live_review.integrations.asr_gateway.contracts import ASRError, ASRRequest
 from live_review.integrations.asr_gateway.factory import registry_for
 from live_review.integrations.asr_gateway.service import ASRGateway
 from live_review.integrations.media import extract_audio
+from live_review.modules.asr.policy import policy_snapshot
 from live_review.modules.asr.schemas import SettingsOutput
 from live_review.modules.identity.models import Admin
 from live_review.modules.jobs.execution import UnknownCall, locked
@@ -25,6 +26,7 @@ def restore_gateway(data, settings):
     captured = restore_snapshot(data["provider_snapshot"])
     if (
         captured.config_hash != registry.snapshot().config_hash
+        or data["gateway_policy_snapshot"] != policy_snapshot(settings)
         or data["provider_locator"] != registry.loaded.source_locator()
         or data["runtime_environment"] != settings.environment
         or data["storage_fingerprint"]
@@ -81,7 +83,9 @@ def run_stage(context, settings):
     gateway = ASRGateway(
         registry, prefs, data["authorization"], CloudRecorder(context, root, directory + "/calls")
     )
-    request = request_for(data, context.job_id, media.max_duration_seconds)
+    with Session(context.engine) as db:
+        attempt = locked(db, context.job_id, context.token).attempt
+    request = request_for(data, f"{context.job_id}:{attempt}", media.max_duration_seconds)
     try:
         result = asyncio.run(gateway.transcribe_file(output / extracted.audio.path, request))
     except ASRError as error:

@@ -62,6 +62,10 @@ def _child(connection, parent_pid, settings, job_id, token, stage_id, handler_na
 
 
 def execute_handler(context, settings, handler_name):
+    from live_review.workers.asr_stop import stop_guard
+
+    confirm_stop = stop_guard(context, settings, handler_name)
+    completed = False
     factory = multiprocessing.get_context("spawn")
     parent, child = factory.Pipe()
     process = factory.Process(
@@ -103,6 +107,7 @@ def execute_handler(context, settings, handler_name):
                 if process.is_alive():
                     raise RuntimeError("Handler did not stop after result")
                 if category == "ok":
+                    completed = True
                     return artifact
                 if category == "skip":
                     raise SkipStage(artifact)
@@ -131,4 +136,9 @@ def execute_handler(context, settings, handler_name):
         parent.close()
         if process.is_alive():
             raise StopUnconfirmed
+        if confirm_stop is not None and not completed:
+            try:
+                confirm_stop()
+            except Exception:
+                raise StopUnconfirmed from None
         print(f"handler_stopped job={context.job_id} pid={process.pid}", flush=True)

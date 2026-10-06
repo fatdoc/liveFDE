@@ -1,5 +1,7 @@
 """Reuse LIVE-005 intents and artifact references for file/stream cloud outcomes."""
 
+from contextlib import aclosing
+
 from live_review.integrations.asr_gateway.contracts import ASRError, ASRResult
 from live_review.modules.jobs.execution import UnknownCall
 from live_review.workers.media_artifacts import read_json, write_json
@@ -40,16 +42,17 @@ class CloudRecorder:
             raise ASRError("stream_not_replayable", unknown=True)
         finished = False
         try:
-            async for event in provider.transcribe_stream(chunks, request):
-                if event.type == "completed" and event.result is not None:
-                    ref = write_json(
-                        self.root, self.directory, event.result.model_dump(mode="json")
-                    )
-                    self.context.finish_paid_call(
-                        call["intent_id"], {"kind": "response", "reference": ref}
-                    )
-                    finished = True
-                yield event
+            async with aclosing(provider.transcribe_stream(chunks, request)) as events:
+                async for event in events:
+                    if event.type == "completed" and event.result is not None:
+                        ref = write_json(
+                            self.root, self.directory, event.result.model_dump(mode="json")
+                        )
+                        self.context.finish_paid_call(
+                            call["intent_id"], {"kind": "response", "reference": ref}
+                        )
+                        finished = True
+                    yield event
         except ASRError as error:
             if not error.unknown:
                 self.context.finish_paid_call(

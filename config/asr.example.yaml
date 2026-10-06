@@ -13,6 +13,8 @@ models:
       enabled: false
       model: Fun-ASR-Nano-2512
       model_root: /absolute/private/model-directory
+      worker_socket: /absolute/private/asr.sock
+      cache_idle_seconds: 60
       device: cpu
       punctuation_model: ct-punc
   tencent_asr:

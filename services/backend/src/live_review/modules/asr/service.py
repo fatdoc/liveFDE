@@ -8,20 +8,21 @@ from sqlalchemy.exc import IntegrityError
 from live_review.core.errors import ApiError
 from live_review.integrations.asr_gateway.factory import MODEL_IDS, registry_for
 from live_review.modules.asr.models import ASRSettings
-from live_review.modules.asr.schemas import Preferences, SettingsOutput
+from live_review.modules.asr.policy import load_policy, policy_snapshot
+from live_review.modules.asr.schemas import SettingsOutput
 from live_review.modules.jobs.service import create_job
 from live_review.workers.media_jobs import material_source
 
 
-def settings_view(db, workspace_id):
+def settings_view(db, workspace_id, settings=None):
     row = db.get(ASRSettings, workspace_id)
     return SettingsOutput(
-        **(row.preferences if row else Preferences().model_dump()),
+        **(row.preferences if row else load_policy(settings).defaults.model_dump()),
         revision=row.revision if row else 0,
     )
 
 
-def save_settings(db, workspace_id, data):
+def save_settings(db, workspace_id, data, settings=None):
     fields = data.model_dump(exclude={"expected_revision"})
     if data.expected_revision == 0:
         db.add(ASRSettings(workspace_id=workspace_id, revision=1, preferences=fields))
@@ -44,13 +45,15 @@ def save_settings(db, workspace_id, data):
             raise ApiError(409, "revision_conflict", "设置已被修改，请刷新后重试")
         db.commit()
     db.expire_all()
-    return settings_view(db, workspace_id)
+    return settings_view(db, workspace_id, settings)
 
 
 def authorization(preferences, data):
     if data.expected_revision != preferences.revision:
         raise ApiError(409, "revision_conflict", "ASR设置已更改，请确认最新设置")
-    needs_cloud = preferences.provider == "tencent" or preferences.allow_cloud_fallback
+    needs_cloud = preferences.provider == "tencent" or (
+        preferences.allow_cloud_fallback and data.allow_network
+    )
     if needs_cloud and (
         preferences.privacy != "cloud_allowed"
         or not data.allow_network
@@ -69,18 +72,21 @@ def authorization(preferences, data):
 
 
 def prepare(db, admin, settings, data):
-    preferences = settings_view(db, admin.workspace_id)
+    preferences = settings_view(db, admin.workspace_id, settings)
     grant = authorization(preferences, data)
+    if preferences.revision == 0:
+        raise ApiError(409, "settings_save_required", "请先保存识别设置，再开始试用")
     registry = registry_for(settings)
     descriptor = registry.get(MODEL_IDS[preferences.provider])
     if not descriptor.route.enabled:
         raise ApiError(422, "asr_provider_disabled", "识别服务尚未启用")
-    if preferences.allow_cloud_fallback:
+    if preferences.allow_cloud_fallback and grant["allow_network"]:
         fallback = registry.get(MODEL_IDS["tencent"])
         if not fallback.route.enabled:
             raise ApiError(422, "fallback_provider_disabled", "云回退尚未启用")
     return registry, {
         "kind": "asr_gateway_v1",
+        "gateway_policy_snapshot": policy_snapshot(settings),
         "preferences": preferences.model_dump(),
         "authorization": grant,
         "provider_snapshot": registry.snapshot().model_dump(mode="json"),

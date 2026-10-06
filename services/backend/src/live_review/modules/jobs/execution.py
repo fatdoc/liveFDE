@@ -97,7 +97,14 @@ def recover_expired(engine):
                 for stage in stages:
                     if stage.status == "running":
                         stage.status, stage.reason = "failed", "call_result_unknown"
-            elif job.cancel_requested:
+            elif job.input_data.get("kind") == "asr_stream_v1":
+                job.status, job.error = "failed", safe_error(
+                    "stream_not_replayable", "实时音频未持久保存，不能自动重放"
+                )
+                for stage in stages:
+                    if stage.status not in {"succeeded", "skipped"}:
+                        stage.status, stage.reason = "failed", "stream_not_replayable"
+            elif job.cancel_requested or job.input_data.get("kind") == "asr_gateway_v1":
                 job.status = "failed"
                 job.error = safe_error(
                     "execution_stop_unconfirmed", "执行进程中断，停止状态需要核验"

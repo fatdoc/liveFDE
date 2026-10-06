@@ -27,11 +27,17 @@ def create_provider(registry, provider):
         raise ASRError("asr_provider_disabled")
     route = model.route
     if provider == "local" and route.protocol == "local_funasr":
-        from live_review.integrations.asr_gateway.local import LocalASRProvider, LocalConfig
+        from live_review.integrations.asr_gateway.local.config import LocalConfig
+        from live_review.integrations.asr_gateway.local_worker import LocalWorkerProvider
 
-        values = route.model_dump(exclude={"protocol", "enabled", "provider", "key_env", "model"})
+        if route.worker_socket is None:
+            raise ASRError("local_worker_socket_required")
+
+        values = route.model_dump(
+            exclude={"protocol", "enabled", "provider", "key_env", "model", "worker_socket"}
+        )
         values["asr_model"] = route.model
-        return LocalASRProvider(LocalConfig(**values))
+        return LocalWorkerProvider(route.worker_socket, LocalConfig(**values))
     if provider == "tencent" and route.protocol == "tencent_asr":
         from live_review.integrations.asr_gateway.tencent import TencentASRProvider, TencentConfig
 

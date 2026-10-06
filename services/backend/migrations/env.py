@@ -3,6 +3,7 @@ from alembic import context
 from live_review.core.config import get_settings
 from live_review.core.database import Base, build_engine
 from live_review.modules.asr import models as asr_models  # noqa: F401
+from live_review.modules.capture import models as capture_models  # noqa: F401
 from live_review.modules.identity import models  # noqa: F401
 from live_review.modules.jobs import models as job_models  # noqa: F401
 from live_review.modules.materials import models as material_models  # noqa: F401

@@ -22,6 +22,7 @@ def https_candidate(url, domains):
             return url
         if (
             parts.port not in {None, 80}
+            or parts.netloc.lower() not in {host, host + ":80"}
             or not (host == "wxlivecdn.com" or host.endswith(".wxlivecdn.com"))
             or not any(host == d or host.endswith("." + d) for d in domains)
         ):

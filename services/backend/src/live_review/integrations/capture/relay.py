@@ -225,9 +225,13 @@ class Relay:
             conn = http.client.HTTPConnection(parts.hostname, port, timeout=10)
             sock = socket.create_connection((address, port), timeout=10)
             if parts.scheme == "https":
-                sock = ssl.create_default_context().wrap_socket(
-                    sock, server_hostname=parts.hostname
-                )
+                try:
+                    sock = ssl.create_default_context().wrap_socket(
+                        sock, server_hostname=parts.hostname
+                    )
+                except Exception:
+                    sock.close()
+                    raise
             conn.sock = sock
             headers = {"User-Agent": "Mozilla/5.0", "Accept-Encoding": "identity"}
             if range_header and re.fullmatch(r"bytes=\d+-\d*", range_header):

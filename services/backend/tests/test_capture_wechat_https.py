@@ -37,6 +37,8 @@ def test_candidate_preserves_suffix(suffix, port):
         "http://douyincdn.com/x",
         f"http://{HOST}:443/x",
         f"http://{HOST}:8080/x",
+        f"http://{HOST}:/x",
+        f"http://{HOST}:080/x",
         f"http://@{HOST}/x",
         f"http://a:b@{HOST}/x",
         f"http://{HOST}/x#",
@@ -163,7 +165,9 @@ def fake_transport(monkeypatch, statuses):
         return sock
 
     monkeypatch.setattr(relay.http.client, "HTTPConnection", Connection)
-    monkeypatch.setattr(relay.socket, "create_connection", lambda *a, **k: object())
+    monkeypatch.setattr(
+        relay.socket, "create_connection", lambda *a, **k: SimpleNamespace(close=lambda: None)
+    )
     monkeypatch.setattr(
         relay.ssl, "create_default_context", lambda: SimpleNamespace(wrap_socket=wrap)
     )
@@ -208,6 +212,12 @@ def test_redirect_loop_bounded(instance, monkeypatch):
 
 def test_tls_failure_no_http_fallback(instance, monkeypatch):
     calls, _ = fake_transport(monkeypatch, [(200, None)])
+    closed = []
+    monkeypatch.setattr(
+        relay.socket,
+        "create_connection",
+        lambda *a, **k: SimpleNamespace(close=lambda: closed.append(True)),
+    )
 
     def fail(*args, **kwargs):
         raise relay.ssl.SSLCertVerificationError("offline fixture")
@@ -218,6 +228,7 @@ def test_tls_failure_no_http_fallback(instance, monkeypatch):
     with pytest.raises(relay.ssl.SSLCertVerificationError):
         instance.fetch(BASE, None)
     assert calls == []
+    assert closed == [True]
 
 
 @pytest.mark.parametrize("ip", ["127.0.0.1", "10.1.2.3", "::1"])

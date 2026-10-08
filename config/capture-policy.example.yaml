@@ -1,5 +1,8 @@
 schema_version: 1
 enabled: false
+# Opt-in only: HTTPS candidates for allowed wxlivecdn.com hosts; no HTTP fallback.
+# Also include wxlivecdn.com (or narrower hosts) in stream_domains when enabling.
+wechat_https_upgrade: false
 # Copy to capture-policy.yaml in LIVE_MODEL_CONFIG_DIR; local values in capture.local.yaml.
 # root: /absolute/workspace/runtime/live-015/captures
 # douyin_python: /absolute/workspace/runtime/live-015/douyin-venv/bin/python

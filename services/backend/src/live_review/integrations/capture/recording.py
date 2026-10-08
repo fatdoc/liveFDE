@@ -93,6 +93,7 @@ def record(
         deadline=deadline,
         tick=tick,
         https_only=policy.https_only,
+        wechat_https_upgrade=platform == "wechat" and policy.wechat_https_upgrade,
     ) as relay:
         tick()
         if time.monotonic() >= deadline:

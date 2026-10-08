@@ -22,6 +22,11 @@ from urllib.parse import urljoin, urlsplit
 
 from live_review.integrations.capture.contracts import CaptureError, StopCapture
 from live_review.integrations.capture.hls import rewrite
+from live_review.integrations.capture.wechat_url import (
+    https_candidate,
+    request_target,
+    resolve_reference,
+)
 
 # Per-call controls preserve destination(url, domains), including offline fixture adapters.
 _resolution_controls = ContextVar("capture_resolution_controls", default=None)
@@ -114,7 +119,7 @@ def destination(url, domains):
             or parts.password
             or parts.fragment
             or parts.port not in {None, 80, 443}
-            or any(ord(c) < 33 for c in url)
+            or any(ord(c) < 33 or ord(c) == 127 for c in url)
             or not any(host == d or host.endswith("." + d) for d in domains)
         ):
             raise CaptureError("unsafe_stream_url")
@@ -137,8 +142,18 @@ class LoopbackServer(ThreadingHTTPServer):
 
 
 class Relay:
-    def __init__(self, source, domains, *, deadline=None, tick=None, https_only=False):
+    def __init__(
+        self,
+        source,
+        domains,
+        *,
+        deadline=None,
+        tick=None,
+        https_only=False,
+        wechat_https_upgrade=False,
+    ):
         self.domains = domains
+        self.wechat_https_upgrade = wechat_https_upgrade
         self.deadline, self.tick, self.https_only = deadline, tick, https_only
         self.stopped = threading.Event()
         self.resolution_condition = threading.Condition()
@@ -155,6 +170,9 @@ class Relay:
             self.server.server_close()
             raise
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+
+    def normalize(self, url):
+        return https_candidate(url, self.domains) if self.wechat_https_upgrade else url
 
     def destination(self, url):
         with self.resolution_condition:
@@ -177,6 +195,7 @@ class Relay:
 
     def register(self, url, kind=None):
         # Validate before publishing; fetch revalidates and pins the actual connection.
+        url = self.normalize(url)
         self.destination(url)
         with self.lock:
             identity = (url, kind)
@@ -201,6 +220,7 @@ class Relay:
 
     def fetch(self, url, range_header):
         for _ in range(5):
+            url = self.normalize(url)
             parts, address, port = self.destination(url)
             conn = http.client.HTTPConnection(parts.hostname, port, timeout=10)
             sock = socket.create_connection((address, port), timeout=10)
@@ -212,22 +232,29 @@ class Relay:
             headers = {"User-Agent": "Mozilla/5.0", "Accept-Encoding": "identity"}
             if range_header and re.fullmatch(r"bytes=\d+-\d*", range_header):
                 headers["Range"] = range_header
-            conn.request(
-                "GET", parts.path + ("?" + parts.query if parts.query else ""), headers=headers
-            )
+            conn.request("GET", request_target(url), headers=headers)
             response = conn.getresponse()
             if response.status in {301, 302, 303, 307, 308}:
                 target = response.getheader("Location")
                 conn.close()
                 if not target:
                     raise CaptureError("source_http_error")
-                url = urljoin(url, target)
+                url = (
+                    resolve_reference(url, target)
+                    if self.wechat_https_upgrade
+                    else urljoin(url, target)
+                )
                 continue
             return conn, response, url
         raise CaptureError("source_redirect_limit")
 
     def playlist(self, body, base):
-        return rewrite(body, base, self.register)
+        return rewrite(
+            body,
+            base,
+            self.register,
+            resolve=resolve_reference if self.wechat_https_upgrade else urljoin,
+        )
 
     def handler(self):
         relay = self

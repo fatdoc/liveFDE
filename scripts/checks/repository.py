@@ -97,6 +97,17 @@ CAPTURE_UI_FRONTEND_SCOPE = [
     "project-team/reports/LIVE-021/",
 ]
 SCOPES = {
+    "LIVE-032": [
+        "services/backend/src/live_review/integrations/capture/policy.py",
+        "services/backend/src/live_review/integrations/capture/relay.py",
+        "services/backend/src/live_review/integrations/capture/recording.py",
+        "services/backend/src/live_review/integrations/capture/hls.py",
+        "services/backend/src/live_review/integrations/capture/wechat_url.py",
+        "services/backend/tests/test_capture_wechat_https.py",
+        "config/capture-policy.example.yaml",
+        "scripts/checks/repository.py", "docs/capture.md",
+        "project-team/tasks/LIVE-032.md", "project-team/reports/LIVE-032/",
+    ],
     "LIVE-029": [
         "config/capture-policy.example.yaml",
         "services/backend/src/live_review/modules/jobs/service.py",

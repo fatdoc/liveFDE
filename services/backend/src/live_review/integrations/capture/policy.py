@@ -18,6 +18,7 @@ class CapturePolicy(BaseModel):
     schema_version: int = Field(default=1, ge=1, le=1)
     enabled: bool = False
     https_only: bool = False
+    wechat_https_upgrade: bool = False
     allowed_platforms: list[Literal["douyin", "wechat"]] = Field(
         default_factory=lambda: ["douyin", "wechat"]
     )

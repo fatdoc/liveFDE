@@ -178,3 +178,14 @@ LIVE-026依据固定上游main.py1150–1151的HTTPS转换选项补齐协议层�
 每次选择冻结在job输入recording_limits，运行查询返回实际限额；旧run无快照返回null。FFmpeg单fragmented MP4，先达到时长/大小/磁盘保护或用户停止即结束，容许64MiB有界封装余量。保留源文件和导入临时副本，按同盘三份/不同盘源一份与目标两份及2GiB保留预检，增长时持续检查。hash/copy/ffprobe期间继续job心跳、取消和上传租约，导入只给可信run局部放宽容量，普通上传512MiB不变。
 
 历史默认收起，当前/最新紧凑显示，分页保留旧失败证据；停止入口在进行中任务旁。无断点恢复/多分段材料合并；更改基础policy后，旧hash不符任务仍拒绝重放，不静默借用新限额。65秒本地合成媒体录制/导入仅证明媒体时轴和收尾闭环，真实平台2h连续稳定性未验收。
+
+
+## LIVE-032 视频号 HTTPS 候选适配
+
+视频号 DLNA 上游会把手机发送的 HTTP 地址原样交给 FFmpeg。本系统保持全局 `https_only`，通过默认关闭的 `wechat_https_upgrade` 开关为视频号构造 HTTPS 候选；该开关不改变抖音路径，也不是允许明文回退。
+
+仅当 HTTP 地址同时命中 `stream_domains` 与 `wxlivecdn.com` 的精确域/子域边界，且无用户信息、fragment、控制字符，端口为隐式默认或显式80时，才以同主机默认443替换协议。路径、签名查询字节和空问号保留。源入口、已支持 HLS master/variant/segment/key/map 等全部 URI、每跳重定向均使用同一规则；实际 HTTPS 仍需证书、公网 DNS 固定及逐跳域检查。其他 HTTP 地址保持拒绝；请求失败不尝试 HTTP。
+
+这项适配是本系统为保留 HTTPS 限制增加的兼容逻辑，不能表述为上游已经自动升级 HTTPS。固定及本轮查询的官方 main 为 `07271abdb5707cf8074483a33c2519b457ccc669`，源码 `upnp.py:_on_set_uri` 解码 CurrentURI，`__init__.py:capture` 返回地址，`__main__.py:_record` 直接 `ffmpeg -re -i URI -c copy`，没有专用 Cookie/Referer、预转换或预检。上游重定向/HLS获取委托FFmpeg，本系统继续在relay隔离验证，不把远程URL交给FFmpeg。
+
+本轮失败签名 URL 已按内存临时凭据设计释放，无法重放验证。公开示例 CDN 主机 TLS 握手通过，只证明该主机支持 TLS；单元/合成测试也不证明真机签名兼容。部署后需用户重新点击“开始等待投屏”，手机选接收设备，确认“录制中”及停止后音视频材料。若失败，保留真实错误，不自动重复录制。部署状态和回滚见工作区 `runtime/live-032/`。

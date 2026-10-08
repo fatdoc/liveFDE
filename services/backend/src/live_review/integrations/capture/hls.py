@@ -124,7 +124,7 @@ def attributes(text):
     return values
 
 
-def rewrite(body, base, register):
+def rewrite(body, base, register, *, resolve=urljoin):
     if len(body) > 1048576:
         raise CaptureError("playlist_limit")
     try:
@@ -142,7 +142,7 @@ def rewrite(body, base, register):
         if "{$" in line or any(ord(c) < 32 for c in line):
             raise CaptureError("unsupported_hls_syntax")
         if not line.startswith("#"):
-            result.append(register(urljoin(base, line), "playlist" if next_playlist else "segment"))
+            result.append(register(resolve(base, line), "playlist" if next_playlist else "segment"))
             next_playlist = False
             continue
         tag, separator, payload = line[1:].partition(":")
@@ -170,7 +170,7 @@ def rewrite(body, base, register):
                             else "segment"
                         )
                     )
-                    value = register(urljoin(base, value), kind)
+                    value = register(resolve(base, value), kind)
                 rewritten.append(key + "=" + ('"' + value + '"' if quoted else value))
             next_playlist = tag == "EXT-X-STREAM-INF"
             result.append("#" + tag + ":" + ",".join(rewritten))

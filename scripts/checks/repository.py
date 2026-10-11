@@ -100,7 +100,9 @@ SCOPES = {
     "LIVE-033": [
         "services/backend/src/live_review/modules/asr/",
         "services/backend/src/live_review/modules/llm/private_files.py",
-        "services/backend/src/live_review/modules/llm/vision_",
+        "services/backend/src/live_review/modules/llm/vision_router.py",
+        "services/backend/src/live_review/modules/llm/vision_schemas.py",
+        "services/backend/src/live_review/modules/llm/vision_store.py",
         "services/backend/src/live_review/core/model_config/workspace_asr.py",
         "services/backend/src/live_review/core/model_config/workspace_vision.py",
         "services/backend/src/live_review/integrations/asr_gateway/factory.py",

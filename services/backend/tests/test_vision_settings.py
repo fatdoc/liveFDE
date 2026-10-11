@@ -208,3 +208,40 @@ def test_disabled_overlay_removes_its_stale_registry_declaration(api):
     disabled = effective_vision(settings, workspace, loaded)
     assert all(m.name != "workspace_vision" for m in disabled.public.models)
     assert all(a.model != "workspace_vision" for a in disabled.public.aliases)
+
+
+@pytest.mark.parametrize("held_lock", ["text", "vision"])
+def test_public_reads_ignore_writer_locks_without_reading_secrets_or_mutating(
+    api, monkeypatch, held_lock
+):
+    client, settings, headers, workspace, calls = api
+    save_text(client, headers)
+    text_store = TextStore(settings, workspace)
+    vision_store = Store(settings, workspace)
+    before = text_store.files.read("state.json", 2097152)
+
+    def forbidden_secret(*args):
+        raise AssertionError("public metadata must not read credentials")
+
+    monkeypatch.setattr(TextStore, "secret", forbidden_secret)
+    monkeypatch.setattr(Store, "secret", forbidden_secret)
+    # Both files are atomically replaced. A concurrent writer can hold either
+    # lock while public readers still receive a whole old or new metadata file.
+    with (text_store if held_lock == "text" else vision_store).files.lock():
+        response = client.get(URL)
+    assert response.status_code == 200, response.text
+    assert response.json()["default_revision"] == text_store._read().value.revision
+    assert text_store.files.read("state.json", 2097152) == before
+    assert calls == []
+
+
+def test_text_and_vision_gets_can_run_together(api):
+    from concurrent.futures import ThreadPoolExecutor
+
+    client, _, headers, _, calls = api
+    save_text(client, headers)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        for _ in range(12):
+            results = list(pool.map(client.get, ["/api/v1/llm/settings", URL]))
+            assert [r.status_code for r in results] == [200, 200]
+    assert calls == []

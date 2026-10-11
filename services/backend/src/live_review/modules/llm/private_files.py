@@ -15,12 +15,14 @@ def unavailable():
 
 
 class PrivateFiles:
-    def __init__(self, settings, workspace_id):
+    def __init__(self, settings, workspace_id, *, namespace="llm"):
         try:
+            if namespace not in {"llm", "vision", "asr"}:
+                raise ValueError
             root = Path(settings.storage_root)
             if not root.is_absolute() or root.resolve() != root:
                 raise ValueError
-            self.path = root.parent / "private" / "llm" / str(UUID(str(workspace_id)))
+            self.path = root.parent / "private" / namespace / str(UUID(str(workspace_id)))
             for directory in (self.path.parent.parent, self.path.parent, self.path):
                 directory.mkdir(mode=0o700, exist_ok=True)
                 info = directory.lstat()

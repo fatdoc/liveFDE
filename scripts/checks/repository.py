@@ -97,6 +97,28 @@ CAPTURE_UI_FRONTEND_SCOPE = [
     "project-team/reports/LIVE-021/",
 ]
 SCOPES = {
+    "LIVE-033": [
+        "services/backend/src/live_review/modules/asr/",
+        "services/backend/src/live_review/modules/llm/private_files.py",
+        "services/backend/src/live_review/modules/llm/vision_",
+        "services/backend/src/live_review/core/model_config/workspace_asr.py",
+        "services/backend/src/live_review/core/model_config/workspace_vision.py",
+        "services/backend/src/live_review/integrations/asr_gateway/factory.py",
+        "services/backend/src/live_review/workers/asr_jobs.py",
+        "services/backend/src/live_review/workers/asr_stop.py",
+        "services/backend/src/live_review/main.py",
+        "services/backend/tests/test_asr_api.py",
+        "services/backend/tests/test_asr_workspace_settings.py",
+        "services/backend/tests/test_vision_settings.py",
+        "services/backend/tests/test_model_private_files.py",
+        "frontend/web/src/features/asr/", "frontend/web/src/features/llm/",
+        "frontend/web/src/features/model-settings/",
+        "frontend/web/src/pages/Settings.tsx", "frontend/web/src/components/Shell.tsx",
+        "docs/llm-settings.md", "docs/asr.md", "docs/contracts/openapi.json",
+        "docs/contracts/implementation-status.md", "project-team/STATUS.md",
+        "project-team/tasks/LIVE-033.md", "project-team/reports/LIVE-033/",
+        "scripts/checks/repository.py",
+    ],
     "LIVE-032": [
         "services/backend/src/live_review/integrations/capture/policy.py",
         "services/backend/src/live_review/integrations/capture/relay.py",

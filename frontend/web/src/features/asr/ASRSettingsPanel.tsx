@@ -3,6 +3,7 @@ import {Button, Badge} from '../../components/UI'
 import {AdminSession, type Session} from '../../auth/AdminSession'
 import {ApiError, message, request} from '../../api/client'
 import type {ASRSettings, Health} from './types'
+import {TencentSettingsPanel} from './TencentSettingsPanel'
 import {TranscriptionTrial} from './TranscriptionTrial'
 import './asr.css'
 const healthGuidance: Record<string, string> = {
@@ -12,8 +13,8 @@ const healthGuidance: Record<string, string> = {
   local_model_path_invalid: '本地模型路径无效，请管理员检查模型目录配置。',
   local_model_config_invalid: '本地模型配置无效，请管理员核对模型文件与配置。',
   model_configuration_missing: '尚未配置识别模型，请管理员完成服务配置。',
-  tencent_credentials_missing: '腾讯云凭证尚未配置，请管理员在服务器配置凭证。',
-  credentials_missing: '腾讯云凭证尚未配置，请管理员在服务器配置凭证。',
+  tencent_credentials_missing: '腾讯云凭证尚未配置，请在本页填写腾讯服务凭据。',
+  credentials_missing: '腾讯云凭证尚未配置，请在本页填写腾讯服务凭据。',
   configuration_only_not_network_verified: '凭证配置已读取，尚未验证腾讯云连接或调用权限。',
   provisioned_lazy_not_loaded: '模型文件已准备，将在首次转写时加载；尚未验证实际推理。',
   local_cuda_unavailable: '配置的显卡不可用，请管理员检查设备或改用CPU。',
@@ -42,6 +43,7 @@ function SettingsEditor({session, expired}: {session: Session; expired: () => vo
     try {setHealth(await request<Health>('/asr/health'))} catch (e) {setHealthError(message(e)); if (e instanceof ApiError && e.status === 401) expired()} finally {setChecking(false)}
   }
   const reason = health?.error || health?.health?.reason
+  const configOnly = health?.config_valid && !health.error && health.health === null && health.network_checked === false
   const dirty = JSON.stringify(saved) !== JSON.stringify(draft)
   return <><h2>语音转写设置</h2><p className="muted">这些设置保存在当前工作区服务器。切换服务不会开始识别。</p>
     {error && <p className="asr-error" role="alert">{error}</p>}{notice && <p className="asr-success" role="status">{notice}</p>}
@@ -52,7 +54,7 @@ function SettingsEditor({session, expired}: {session: Session; expired: () => vo
         <label className="asr-option"><input type="checkbox" checked={draft.allow_cloud_fallback} disabled={draft.privacy === 'local_only'} onChange={e => setDraft({...draft, allow_cloud_fallback: e.target.checked})}/><span>本地失败时允许转云端<small>仅在允许云端且本次已明确授权时生效。</small></span></label>
         <div className="asr-options">{([{key: 'speaker', label: '区分说话人', help: '只区分匿名说话人，不识别真实身份。'}, {key: 'emotion', label: '情绪标注', help: '未识别或不支持时显示未知。'}, {key: 'punctuation', label: '补充标点', help: '能力以实际服务支持为准。'}] as const).map(option => <label className="asr-option" key={option.key}><input type="checkbox" checked={draft[option.key]} onChange={e => setDraft({...draft, [option.key]: e.target.checked})}/><span>{option.label}<small>{option.help}</small></span></label>)}</div>
       </fieldset><div className="asr-actions"><Button primary disabled={busy || (!dirty && saved?.revision !== 0)} onClick={save}>{busy ? '正在保存…' : '保存转写设置'}</Button><Button disabled={busy} onClick={load}>{dirty ? '放弃草稿并重新读取' : '从服务器刷新'}</Button><span className="muted">版本 {saved?.revision} {saved?.revision === 0 ? '· 尚未保存工作区设置，请先保存一次' : dirty ? '· 有未保存修改' : '· 已同步'}</span></div>
-      <section className="asr-section"><div className="asr-section-heading"><h3>服务状态</h3><Button disabled={checking} onClick={checkHealth}>{checking ? '正在检查…' : '检查已保存的配置'}</Button></div><p className="muted">状态检查不会发起试用转写或下载模型。</p>{healthError && <p role="alert" className="asr-error">{healthError}</p>}{health && <div role="status"><Badge tone={health.config_valid && health.health?.ready ? 'green' : 'amber'}>{!health.config_valid ? '配置无效' : health.health?.ready ? '服务已就绪' : '服务未就绪'}</Badge><p>{reason ? healthGuidance[reason] || '服务返回了状态信息，请管理员核对配置后再试。' : health.health?.ready ? '当前检查未发现异常。' : '服务尚未就绪，请管理员检查配置。'}{health.health?.device && ` · 设备 ${health.health.device}`}</p>{reason && <small>状态码：{reason}</small>}<br/><small>支持能力：{health.health?.capabilities.join('、') || '未报告'} · {health.health?.network_checked ? '已进行网络检查' : '未验证外部服务连接'}</small></div>}</section>
+      <TencentSettingsPanel session={session} expired={expired} onSaved={() => setHealth(null)}/><section className="asr-section"><div className="asr-section-heading"><h3>服务状态</h3><Button disabled={checking} onClick={checkHealth}>{checking ? '正在检查…' : '检查已保存的配置'}</Button></div><p className="muted">状态检查不会发起试用转写或下载模型。</p>{healthError && <p role="alert" className="asr-error">{healthError}</p>}{health && <div role="status"><Badge tone={health.config_valid && health.health?.ready ? 'green' : 'amber'}>{!health.config_valid ? '配置无效' : configOnly ? '配置已读取 · 外部服务未验证' : health.health?.ready ? '服务已就绪' : '服务未就绪'}</Badge><p>{configOnly ? '腾讯配置已读取；本次没有发送网络请求，实际可用性需在授权转写时验证。' : reason ? healthGuidance[reason] || '服务返回了状态信息，请管理员核对配置后再试。' : health.health?.ready ? '当前检查未发现异常。' : '服务尚未就绪，请管理员检查配置。'}{health.health?.device && ` · 设备 ${health.health.device}`}</p>{reason && <small>状态码：{reason}</small>}<br/><small>支持能力：{health.health?.capabilities.join('、') || '未报告'} · {health.health?.network_checked ? '已进行网络检查' : '未验证外部服务连接'}</small></div>}</section>
       {saved && <TranscriptionTrial settings={saved} csrf={session.csrf_token} expired={expired} dirty={dirty}/>}
     </>}
   </>

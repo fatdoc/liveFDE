@@ -15,10 +15,11 @@ def stop_guard(context, settings, handler_name):
     data = context.input_data()
     if data["preferences"]["provider"] != "local":
         return None
-    registry = restore_gateway(data, settings)
-    provider = create_provider(registry, "local")
     with Session(context.engine) as db:
-        attempt = locked(db, context.job_id, context.token).attempt
+        job = locked(db, context.job_id, context.token)
+        attempt, workspace_id = job.attempt, job.workspace_id
+    registry = restore_gateway(data, settings, workspace_id)
+    provider = create_provider(registry, "local")
     request_id = f"{context.job_id}:{attempt}"
 
     def confirm():

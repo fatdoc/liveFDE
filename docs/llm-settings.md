@@ -11,3 +11,11 @@ API为 `/api/v1/llm/settings` GET/PUT/DELETE及POST `/check`，沿用管理员�
 普通OpenAI兼容配置保持HTTPS/443。HTTP调试仅development且命中服务端 `LIVE_LLM_DEBUG_HTTP_ENDPOINTS` 中精确base URL时允许；web填写一个HTTP地址不能自行获得例外，生产环境拒绝。该列表属于本机受控运行配置，交付默认空。每次请求重新校验目标，拒绝非公网IP/重定向，DNS全部结果检查后实际连接固定IP，HTTPS仍校验证书与原域名；限制总时长和响应体，不继承系统代理，不自动切换地址或重试。
 
 当前没有调用LLM生成复盘报告的业务消费者；`analysis_enabled=false`。本地ASR和直播采集的验收状态分别管理，配置成功不能替代这些验收。
+
+## LIVE-033 按用途配置
+
+入口 `/settings?section=models`。上方默认文本服务用于后续复盘总结；下方可选画面理解支持复用默认服务的接口/密钥（引用，不复制），并单独填写视觉模型。也可独立填写OpenAI-compatible接口、密钥、模型及超时。页面不提供未实现的原生Gemini/Claude协议或Embedding/Rerank管理。
+
+视觉 GET/PUT/DELETE `/api/v1/llm/vision/settings`，expected_revision初始为`0`；PUT包含enabled、mode(default/independent)、model、base_url、timeout_seconds及可选api_key。默认模式不接受api_key；独立模式即使禁用也须合法base_url，enabled须模型名。省略密钥保留独立旧密钥，切换引用模式不删除独立密钥；DELETE清除独立密钥并禁用视觉用途。响应公开effective_base_url、default_revision/default_status、configured、verification=not_tested、analysis_enabled=false，绝不回显密钥。
+
+保存、刷新、清除均不调用模型；当前没有视觉测试或录像分析执行端点。引用默认服务的GET不会更改文本checking/unknown或历史请求记录。vision声明禁用，HTTP调试仅元数据，不创建可执行视觉路由。配置保存在private/vision/<workspace UUID>，与原private/llm分离。未来业务使用时必须结合完整配置快照和默认配置修订，不能单用视觉偏好revision判断默认服务有无变化。

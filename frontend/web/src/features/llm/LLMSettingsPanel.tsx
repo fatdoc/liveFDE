@@ -17,7 +17,7 @@ export function LLMSettingsPanel() {
   return (
     <AdminSession>
       {(session, expired) => (
-        <Editor
+        <LLMSettingsEditor
           key={session.user.workspace_id + session.user.id}
           session={session}
           expired={expired}
@@ -26,7 +26,7 @@ export function LLMSettingsPanel() {
     </AdminSession>
   )
 }
-function Editor({ session, expired }: { session: Session; expired: () => void }) {
+export function LLMSettingsEditor({ session, expired }: { session: Session; expired: () => void }) {
   const [saved, setSaved] = useState<LLMSettings | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [key, setKey] = useState(''),
@@ -157,9 +157,9 @@ function Editor({ session, expired }: { session: Session; expired: () => void })
     (!key || !!key.trim())
   return (
     <>
-      <h2>大模型配置</h2>
+      <h2>默认文本服务 · 复盘总结</h2>
       <p className="muted">
-        配置保存在当前工作区服务器。保存不会调用模型；复盘报告与评分分析尚未启用。
+        复盘文字总结需要文本模型。当前支持 OpenAI-compatible 协议，模型名称请独立填写。配置保存在当前工作区服务器；保存不会调用模型，复盘报告与评分分析尚未启用。
       </p>
       {error && (
         <p className="asr-error" role="alert">

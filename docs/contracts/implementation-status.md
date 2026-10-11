@@ -41,3 +41,5 @@ LIVE-020增加GET /capture/runs按session_id与created_at/id游标分页（limit
 
 ## LIVE-029 材料转写与录制限额
 新增GET `/api/v1/asr/providers`配置能力列表；转写POST可带前序失败任务/revision，GET多successor_job_id，服务端材料锁与通用retry共同防重复排队。capture start多可选duration_seconds/max_bytes，health.limits扩展默认/预设/可用磁盘预算，run.recording_limits显示冻结限额。字段与32条实际路径见OpenAPI。复盘/评分及长音频云聚合仍未实现，工程/运行验收分别记录。
+
+LIVE-033新增真实管理员接口：`/api/v1/llm/vision/settings`与`/api/v1/asr/tencent/settings` GET/PUT/DELETE，均CAS+Origin/CSRF+工作区隔离。腾讯保存配置用于API与worker，视觉仅禁用声明（不执行分析）。见llm-settings.md/asr.md；OpenAPI已同步。

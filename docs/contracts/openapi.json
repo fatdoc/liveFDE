@@ -505,6 +505,105 @@
         }
       }
     },
+    "/api/v1/asr/tencent/settings": {
+      "get": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Get Settings",
+        "operationId": "get_settings_api_v1_asr_tencent_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/live_review__modules__asr__tencent_settings__Public"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Put Settings",
+        "operationId": "put_settings_api_v1_asr_tencent_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/live_review__modules__asr__tencent_settings__Public"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Delete Settings",
+        "operationId": "delete_settings_api_v1_asr_tencent_settings_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Revision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/live_review__modules__asr__tencent_settings__Public"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/asr/providers": {
       "get": {
         "tags": [
@@ -855,7 +954,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Public"
+                  "$ref": "#/components/schemas/live_review__modules__llm__schemas__Public"
                 }
               }
             }
@@ -872,7 +971,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Update"
+                "$ref": "#/components/schemas/live_review__modules__llm__schemas__Update"
               }
             }
           },
@@ -884,7 +983,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Public"
+                  "$ref": "#/components/schemas/live_review__modules__llm__schemas__Public"
                 }
               }
             }
@@ -923,7 +1022,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Public"
+                  "$ref": "#/components/schemas/live_review__modules__llm__schemas__Public"
                 }
               }
             }
@@ -964,7 +1063,106 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Public"
+                  "$ref": "#/components/schemas/live_review__modules__llm__schemas__Public"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/llm/vision/settings": {
+      "get": {
+        "tags": [
+          "llm"
+        ],
+        "summary": "Read Settings",
+        "operationId": "read_settings_api_v1_llm_vision_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/live_review__modules__llm__vision_schemas__Public"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "llm"
+        ],
+        "summary": "Save Settings",
+        "operationId": "save_settings_api_v1_llm_vision_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/live_review__modules__llm__vision_schemas__Update"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/live_review__modules__llm__vision_schemas__Public"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "llm"
+        ],
+        "summary": "Clear Settings",
+        "operationId": "clear_settings_api_v1_llm_vision_settings_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Revision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/live_review__modules__llm__vision_schemas__Public"
                 }
               }
             }
@@ -2024,6 +2222,83 @@
         ],
         "title": "HistoricalStep"
       },
+      "Input": {
+        "properties": {
+          "expected_revision": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Expected Revision"
+          },
+          "model": {
+            "type": "string",
+            "pattern": "^16k_[a-zA-Z0-9_.-]{1,76}$",
+            "title": "Model",
+            "default": "16k_zh"
+          },
+          "stream_model": {
+            "type": "string",
+            "enum": [
+              "16k_zh_en_2.0",
+              "16k_zh_en_speaker_2.0"
+            ],
+            "title": "Stream Model",
+            "default": "16k_zh_en_speaker_2.0"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "maximum": 600.0,
+            "minimum": 1.0,
+            "title": "Timeout Seconds",
+            "default": 120
+          },
+          "secret_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Id"
+          },
+          "secret_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Key"
+          },
+          "app_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "Input"
+      },
       "JobOutput": {
         "properties": {
           "id": {
@@ -2303,94 +2578,6 @@
           "source_ref"
         ],
         "title": "ProbeInput"
-      },
-      "Public": {
-        "properties": {
-          "revision": {
-            "type": "string",
-            "title": "Revision",
-            "default": "0"
-          },
-          "base_url": {
-            "type": "string",
-            "title": "Base Url",
-            "default": ""
-          },
-          "model": {
-            "type": "string",
-            "title": "Model",
-            "default": ""
-          },
-          "timeout_seconds": {
-            "type": "integer",
-            "title": "Timeout Seconds",
-            "default": 60
-          },
-          "configured": {
-            "type": "boolean",
-            "title": "Configured",
-            "default": false
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "not_configured",
-              "unverified",
-              "checking",
-              "verified",
-              "check_failed",
-              "unknown"
-            ],
-            "title": "Status",
-            "default": "not_configured"
-          },
-          "checked_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Checked At"
-          },
-          "last_error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Error"
-          },
-          "usage": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Usage"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "debug_http": {
-            "type": "boolean",
-            "title": "Debug Http",
-            "default": false
-          },
-          "analysis_enabled": {
-            "type": "boolean",
-            "const": false,
-            "title": "Analysis Enabled",
-            "default": false
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "Public"
       },
       "ReceiveOutput": {
         "properties": {
@@ -3246,56 +3433,6 @@
         ],
         "title": "TranscriptionInput"
       },
-      "Update": {
-        "properties": {
-          "expected_revision": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Expected Revision"
-          },
-          "base_url": {
-            "type": "string",
-            "maxLength": 512,
-            "minLength": 1,
-            "title": "Base Url"
-          },
-          "model": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 1,
-            "title": "Model"
-          },
-          "timeout_seconds": {
-            "type": "integer",
-            "maximum": 120.0,
-            "minimum": 1.0,
-            "title": "Timeout Seconds"
-          },
-          "api_key": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "password",
-                "writeOnly": true
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Api Key"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "expected_revision",
-          "base_url",
-          "model",
-          "timeout_seconds"
-        ],
-        "title": "Update"
-      },
       "UploadInput": {
         "properties": {
           "filename": {
@@ -3510,6 +3647,376 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "live_review__modules__asr__tencent_settings__Public": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "pattern": "^16k_[a-zA-Z0-9_.-]{1,76}$",
+            "title": "Model",
+            "default": "16k_zh"
+          },
+          "stream_model": {
+            "type": "string",
+            "enum": [
+              "16k_zh_en_2.0",
+              "16k_zh_en_speaker_2.0"
+            ],
+            "title": "Stream Model",
+            "default": "16k_zh_en_speaker_2.0"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "maximum": 600.0,
+            "minimum": 1.0,
+            "title": "Timeout Seconds",
+            "default": 120
+          },
+          "revision": {
+            "type": "string",
+            "title": "Revision",
+            "default": "unconfigured"
+          },
+          "configured": {
+            "type": "boolean",
+            "title": "Configured",
+            "default": false
+          },
+          "secret_id_configured": {
+            "type": "boolean",
+            "title": "Secret Id Configured",
+            "default": false
+          },
+          "secret_key_configured": {
+            "type": "boolean",
+            "title": "Secret Key Configured",
+            "default": false
+          },
+          "app_id_configured": {
+            "type": "boolean",
+            "title": "App Id Configured",
+            "default": false
+          },
+          "max_audio_bytes": {
+            "type": "integer",
+            "title": "Max Audio Bytes",
+            "default": 5000000
+          },
+          "max_duration_seconds": {
+            "type": "integer",
+            "title": "Max Duration Seconds",
+            "default": 156
+          },
+          "network_checked": {
+            "type": "boolean",
+            "title": "Network Checked",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Public"
+      },
+      "live_review__modules__llm__schemas__Public": {
+        "properties": {
+          "revision": {
+            "type": "string",
+            "title": "Revision",
+            "default": "0"
+          },
+          "base_url": {
+            "type": "string",
+            "title": "Base Url",
+            "default": ""
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": ""
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "title": "Timeout Seconds",
+            "default": 60
+          },
+          "configured": {
+            "type": "boolean",
+            "title": "Configured",
+            "default": false
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_configured",
+              "unverified",
+              "checking",
+              "verified",
+              "check_failed",
+              "unknown"
+            ],
+            "title": "Status",
+            "default": "not_configured"
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Usage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "debug_http": {
+            "type": "boolean",
+            "title": "Debug Http",
+            "default": false
+          },
+          "analysis_enabled": {
+            "type": "boolean",
+            "const": false,
+            "title": "Analysis Enabled",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Public"
+      },
+      "live_review__modules__llm__schemas__Update": {
+        "properties": {
+          "expected_revision": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Expected Revision"
+          },
+          "base_url": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Base Url"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 1.0,
+            "title": "Timeout Seconds"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "base_url",
+          "model",
+          "timeout_seconds"
+        ],
+        "title": "Update"
+      },
+      "live_review__modules__llm__vision_schemas__Public": {
+        "properties": {
+          "revision": {
+            "type": "string",
+            "title": "Revision",
+            "default": "0"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": false
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "default",
+              "independent"
+            ],
+            "title": "Mode",
+            "default": "default"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": ""
+          },
+          "base_url": {
+            "type": "string",
+            "title": "Base Url",
+            "default": ""
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "title": "Timeout Seconds",
+            "default": 60
+          },
+          "independent_key_configured": {
+            "type": "boolean",
+            "title": "Independent Key Configured",
+            "default": false
+          },
+          "protocol": {
+            "type": "string",
+            "const": "openai_compatible",
+            "title": "Protocol",
+            "default": "openai_compatible"
+          },
+          "configured": {
+            "type": "boolean",
+            "title": "Configured",
+            "default": false
+          },
+          "effective_base_url": {
+            "type": "string",
+            "title": "Effective Base Url",
+            "default": ""
+          },
+          "default_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Revision"
+          },
+          "default_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Status"
+          },
+          "debug_http": {
+            "type": "boolean",
+            "title": "Debug Http",
+            "default": false
+          },
+          "analysis_enabled": {
+            "type": "boolean",
+            "const": false,
+            "title": "Analysis Enabled",
+            "default": false
+          },
+          "verification": {
+            "type": "string",
+            "const": "not_tested",
+            "title": "Verification",
+            "default": "not_tested"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Public"
+      },
+      "live_review__modules__llm__vision_schemas__Update": {
+        "properties": {
+          "expected_revision": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Expected Revision"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "default",
+              "independent"
+            ],
+            "title": "Mode"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "Model",
+            "default": ""
+          },
+          "base_url": {
+            "type": "string",
+            "maxLength": 512,
+            "title": "Base Url",
+            "default": ""
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 1.0,
+            "title": "Timeout Seconds",
+            "default": 60
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "enabled",
+          "mode"
+        ],
+        "title": "Update"
       }
     }
   }

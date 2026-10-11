@@ -6,9 +6,13 @@ from live_review.integrations.asr_gateway.factory import create_provider, regist
 from live_review.integrations.media import MediaError
 
 
-def provider_options(settings):
+def provider_options(settings, workspace_id=None):
     try:
-        registry = registry_for(settings)
+        registry = (
+            registry_for(settings, workspace_id)
+            if workspace_id is not None
+            else registry_for(settings)
+        )
     except (ASRError, ProviderConfigError, MediaError):
         registry = None
     options = []

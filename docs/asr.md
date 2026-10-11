@@ -77,3 +77,11 @@ uv run --frozen --project services/backend python scripts/checks/live006c_smoke.
 本地输入时长按media配置（最多4h），是输入策略上限，不代表长音频识别质量、内存和结果帧容量已通过真实验收。现有整文件读取与128KiB本地响应帧仍需后续长音频专项改造。录制完成不会自动转写。
 
 明确失败且后端允许重试时，可按新保存服务创建后继任务；POST转写带previous_job_id和expected_previous_revision，旧失败保留，GET返回successor_job_id供恢复查询。每个旧任务至多一个后继；材料级串行与旧jobs重试共用锁序，进行中/未知/停止不明确阻断。前端不清未知标记绕过服务端。
+
+## LIVE-033 工作区腾讯服务配置
+
+入口 `/settings?section=asr`。本地转写无需腾讯云凭据。管理员可保存SecretId、SecretKey、AppID（实时识别用）、文件模型、实时模型和1–600秒超时；凭据只写不回显，留空保留当前工作区已有值。新工作区需单独填写腾讯凭据，不继承或复制服务器YAML密钥。旧任务的全局配置兼容仅限未出现工作区覆盖的既有任务。
+
+GET/PUT/DELETE `/api/v1/asr/tencent/settings`。初始expected_revision为`unconfigured`，之后每次写入产生新revision。DELETE清空三凭据并保留参数/修订，不能恢复服务器密钥。返回各字段是否已配置、configured、模型参数、5,000,000字节/156秒限制与network_checked=false。凭据在private/asr/<workspace UUID>/tencent.json原子写入，目录0700、文件0600。
+
+API和worker以工作区配置生成注册表，云任务绑定配置修订；队列不存密钥。云任务执行前再查workspace及修订，配置已变则拒绝旧云任务。纯本地且未授权云回退的任务不绑定腾讯修订，本地执行/停止不因腾讯配置修改失效。保存不改变隐私偏好，不触发外部识别；每次云端音频发送仍需要现有授权和预算。

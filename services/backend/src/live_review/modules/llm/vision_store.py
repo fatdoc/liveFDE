@@ -41,9 +41,10 @@ class Store:
         result = Public(**value.model_dump())
         if value.mode == "default":
             text = TextStore(self.settings, self.workspace_id)
-            # Read metadata only, without changing abandoned-check state or reading its key.
-            with text.files.lock():
-                default = text._read().value
+            # Metadata is one atomically replaced file; read a complete snapshot
+            # without contending with the text GET's abandoned-check recovery lock.
+            # Never load its key or mutate checking/unknown/request tombstones here.
+            default = text._read().value
             result.effective_base_url = default.base_url
             result.timeout_seconds = default.timeout_seconds
             result.default_revision = default.revision
@@ -56,8 +57,9 @@ class Store:
         return result
 
     def read(self):
-        with self.files.lock():
-            return self.public(self._read())
+        # Public metadata needs no writer lock: no secret file is dereferenced.
+        # Mutations still serialize CAS, secret replacement and cleanup in update().
+        return self.public(self._read())
 
     def update(self, data=None, *, revision):
         if data is not None and data.mode == "independent":

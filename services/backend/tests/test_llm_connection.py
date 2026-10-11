@@ -395,3 +395,77 @@ def test_deadline_watchdog_close_has_priority_over_incomplete_framing(
     thread.join(2)
     assert error.value.code == "llm_timeout" and error.value.unknown
     assert len(requests) == 1
+
+
+@pytest.mark.parametrize(
+    "phase,exception,expected,category",
+    [
+        ("body", OSError("synthetic-secret-response"), "llm_connection_lost", "transport"),
+        ("body", impl.http.client.BadStatusLine("synthetic-secret-response"),
+         "llm_protocol_error", "protocol"),
+        ("validate", RuntimeError("synthetic-secret-response"), "llm_client_error", "client"),
+    ],
+)
+def test_safe_failure_categories_never_log_exception_text(
+    configured, monkeypatch, caplog, phase, exception, expected, category
+):
+    requests, _, thread = wire(monkeypatch, success())
+
+    def fail(*args):
+        raise exception
+
+    if phase == "body":
+        monkeypatch.setattr(impl.CompleteResponse, "read1", fail)
+    else:
+        monkeypatch.setattr(impl, "parse_usage", fail)
+    with pytest.raises(impl.CheckFailure) as failure:
+        impl.check_connection(*configured)
+    thread.join(2)
+    assert failure.value.code == expected and failure.value.unknown
+    assert len(requests) == 1
+    assert f"phase={phase} category={category}" in caplog.text
+    assert "synthetic-secret" not in caplog.text and "models.example" not in caplog.text
+
+
+@pytest.mark.parametrize("kind", ["connect", "tls"])
+def test_pre_request_transport_failures_are_classified_without_send(
+    configured, monkeypatch, caplog, kind
+):
+    settings, loaded = configured
+    if kind == "tls":
+        loaded = effective_llm(
+            settings,
+            Public(revision=uuid4().hex, base_url="https://models.example/v1",
+                   model="synthetic", timeout_seconds=1, configured=True),
+            "synthetic-secret",
+        )
+
+    class Transport:
+        def settimeout(self, timeout):
+            pass
+
+        def connect(self, address):
+            if kind == "connect":
+                raise ConnectionRefusedError("synthetic-secret-response")
+
+        def do_handshake(self):
+            raise impl.ssl.SSLError("synthetic-secret-response")
+
+        def shutdown(self, how):
+            pass
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(impl, "resolve_addresses", lambda *a, **kw: ["8.8.8.8"])
+    monkeypatch.setattr(impl.socket, "socket", lambda *a: Transport())
+    monkeypatch.setattr(
+        impl.ssl, "create_default_context",
+        lambda: SimpleNamespace(wrap_socket=lambda raw, **kw: raw),
+    )
+    with pytest.raises(impl.CheckFailure) as failure:
+        impl.check_connection(settings, loaded)
+    assert not failure.value.unknown
+    assert failure.value.code == ("llm_tls_failed" if kind == "tls" else "llm_connection_failed")
+    assert f"phase={kind}" in caplog.text
+    assert "synthetic-secret" not in caplog.text

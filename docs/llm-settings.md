@@ -19,3 +19,9 @@ API为 `/api/v1/llm/settings` GET/PUT/DELETE及POST `/check`，沿用管理员�
 视觉 GET/PUT/DELETE `/api/v1/llm/vision/settings`，expected_revision初始为`0`；PUT包含enabled、mode(default/independent)、model、base_url、timeout_seconds及可选api_key。默认模式不接受api_key；独立模式即使禁用也须合法base_url，enabled须模型名。省略密钥保留独立旧密钥，切换引用模式不删除独立密钥；DELETE清除独立密钥并禁用视觉用途。响应公开effective_base_url、default_revision/default_status、configured、verification=not_tested、analysis_enabled=false，绝不回显密钥。
 
 保存、刷新、清除均不调用模型；当前没有视觉测试或录像分析执行端点。引用默认服务的GET不会更改文本checking/unknown或历史请求记录。vision声明禁用，HTTP调试仅元数据，不创建可执行视觉路由。配置保存在private/vision/<workspace UUID>，与原private/llm分离。未来业务使用时必须结合完整配置快照和默认配置修订，不能单用视觉偏好revision判断默认服务有无变化。
+
+## LIVE-034 正常关闭连接与安全诊断
+
+Python3.11在读取完带Content-Length的响应时可能关闭transport，客户端必须按response是否结束退出读取，不能再操作已关闭socket。完整响应仍需JSON/usage验证；截断、超时、过大响应、异常chunk trailer继续拒绝，发送后不确定状态仍为unknown，不自动重试。
+
+新增稳定错误码区分连接未建立、发送后断连、TLS、HTTP协议和本地客户端异常。日志仅记录固定阶段(connect/tls/send/headers/body/validate或router prepare/execute)、类别与错误码，不记录异常原文、接口地址、headers/key/body。旧llm_result_unknown历史无法反推具体异常，不会被改成成功或清除。新的一次真实合成模型测试需用户另行明确授权，本轮仅离线及loopback验证。

@@ -21,8 +21,28 @@ from live_review.workers.media_artifacts import controlled, write_json
 from live_review.workers.media_jobs import cancellation, material_source
 
 
-def restore_gateway(data, settings):
-    registry = registry_for(settings)
+def restore_gateway(data, settings, workspace_id=None):
+    needs_tencent = data["preferences"]["provider"] == "tencent" or bool(
+        data["preferences"].get("allow_cloud_fallback")
+        and data["authorization"].get("allow_network")
+    )
+    captured_workspace = data.get("workspace_asr_id")
+    if captured_workspace is not None:
+        if workspace_id is None or captured_workspace != str(workspace_id):
+            raise ASRError("configuration_changed")
+        if data.get("use_workspace_tencent") is not needs_tencent:
+            raise ASRError("configuration_changed")
+        registry = registry_for(settings, workspace_id) if needs_tencent else registry_for(settings)
+        if data.get("workspace_asr_revision") != registry.loaded.public.revision:
+            raise ASRError("configuration_changed")
+    else:
+        # Legacy local snapshots survive Tencent edits; legacy cloud cannot bypass a tombstone.
+        if workspace_id is not None and needs_tencent:
+            from live_review.modules.asr.tencent_settings import Store
+
+            if Store(settings, workspace_id).read().revision != "unconfigured":
+                raise ASRError("configuration_changed")
+        registry = registry_for(settings)
     captured = restore_snapshot(data["provider_snapshot"])
     if (
         captured.config_hash != registry.snapshot().config_hash
@@ -51,7 +71,9 @@ def request_for(data, request_id, max_duration_seconds):
 
 def run_stage(context, settings):
     data = context.input_data()
-    registry = restore_gateway(data, settings)
+    with Session(context.engine) as db:
+        workspace_id = locked(db, context.job_id, context.token).workspace_id
+    registry = restore_gateway(data, settings, workspace_id)
     media = registry.loaded.public.media
     root = Path(settings.storage_root)
     with Session(context.engine) as db:
@@ -80,6 +102,8 @@ def run_stage(context, settings):
     ):
         raise ASRError("source_integrity_changed")
     prefs = SettingsOutput.model_validate(data["preferences"])
+    # Extraction may be slow; recheck the pinned workspace config before provider use.
+    registry = restore_gateway(data, settings, workspace_id)
     gateway = ASRGateway(
         registry, prefs, data["authorization"], CloudRecorder(context, root, directory + "/calls")
     )

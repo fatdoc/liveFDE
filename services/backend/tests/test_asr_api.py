@@ -284,3 +284,51 @@ def test_expired_stream_never_requeues(materials):
         assert len(db.scalars(select(Outbox).where(Outbox.job_id == jid)).all()) == before
         assert stages_for(db, jid)[0].status == "failed"
     assert not client.get(f"/api/v1/jobs/{jid}").json()["can_retry"]
+
+
+def test_tencent_workspace_credentials_auth_cas_and_job_snapshot(materials, tmp_path, monkeypatch):
+    client, headers, admin, _, stranger = materials
+    configured(tmp_path, monkeypatch)
+    endpoint = "/api/v1/asr/tencent/settings"
+    body = {
+        "expected_revision": "unconfigured",
+        "secret_id": "synthetic-api-id",
+        "secret_key": "synthetic-api-key",
+    }
+    assert client.put(endpoint, json=body).status_code == 403
+    saved = client.put(endpoint, headers=headers, json=body)
+    assert saved.status_code == 200 and saved.json()["configured"]
+    assert "synthetic-api" not in saved.text
+    assert client.put(endpoint, headers=headers, json=body).status_code == 409
+    client.put(
+        "/api/v1/asr/settings",
+        headers=headers,
+        json={"expected_revision": 0, "provider": "tencent", "privacy": "cloud_allowed"},
+    )
+    _, material = upload(client, headers, wav_bytes(), "audio/wav", "session_media")
+    created = client.post(
+        "/api/v1/asr/transcriptions",
+        headers=headers,
+        json={
+            "expected_revision": 1,
+            "material_id": material["material_id"],
+            "allow_network": True,
+            "max_requests": 1,
+            "max_cost_usd": 0.01,
+        },
+    )
+    assert created.status_code == 202, created.text
+    with Session(app.state.engine) as db:
+        job = db.get(Job, UUID(created.json()["id"]))
+        assert job.input_data["workspace_asr_id"] == str(admin.workspace_id)
+        assert job.input_data["use_workspace_tencent"] is True
+        assert "synthetic-api" not in str(job.input_data)
+    client.post(
+        "/api/v1/auth/login",
+        headers=ORIGIN,
+        json={"username": stranger.username, "password": PASSWORD},
+    )
+    assert client.get(endpoint).json()["revision"] == "unconfigured"
+    assert client.get("/api/v1/asr/providers").json()["providers"][1]["configured"] is False
+    client.cookies.clear()
+    assert client.get(endpoint).status_code == 401

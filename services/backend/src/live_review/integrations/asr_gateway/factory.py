@@ -8,7 +8,7 @@ from live_review.workers.media_configuration import config_environment
 MODEL_IDS = {"local": "asr.local", "tencent": "asr.tencent"}
 
 
-def registry_for(settings):
+def registry_for(settings, workspace_id=None):
     if settings.model_config_dir is None:
         raise ASRError("model_configuration_missing")
     loaded = load_model_config(
@@ -16,6 +16,11 @@ def registry_for(settings):
         environment=config_environment(settings, settings.model_config_environment),
         dotenv_path=settings.model_dotenv_path,
     )
+    if workspace_id is not None:
+        from live_review.core.model_config.workspace_asr import overlay
+        from live_review.modules.asr.tencent_settings import Store
+
+        loaded = overlay(loaded, Store(settings, workspace_id).read(), workspace_id)
     return ModelRegistry(loaded)
 
 
@@ -47,7 +52,7 @@ def create_provider(registry, provider):
             raise ASRError("tencent_credentials_missing")
         return TencentASRProvider(
             TencentConfig(
-                app_id=registry.loaded.credential(route.app_id_env),
+                app_id=registry.loaded.credential(route.app_id_env) or None,
                 secret_id=secret_id,
                 secret_key=secret_key,
                 engine_file=route.model,

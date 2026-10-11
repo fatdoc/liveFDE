@@ -14,17 +14,19 @@ from live_review.integrations.media import MediaError
 from live_review.modules.asr.providers import provider_options
 from live_review.modules.asr.schemas import SettingsInput, SettingsOutput, TranscriptionInput
 from live_review.modules.asr.service import save_settings, settings_view, submit
+from live_review.modules.asr.tencent_settings import router as tencent_router
 from live_review.modules.jobs.models import Job, JobStage
 from live_review.modules.jobs.service import owned, view
 from live_review.workers.job_runner import run_job
 from live_review.workers.media_artifacts import read_json
 
 router = APIRouter(prefix="/api/v1/asr", tags=["asr"])
+router.include_router(tencent_router)
 
 
 @router.get("/providers")
 def providers(request: Request, admin: CurrentAdmin):
-    return provider_options(request.app.state.settings)
+    return provider_options(request.app.state.settings, admin.workspace_id)
 
 
 @router.get("/settings", response_model=SettingsOutput)
@@ -44,11 +46,13 @@ def put_settings(data: SettingsInput, request: Request, admin: MutationAdmin, db
 async def health(request: Request, admin: CurrentAdmin, db: Database):
     try:
         preferences = settings_view(db, admin.workspace_id, request.app.state.settings)
-        registry = registry_for(request.app.state.settings)
+        registry = registry_for(request.app.state.settings, admin.workspace_id)
     except (ASRError, ProviderConfigError) as error:
         return {"config_valid": False, "health": None, "error": error.code}
     try:
         provider = create_provider(registry, preferences.provider)
+        if preferences.provider == "tencent":
+            return {"config_valid": True, "health": None, "error": None, "network_checked": False}
         state = await provider.health()
         return {"config_valid": True, "health": state, "error": None}
     except (ASRError, ProviderConfigError) as error:

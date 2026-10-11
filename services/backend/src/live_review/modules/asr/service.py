@@ -78,7 +78,14 @@ def prepare(db, admin, settings, data):
     grant = authorization(preferences, data)
     if preferences.revision == 0:
         raise ApiError(409, "settings_save_required", "请先保存识别设置，再开始试用")
-    registry = registry_for(settings)
+    use_workspace_tencent = preferences.provider == "tencent" or (
+        preferences.allow_cloud_fallback and grant["allow_network"]
+    )
+    registry = (
+        registry_for(settings, admin.workspace_id)
+        if use_workspace_tencent
+        else registry_for(settings)
+    )
     descriptor = registry.get(MODEL_IDS[preferences.provider])
     if not descriptor.route.enabled:
         raise ApiError(422, "asr_provider_disabled", "识别服务尚未启用")
@@ -88,6 +95,9 @@ def prepare(db, admin, settings, data):
             raise ApiError(422, "fallback_provider_disabled", "云回退尚未启用")
     return registry, {
         "kind": "asr_gateway_v1",
+        "workspace_asr_id": str(admin.workspace_id),
+        "workspace_asr_revision": registry.loaded.public.revision,
+        "use_workspace_tencent": use_workspace_tencent,
         "gateway_policy_snapshot": policy_snapshot(settings),
         "preferences": preferences.model_dump(),
         "authorization": grant,

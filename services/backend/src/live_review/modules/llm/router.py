@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Request
 
 from live_review.core.auth import CurrentAdmin, MutationAdmin
@@ -56,8 +58,10 @@ def check_settings(data: Check, request: Request, admin: MutationAdmin):
         value, secret = store.begin(data.expected_revision, data.request_id)
         if secret is None:
             return public(value, settings)
+        phase = "prepare"
         try:
             loaded = effective_llm(settings, value, secret)
+            phase = "execute"
             usage = check_connection(settings, loaded)
         except CheckFailure as error:
             return public(
@@ -77,8 +81,12 @@ def check_settings(data: Check, request: Request, admin: MutationAdmin):
                 settings,
             )
         except Exception:
+            logging.getLogger(__name__).warning(
+                "llm_check_failed phase=%s category=client code=llm_client_error unknown=true",
+                phase,
+            )
             return public(
-                store.finish(value, data.request_id, status="unknown", error="llm_result_unknown"),
+                store.finish(value, data.request_id, status="unknown", error="llm_client_error"),
                 settings,
             )
         return public(

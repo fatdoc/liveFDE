@@ -3,6 +3,7 @@
 import http.client
 import ipaddress
 import json
+import logging
 import socket
 import ssl
 import threading
@@ -12,6 +13,8 @@ from urllib.parse import urlsplit
 from live_review.core.model_config.llm_routes import endpoint
 from live_review.integrations.capture.contracts import CaptureError
 from live_review.integrations.capture.relay import resolve_addresses
+
+logger = logging.getLogger(__name__)
 
 MAX_BODY = 65536
 SAFE_ERRORS = frozenset(
@@ -28,6 +31,11 @@ SAFE_ERRORS = frozenset(
         "llm_upstream_failed",
         "llm_result_unknown",
         "llm_configuration_invalid",
+        "llm_connection_failed",
+        "llm_connection_lost",
+        "llm_tls_failed",
+        "llm_protocol_error",
+        "llm_client_error",
     }
 )
 
@@ -37,6 +45,16 @@ class CheckFailure(Exception):
         self.code = code if code in SAFE_ERRORS else "llm_result_unknown"
         self.unknown = unknown
         super().__init__(self.code)
+
+
+def logged_failure(code, *, phase, category, unknown=False):
+    error = CheckFailure(code, unknown=unknown)
+    # All fields are local enums; never log exception messages, target or payload.
+    logger.warning(
+        "llm_check_failed phase=%s category=%s code=%s unknown=%s",
+        phase, category, error.code, unknown,
+    )
+    return error
 
 
 class CompleteResponse(http.client.HTTPResponse):
@@ -152,6 +170,7 @@ def check_connection(settings, loaded):
     timer = threading.Timer(max(0, deadline - time.monotonic()), expire)
     timer.daemon = True
     timer.start()
+    phase = "connect"
     try:
         address = ipaddress.ip_address(addresses[0])
         raw = socket.socket(
@@ -163,6 +182,7 @@ def check_connection(settings, loaded):
         raw.connect((str(address), target.port or (443 if target.scheme == "https" else 80)))
         transport = raw
         if target.scheme == "https":
+            phase = "tls"
             raw.settimeout(remaining())
             transport = ssl.create_default_context().wrap_socket(
                 raw, server_hostname=target.hostname, do_handshake_on_connect=False
@@ -185,6 +205,7 @@ def check_connection(settings, loaded):
             }
         ).encode()
         transport.settimeout(remaining())
+        phase = "send"
         sent = True  # A partial write may already have reached the provider.
         connection.request(
             "POST",
@@ -198,6 +219,7 @@ def check_connection(settings, loaded):
                 "Connection": "close",
             },
         )
+        phase = "headers"
         response = connection.getresponse()
         if response.status in {401, 403}:
             raise CheckFailure("llm_auth_failed")
@@ -215,7 +237,10 @@ def check_connection(settings, loaded):
         if length is not None and (not length.isdigit() or int(length) > MAX_BODY):
             raise CheckFailure("llm_response_too_large", unknown=True)
         content = bytearray()
-        while True:
+        phase = "body"
+        # Python 3.11 closes a Connection: close transport after the last
+        # Content-Length byte. Do not touch it again once the response is closed.
+        while not response.isclosed():
             transport.settimeout(remaining())
             chunk = response.read1(min(8192, MAX_BODY + 1 - len(content)))
             if not chunk:
@@ -229,24 +254,39 @@ def check_connection(settings, loaded):
         if response.length not in {None, 0}:
             raise CheckFailure("llm_response_invalid", unknown=True)
         remaining()
+        phase = "validate"
         return parse_usage(content)
-    except CheckFailure:
+    except CheckFailure as error:
+        logged_failure(error.code, phase=phase, category="response", unknown=error.unknown)
         raise
     except http.client.IncompleteRead:
-        raise CheckFailure(
+        raise logged_failure(
             "llm_timeout" if time.monotonic() >= deadline else "llm_response_invalid",
-            unknown=sent,
+            phase=phase, category="incomplete_response", unknown=sent,
         ) from None
     except TimeoutError:
-        raise CheckFailure("llm_timeout", unknown=sent) from None
+        raise logged_failure(
+            "llm_timeout", phase=phase, category="timeout", unknown=sent
+        ) from None
+    except ssl.SSLError:
+        raise logged_failure(
+            "llm_tls_failed", phase=phase, category="tls", unknown=sent
+        ) from None
+    except http.client.HTTPException:
+        raise logged_failure(
+            "llm_timeout" if time.monotonic() >= deadline else "llm_protocol_error",
+            phase=phase, category="protocol", unknown=sent,
+        ) from None
+    except OSError:
+        raise logged_failure(
+            "llm_timeout" if time.monotonic() >= deadline
+            else "llm_connection_lost" if sent else "llm_connection_failed",
+            phase=phase, category="transport", unknown=sent,
+        ) from None
     except Exception:
-        raise CheckFailure(
-            "llm_timeout"
-            if time.monotonic() >= deadline
-            else "llm_result_unknown"
-            if sent
-            else "llm_endpoint_rejected",
-            unknown=sent,
+        raise logged_failure(
+            "llm_timeout" if time.monotonic() >= deadline else "llm_client_error",
+            phase=phase, category="client", unknown=sent,
         ) from None
     finally:
         timer.cancel()

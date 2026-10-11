@@ -311,7 +311,7 @@ def test_private_files_reject_symlinks_permissions_and_missing_storage(tmp_path)
         Store(SimpleNamespace(storage_root=None), uuid4())
 
 
-def test_no_env_key_fallback_and_unknown_error_no_secret_or_log(api, monkeypatch, capsys):
+def test_no_env_key_fallback_and_unknown_error_no_secret_or_log(api, monkeypatch, capsys, caplog):
     client, _, headers, _, calls = api
     monkeypatch.setenv("LIVE_WORKSPACE_LLM_KEY", "synthetic-global-forbidden")
     assert check(client, headers, "0").status_code == 422
@@ -323,9 +323,11 @@ def test_no_env_key_fallback_and_unknown_error_no_secret_or_log(api, monkeypatch
     monkeypatch.setattr(implementation, "check_connection", fail)
     result = check(client, headers, revision)
     assert (
-        result.json()["status"] == "unknown" and result.json()["last_error"] == "llm_result_unknown"
+        result.json()["status"] == "unknown" and result.json()["last_error"] == "llm_client_error"
     )
     assert SECRET not in result.text and "private raw body" not in result.text
+    assert SECRET not in caplog.text and "private raw body" not in caplog.text
+    assert "phase=execute category=client" in caplog.text
     assert not capsys.readouterr().out
     assert calls == []
 
